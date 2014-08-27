@@ -1,7 +1,5 @@
 package util;
 
-import em.ILP;
-import gigaword.ConvertZYParser;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -23,7 +21,6 @@ import java.util.List;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import jnisvmlight.LabeledFeatureVector;
 import model.syntaxTree.MyTree;
 import model.syntaxTree.MyTreeNode;
 
@@ -52,26 +49,6 @@ public class Common {
 				+ "_" + antHead);
 	}
 	
-	public static LabeledFeatureVector SVMStringToFeature(String str) {
-		int a = str.indexOf(" ");
-		double label = Double.parseDouble(str.substring(0, a));
-		String tokens[] = str.substring(a + 1).trim().split("\\s+");
-
-		double[] values = new double[tokens.length];
-		int[] dims = new int[tokens.length];
-
-		for (int i = 0; i < tokens.length; i++) {
-			String t[] = tokens[i].split(":");
-			if(t[0].equals("qid")) {
-				continue;
-			}
-			dims[i] = Integer.parseInt(t[0]);
-			values[i] = Double.parseDouble(t[1]);
-		}
-
-		return new LabeledFeatureVector(label, dims, values);
-	}
-
 	public static String wordnet = "/usr/local/WordNet-3.0/";
 
 	// cache, store file content
@@ -841,8 +818,6 @@ public class Common {
 
 		ArrayList<String> output = new ArrayList<String>();
 
-		ConvertZYParser.convert(output, treeStr);
-
 		System.out.println(output);
 		// HashMap<String, ArrayList<String>> newDic = new HashMap<String,
 		// ArrayList<String>>();
@@ -1123,30 +1098,4 @@ public class Common {
 		}
 	}
 
-	public static void input(Object message) {
-		try {
-			System.err.println("Pause: " + message.toString());
-			System.err.println("Input Parameters: ");
-			throw new Exception();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		// ToDO
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-		String line = "";
-		while (true) {
-			try {
-				line = br.readLine().trim();
-				String tks[] = line.split("\\s+");
-				ILP.a_num = Double.parseDouble(tks[0]);
-				ILP.b_gen = Double.parseDouble(tks[1]);
-				ILP.c_per = Double.parseDouble(tks[2]);
-				ILP.d_ani = Double.parseDouble(tks[3]);
-			} catch (Exception e) {
-				e.printStackTrace();
-				continue;
-			}
-			break;
-		}
-	}
 }
