@@ -10,7 +10,6 @@ import util.Common;
 import model.CoNLL.CoNLLPart;
 import model.CoNLL.CoNLLSentence;
 import model.syntaxTree.MyTreeNode;
-import align.DocumentMap.Unit;
 import em.EMUtil;
 import em.EMUtil.MentionType;
 
@@ -23,8 +22,6 @@ public class Mention implements Comparable<Mention>, Serializable {
 
         public boolean isFake = false;
        
-        public ArrayList<Unit> units = new ArrayList<Unit>();
-
         public int PRONOUN_TYPE;
 
         public MentionType mentionType;
@@ -210,20 +207,6 @@ public class Mention implements Comparable<Mention>, Serializable {
                 return str;
         }
 
-        // find mapped span
-        public Mention getXSpan() {
-                Mention xSpan = this.getXSpanFromCache();
-                if (xSpan == null && assignMode >= 1 && assignMode <= 4) {
-                        assignXSpan();
-                }
-
-                if (xSpan != null && this.s.part.lang.equals("chi")) {
-                        // mappedChiMs.add(this.getMK());
-                }
-
-                return xSpan;
-        }
-
         // enforce one-one map
         public static HashMap<String, Mention> chiSpanMaps = new HashMap<String, Mention>();
         public static HashMap<String, Mention> engSpanMaps = new HashMap<String, Mention>();
@@ -253,123 +236,6 @@ public class Mention implements Comparable<Mention>, Serializable {
                 }
         }
 
-        private Mention assignXSpan() {
-                Mention xSpan = null;
-                if (assignMode == 1) {
-                        xSpan = this.getExactMatchXSpan();
-                        if (xSpan != null) {
-                                // xSpan.xSpanType = 1;
-                                this.xSpanType = xSpan.xSpanType;
-                                this.alignProb = xSpan.alignProb;
-                        }
-                }
-                if (assignMode == 2) {
-                        // xSpan = this.getPartialMatchXSpan();
-                        if (xSpan != null) {
-                                xSpan.xSpanType = 5;
-                                this.xSpanType = xSpan.xSpanType;
-                                this.alignProb = xSpan.alignProb;
-                        }
-                }
-                if (assignMode == 3) {
-                        // xSpan = this.getSameTextMapSpan();
-                        if (xSpan != null) {
-                                xSpan.xSpanType = 6;
-                                this.xSpanType = xSpan.xSpanType;
-                                this.alignProb = xSpan.alignProb;
-                        }
-                }
-                if (assignMode == 4) {
-                        xSpan = this.getCreatedSpan();
-                        if (xSpan != null) {
-                                xSpan.xSpanType = 7;
-                                this.xSpanType = xSpan.xSpanType;
-                                this.alignProb = xSpan.alignProb;
-                        }
-                }
-
-                if (xSpan != null) {
-                        if (this.s.part.lang.equalsIgnoreCase("chi")) {
-                                // System.out.println(this.getText() + "#" + xSpan.getText() +
-                                // "#");
-                                // System.out.println(this.s.toString());
-                                // System.out.println(xSpan.s.toString());
-                                // System.out.println("==" + (a++) +"==");
-                        }
-
-                        boolean put = false;
-                        if (this.s.part.lang.equals("eng")
-                                        && (chiSpanMaps.get(xSpan.getReadName()) == null || chiSpanMaps
-                                                        .get(xSpan.getReadName()).getReadName()
-                                                        .equals(this.getReadName()))) {
-                                put = true;
-                        } else if (this.s.part.lang.equals("chi")
-                                        && (engSpanMaps.get(xSpan.getReadName()) == null || engSpanMaps
-                                                        .get(xSpan.getReadName()).getReadName()
-                                                        .equals(this.getReadName()))) {
-                                put = true;
-                        }
-                        if (put) {
-                                if (this.s.part.lang.equals("eng")) {
-                                        engSpanMaps.put(this.getReadName(), xSpan);
-                                        chiSpanMaps.put(xSpan.getReadName(), this);
-                                } else {
-                                        chiSpanMaps.put(this.getReadName(), xSpan);
-                                        engSpanMaps.put(xSpan.getReadName(), this);
-                                }
-                                String head = this.head;
-                                HashSet<String> xHeads = headMaps.get(head);
-                                if (xHeads == null) {
-                                        xHeads = new HashSet<String>();
-                                        headMaps.put(head, xHeads);
-                                }
-                                String xHead = xSpan.head.toLowerCase();
-                                xHeads.add(xHead);
-                        }
-                }
-                return xSpan;
-        }
-
-        private Mention getExactMatchXSpan() {
-                // match head id
-                Mention xSpan = null;
-                Unit headUnit = null;
-                for (Unit u : this.units) {
-                        if (u.getToken().equalsIgnoreCase(this.head)) {
-//                              System.out.println(this.head + "#" + this.extent);
-                                headUnit = u;
-                                break;
-                        }
-                }
-
-                if (headUnit != null) {
-                        // ordered
-                        ArrayList<Unit> xUnits = headUnit.getMapUnit();
-                        loop: for (int i = 0; i < xUnits.size(); i++) {
-                                Unit xUnit = xUnits.get(i);
-                                double prob = 1;
-                                if (headUnit.getMapProb().size() != 0) {
-                                        prob = headUnit.getMapProb().get(i);
-                                        if (prob < th) {
-                                                continue;
-                                        }
-                                }
-                                // System.out.println("HEE?" + xUnit.mentions.size());
-                                for (Mention xs : xUnit.mentions) {
-                                        String head = xs.head;
-                                        if (head.equals(xUnit.getToken())
-                                                        && xs.ccStruct() == this.ccStruct()) {
-                                                xSpan = xs;
-                                                xSpan.xSpanType = (int) Math.ceil((prob / 0.25));
-                                                xSpan.alignProb = prob;
-                                                // TODO
-                                                break loop;
-                                        }
-                                }
-                        }
-                }
-                return xSpan;
-        }
 
         private boolean ccStruct() {
                 boolean cc = false;
@@ -383,53 +249,6 @@ public class Mention implements Comparable<Mention>, Serializable {
                 return cc;
         }
 
-        public Mention getCreatedSpan() {
-                Mention xSpan = null;
-                // int hdID = this.s.ids[this.hd];
-
-                int leftID = this.start;
-                int rightID = this.end;
-
-                Unit xStartU = null;
-                // System.out.println(this.s);
-                // System.out.println(this.s.part);
-                // System.out.println(this.s.part.itself);
-                Unit leftUnit = this.units.get(0);
-                ArrayList<Unit> xUnits = leftUnit.getMapUnit();
-                for (int i = 0; i < xUnits.size(); i++) {
-                        Unit xUnit = xUnits.get(i);
-                        if (xUnit.sentence == null) {
-                                continue;
-                        }
-                        double prob = leftUnit.getMapProb().get(i);
-                        if (prob < th) {
-                                continue;
-                        }
-                        xStartU = xUnit;
-                        break;
-                }
-
-                if (xStartU != null) {
-                        Unit rightUnit = this.units.get(this.units.size() - 1);
-                        xUnits = rightUnit.getMapUnit();
-                        for (int i = 0; i < xUnits.size(); i++) {
-                                Unit xUnit = xUnits.get(i);
-                                if (xUnit.sentence == null
-                                                || xUnit.sentence != xStartU.sentence) {
-                                        continue;
-                                }
-                                double prob = rightUnit.getMapProb().get(i);
-                                if (prob < th) {
-                                        continue;
-                                }
-                                xSpan = xUnit.sentence.getSpan(xStartU.indexInSentence,
-                                                xUnit.indexInSentence);
-                                xSpan.alignProb = prob;
-                                break;
-                        }
-                }
-                return xSpan;
-        }
 
 }
 
