@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import util.Common;
-import align.DocumentMap;
 
 /*
  * CoNLL-2012 Format Document

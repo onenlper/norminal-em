@@ -3,7 +3,6 @@ package model.CoNLL;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import mentionDetect.ParseTreeMention;
 import model.Element;
 import model.Mention;
 import model.SemanticRole;
@@ -191,7 +190,7 @@ public class CoNLLSentence implements Serializable{
 		m.head = node.getHeadLeaf().value;
 		m.headInS = node.getHeadLeaf().leafIdx;
 		
-		ParseTreeMention.calEnAttribute(m, part);
+//		ParseTreeMention.calEnAttribute(m, part);
 		
 		return m;
 	}

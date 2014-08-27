@@ -14,8 +14,6 @@ import model.SemanticRole;
 import model.CoNLL.CoNLLDocument.DocType;
 import model.syntaxTree.MyTreeNode;
 import util.Common;
-import align.DocumentMap;
-import align.DocumentMap.DocForAlign;
 import em.EMUtil;
 
 /*
