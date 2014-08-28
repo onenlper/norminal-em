@@ -21,11 +21,7 @@ import model.CoNLL.CoNLLWord;
 import model.CoNLL.OntoCorefXMLReader;
 import model.syntaxTree.MyTreeNode;
 import util.Common;
-import edu.stanford.nlp.classify.Dataset;
 import edu.stanford.nlp.classify.LinearClassifier;
-import edu.stanford.nlp.ling.Datum;
-import edu.stanford.nlp.stats.Counter;
-import edu.stanford.nlp.stats.Distribution;
 import em.EMUtil.Grammatic;
 
 public class ApplyEM {
@@ -54,8 +50,6 @@ public class ApplyEM {
 	LinearClassifier<String, String> classifier;
 
 
-	HashMap<String, double[]> contextSuper;
-
 	@SuppressWarnings("unchecked")
 	public ApplyEM(String folder) {
 		this.folder = folder;
@@ -74,11 +68,8 @@ public class ApplyEM {
 			Context.ss = (HashSet<String>) modelInput.readObject();
 			Context.vs = (HashSet<String>) modelInput.readObject();
 			// Context.svoStat = (SVOStat)modelInput.readObject();
-			contextSuper = (HashMap<String, double[]>) modelInput.readObject();
 			modelInput.close();
 
-			classifier = LinearClassifier
-					.readClassifier("stanfordClassifier.gz");
 			// ObjectInputStream modelInput2 = new ObjectInputStream(
 			// new FileInputStream("giga2/EMModel"));
 			// numberP = (Parameter) modelInput2.readObject();
