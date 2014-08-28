@@ -5,13 +5,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 
 import model.Element;
 import model.Mention;
@@ -22,10 +20,6 @@ import model.CoNLL.CoNLLWord;
 import model.syntaxTree.MyTree;
 import model.syntaxTree.MyTreeNode;
 import util.Common;
-import edu.stanford.nlp.classify.Dataset;
-import edu.stanford.nlp.classify.LinearClassifier;
-import edu.stanford.nlp.classify.LinearClassifierFactory;
-import edu.stanford.nlp.ling.Datum;
 import em.ResolveGroup.Entry;
 
 public class EMLearn {
@@ -39,17 +33,9 @@ public class EMLearn {
         static Parameter personQP;
         static Parameter animacyP;
 
-        static Parameter gNumberP;
-        static Parameter gGenderP;
-        static Parameter gPersonP;
-        static Parameter gPersonQP;
-        static Parameter gAnimacyP;
-
         static HashMap<String, Double> contextPrior;
         static HashMap<String, Double> contextOverall;
         static HashMap<String, Double> fracContextCount;
-        static List<Datum<String, String>> trainingData;
-        static HashMap<String, double[]> contextSuper;
 
         public static int qid = 0;
 
@@ -65,27 +51,13 @@ public class EMLearn {
                 animacyP = new Parameter(
                                 1.0 / ((double) EMUtil.Animacy.values().length));
 
-                gNumberP = new Parameter();
-                gGenderP = new Parameter();
-                gPersonP = new Parameter();
-                gPersonQP = new Parameter();
-                gAnimacyP = new Parameter();
-
                 contextPrior = new HashMap<String, Double>();
                 contextOverall = new HashMap<String, Double>();
                 fracContextCount = new HashMap<String, Double>();
-                trainingData = new ArrayList<Datum<String, String>>();
-                contextSuper = new HashMap<String, double[]>();
                 qid = 0;
                 count = 0;
                 Context.contextCache.clear();
         }
-
-        static FileWriter feaWriter;
-
-        static FileWriter nbFeaWriter;
-
-        static FileWriter superviseFw;
 
         private static ArrayList<Element> getChGoldNE(CoNLLPart part) {
                 String documentID = "/users/yzcchen/chen3/CoNLL/conll-2012/v4/data/train/data/chinese/annotations/"
@@ -111,8 +83,8 @@ public class EMLearn {
         public static ArrayList<ResolveGroup> extractGroups(CoNLLPart part) {
                 // ArrayList<Element> goldNE = getChGoldNE(part);
 
-                HashMap<String, Integer> chainMap = EMUtil.formChainMap(part
-                                .getChains());
+//                HashMap<String, Integer> chainMap = EMUtil.formChainMap(part
+//                                .getChains());
                 // System.out.println(chainMap.size());
                 // System.out.println(part.getChains().size());
 
@@ -200,51 +172,10 @@ public class EMLearn {
                                                         contextPrior.put(context.toString(),
                                                                         1.0 + d.doubleValue());
                                                 }
-                                                boolean coref = chainMap.containsKey(m.toName())
-                                                                && chainMap.containsKey(ant.toName())
-                                                                && chainMap.get(m.toName()).intValue() == chainMap
-                                                                                .get(ant.toName()).intValue();
-
-                                                double[] contextStat = contextSuper.get(context
-                                                                .toString());
-                                                if (contextStat == null) {
-                                                        contextStat = new double[2];
-                                                        contextSuper.put(context.toString(), contextStat);
-                                                }
-                                                if (coref) {
-                                                        contextStat[0]++;
-                                                } else {
-                                                        contextStat[1]++;
-                                                }
-
-                                                String pronoun = m.extent;
-
-                                                if (coref) {
-//                                                      gNumberP.addFracCount(entry.number.name(), EMUtil
-//                                                                      .getNumber(pronoun).name(), 1);
-//                                                      gGenderP.addFracCount(entry.gender.name(), EMUtil
-//                                                                      .getGender(pronoun).name(), 1);
-//                                                      gAnimacyP.addFracCount(entry.animacy.name(), EMUtil
-//                                                                      .getAnimacy(pronoun).name(), 1);
-                                                       
-                                                        gNumberP.addFracCount(entry.head, EMUtil
-                                                                        .getNumber(pronoun).name(), 1);
-                                                        gGenderP.addFracCount(entry.head, EMUtil
-                                                                        .getGender(pronoun).name(), 1);
-                                                        gAnimacyP.addFracCount(entry.head, EMUtil
-                                                                        .getAnimacy(pronoun).name(), 1);
-                                                       
-                                                        if (sameSpeaker) {
-                                                                gPersonP.addFracCount(entry.person.name(),
-                                                                                EMUtil.getPerson(pronoun).name(), 1);
-                                                        } else {
-                                                                gPersonQP.addFracCount(entry.person.name(),
-                                                                                EMUtil.getPerson(pronoun).name(), 1);
-                                                        }
-                                                }
-
-//                                              addMaxEnt(chainMap, ant, m, context, sameSpeaker,
-//                                                              entry, part);
+//                                                boolean coref = chainMap.containsKey(m.toName())
+//                                                                && chainMap.containsKey(ant.toName())
+//                                                                && chainMap.get(m.toName()).intValue() == chainMap
+//                                                                                .get(ant.toName()).intValue();
                                         }
                                         groups.add(rg);
 
@@ -277,7 +208,7 @@ public class EMLearn {
                 }
         }
 
-        static int percent = 0;
+        static int percent = 10;
 
         private static void extractGigaword(ArrayList<ResolveGroup> groups)
                         throws Exception {
@@ -481,10 +412,6 @@ public class EMLearn {
                 init();
 
                 EMUtil.train = true;
-                feaWriter = new FileWriter("guessPronoun.train.svm");
-                nbFeaWriter = new FileWriter("guessPronoun.train.nb");
-
-                superviseFw = new FileWriter("supervise.train");
 
                 ArrayList<ResolveGroup> groups = new ArrayList<ResolveGroup>();
 
@@ -493,29 +420,10 @@ public class EMLearn {
                 // Common.pause("count:  " + count);
                 Common.pause(groups.size());
 
-                HashMap<String, Double> map = new HashMap<String, Double>();
-                for(ResolveGroup rg : groups) {
-                        String pr = EMUtil.pronounList.get(rg.pronoun);
-                        Double i = map.get(pr);
-                        if(i==null) {
-                                map.put(pr, 1.0);
-                        } else {
-                                map.put(pr, i.doubleValue() + 1.0);
-                        }
-                }
-                for(String key : map.keySet()) {
-                        System.out.println(key + ":" + map.get(key) + "=" + map.get(key)/groups.size());
-                }
-               
                 ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(
                                 "resolveGroups"));
                 out.writeObject(groups);
                 out.close();
-
-                nbFeaWriter.close();
-                feaWriter.close();
-
-                superviseFw.close();
 
                 int it = 0;
                 while (it < 20) {
@@ -531,18 +439,6 @@ public class EMLearn {
                 personP.printParameter("personP");
                 personQP.printParameter("personQP");
 
-                gGenderP.setVals();
-                gNumberP.setVals();
-                gAnimacyP.setVals();
-                gPersonP.setVals();
-                gPersonQP.setVals();
-
-                gNumberP.printParameter("gnumberP");
-                gGenderP.printParameter("ggenderP");
-                gAnimacyP.printParameter("ganimacyP");
-                gPersonP.printParameter("gpersonP");
-                gPersonQP.printParameter("gpersonQP");
-
                 ObjectOutputStream modelOut = new ObjectOutputStream(
                                 new FileOutputStream("EMModel"));
                 modelOut.writeObject(numberP);
@@ -551,20 +447,12 @@ public class EMLearn {
                 modelOut.writeObject(personP);
                 modelOut.writeObject(personQP);
 
-                // modelOut.writeObject(gNumberP);
-                // modelOut.writeObject(gGenderP);
-                // modelOut.writeObject(gAnimacyP);
-                // modelOut.writeObject(gPersonP);
-                // modelOut.writeObject(gPersonQP);
-
                 modelOut.writeObject(fracContextCount);
                 modelOut.writeObject(contextPrior);
 
                 modelOut.writeObject(Context.ss);
                 modelOut.writeObject(Context.vs);
                 // modelOut.writeObject(Context.svoStat);
-
-                modelOut.writeObject(contextSuper);
 
                 modelOut.close();
 
@@ -576,19 +464,6 @@ public class EMLearn {
 
                 // System.out.println(EMUtil.missed);
                 System.out.println(EMUtil.missed.size());
-
-                LinearClassifierFactory<String, String> factory = new LinearClassifierFactory<String, String>();
-                factory.useConjugateGradientAscent();
-                // Turn on per-iteration convergence updates
-                factory.setVerbose(false);
-                // Small amount of smoothing
-                factory.setSigma(10);
-                // Build a classifier
-                // Build a classifier
-                LinearClassifier<String, String> classifier = factory
-                                .trainClassifier(trainingData);
-                classifier.dump();
-                LinearClassifier.writeClassifier(classifier, "stanfordClassifier.gz");
 
                 ApplyEM.run("all");
 
