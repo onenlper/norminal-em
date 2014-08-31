@@ -1,408 +1,385 @@
 package em;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import model.Mention;
 import model.CoNLL.CoNLLPart;
-import model.CoNLL.CoNLLSentence;
-import model.CoNLL.CoNLLWord;
 import model.syntaxTree.MyTreeNode;
 import util.Common;
-import em.EMUtil.Grammatic;
-import em.EMUtil.MentionType;
 
 public class Context implements Serializable {
 
-        /**
+	/**
          * 
          */
-        private static final long serialVersionUID = 1L;
-        // short antSenPos; // 3 values
-        // short antHeadPos; //
-        // short antGram; //
-        // short proPos; //
-        // short antType;// pronoun, proper, common
+	private static final long serialVersionUID = 1L;
+	// short antSenPos; // 3 values
+	// short antHeadPos; //
+	// short antGram; //
+	// short proPos; //
+	// short antType;// pronoun, proper, common
 
-        String feaL;
+	String feaL;
 
-        public static HashMap<String, Context> contextCache = new HashMap<String, Context>();
+	public static HashMap<String, Context> contextCache = new HashMap<String, Context>();
 
-        public static Context getContext(short[] feas) {
-                // long feaL = 0;
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < feas.length; i++) {
-                        if (feas[i] >= 10) {
-                                Common.bangErrorPOS("Can't larger than 10:" + feas[i]
-                                                + "  Fea:" + i);
-                        }
-                        // feaL += Math.pow(10, i) * feas[i];
-                        sb.append(feas[i]);
-                }
-                if (contextCache.containsKey(sb.toString())) {
-                        return contextCache.get(sb.toString());
-                } else {
-                        Context c = new Context(sb.toString());
-                        contextCache.put(sb.toString(), c);
-                        return c;
-                }
-        }
+	public static Context getContext(short[] feas) {
+		// long feaL = 0;
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < feas.length; i++) {
+			// if (feas[i] >= 10) {
+			// Common.bangErrorPOS("Can't larger than 10:" + feas[i]
+			// + "  Fea:" + i);
+			// }
+			// feaL += Math.pow(10, i) * feas[i];
+			sb.append(feas[i]).append("#");
+		}
+		if (contextCache.containsKey(sb.toString())) {
+			return contextCache.get(sb.toString());
+		} else {
+			Context c = new Context(sb.toString());
+			contextCache.put(sb.toString(), c);
+			return c;
+		}
+	}
 
-        private Context(String feaL) {
-                this.feaL = feaL;
-        }
+	private Context(String feaL) {
+		this.feaL = feaL;
+	}
 
-        public int hashCode() {
-                return this.toString().hashCode();
-        }
+	public int hashCode() {
+		return this.toString().hashCode();
+	}
 
-        public boolean equals(Object obj) {
-                Context c2 = (Context) obj;
-                return (this.feaL == c2.feaL);
-        }
+	public boolean equals(Object obj) {
+		Context c2 = (Context) obj;
+		return (this.feaL == c2.feaL);
+	}
 
-        public String toString() {
-                return this.feaL;
-        }
+	public String toString() {
+		return this.feaL;
+	}
 
-        public static SVOStat svoStat;
-        static short[] feas = new short[18];
-        public static Context buildContext(Mention ant, Mention pronoun,
-                        CoNLLPart part, boolean isFS) {
-                MI = calMI(ant, pronoun);
+	public static SVOStat svoStat;
 
-                int antID = ant.start;
-                int pronounID = pronoun.start;
+	static short[] feas = new short[18];
 
-                CoNLLSentence pronounS = part.getWord(pronounID).sentence;
-                CoNLLSentence antS = part.getWord(antID).sentence;
+	public static Context buildContext(Mention ant, Mention anaphor,
+			CoNLLPart part) {
 
-                int antSID = antS.getSentenceIdx();
-                int proSID = pronounS.getSentenceIdx();
+		// exact match
+		int id = 0;
+		short[] feas = new short[6];
 
-                short senDis = (short) (proSID - antSID);
+		feas[id++] = isExactMatch(ant, anaphor, part); // 2
+		feas[id++] = isAbb(ant, anaphor, part); // 2
+		feas[id++] = headMatch(ant, anaphor, part); // 2
+		feas[id++] = haveIncompatibleModify(ant, anaphor, part); // 3
+		feas[id++] = isIWithI(ant, anaphor, part); // 2
+		feas[id++] = getDistance(ant, anaphor, part); //
 
-                if (senDis > 2) {
-                        senDis = 2;
-                }
+		return getContext(feas);
+	}
 
-                short antPos = 0;
-                if (senDis == 0) {
-                        antPos = (short) (pronounID - antID);
-                        antPos = (short) EMUtil.getBucket(antPos,
-                                        part.getWord(pronounID).indexInSentence, 4);
-                } else {
-                        antPos = (short) part.getWord(antID).indexInSentence;
-                        antPos = (short) EMUtil.getBucket(antPos,
-                                        part.getWord(antID).sentence.words.size(), 4);
-                }
+	private static short getDistance(Mention ant, Mention anaphor,
+			CoNLLPart part) {
+		short diss = (short) (part.getWord(anaphor.end).sentence
+				.getSentenceIdx() - part.getWord(ant.end).sentence
+				.getSentenceIdx());
+		if (diss > EMLearn.maxDisFeaValue) {
+			diss = (short)EMLearn.maxDisFeaValue;
+		}
+		return diss;
+	}
 
-                short proPos = (short) EMUtil.getBucket(
-                                part.getWord(pronounID).indexInSentence,
-                                part.getWord(pronounID).sentence.words.size(), 4);
-                short antSynactic = (short) Grammatic.subject.ordinal();
-                short antType = 0;
-                if (ant.mType == MentionType.tmporal) {
-                        antType = 1;
-                }
-                // = (short) ant.mType.ordinal();
+	private static short isExactMatch(Mention ant, Mention anaphor,
+			CoNLLPart part) {
+		if (ant.extent.equalsIgnoreCase(anaphor.extent)) {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
 
-                short antNP = 0;
-                MyTreeNode antNP_AncNP = ant.NP.getFirstXAncestor("NP");
-                if (antNP_AncNP != null) {
-                        antNP = 1;
-                        if (ant.NP.getFirstXAncestor("IP") == antNP_AncNP
-                                        .getFirstXAncestor("IP")) {
-                                antNP = 2;
-                        }
-                }
+	public static short isAbb(Mention ant, Mention anaphor, CoNLLPart part) {
+		if (Common.isAbbreviation(ant.extent, anaphor.extent)) {
+			return 1;
+		}
+		return 0;
+	}
 
-                short antVP = 0;
-                MyTreeNode antNP_AncVP = ant.NP.getFirstXAncestor("VP");
-                if (antNP_AncVP != null) {
-                        antVP = 1;
-                        if (ant.NP.getFirstXAncestor("IP") == antNP_AncVP
-                                        .getFirstXAncestor("IP")) {
-                                antVP = 2;
-                        }
-                }
+	public static short headMatch(Mention ant, Mention anaphor, CoNLLPart part) {
+		if (ant.head.equalsIgnoreCase(anaphor.head)) {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
 
-                short proStart = 0;
-                if (part.getWord(pronoun.start).indexInSentence == 0) {
-                        proStart = 1;
-                } else {
-                        MyTreeNode leaf = pronounS.syntaxTree.root.getLeaves().get(
-                                        part.getWord(pronounID).indexInSentence);
+	public static short isIWithI(Mention ant, Mention anaphor, CoNLLPart part) {
+		if ((ant.start <= anaphor.start && ant.end > anaphor.end)) {
+			return 1;
+		}
+		return 0;
+	}
 
-                        MyTreeNode firstIP = leaf.getFirstXAncestor("IP");
-                        if (firstIP != null && firstIP.getLeaves().get(0) == leaf) {
-                                proStart = 2;
-                        }
-                }
+	public static short haveIncompatibleModify(Mention ant, Mention anaphor,
+			CoNLLPart part) {
+		if (!ant.head.equalsIgnoreCase(anaphor.head)) {
+			return 0;
+		}
+		boolean thisHasExtra = false;
+		Set<String> thisWordSet = new HashSet<String>();
+		Set<String> antWordSet = new HashSet<String>();
+		Set<String> locationModifier = new HashSet<String>(Arrays.asList("东",
+				"南", "西", "北", "中", "东面", "南面", "西面", "北面", "中部", "东北", "西部",
+				"南部", "下", "上", "新", "旧", "前"));
+		String mPRP = "";
+		String antPRP = "";
+		for (int i = anaphor.start; i <= anaphor.end; i++) {
+			String w1 = part.getWord(i).orig.toLowerCase();
+			String pos1 = part.getWord(i).posTag;
+			if ((pos1.startsWith("PU") || w1.equalsIgnoreCase(anaphor.head))) {
+				continue;
+			}
+			// if ((pos1.startsWith("DEG") && i>em.start)) {
+			// mPRP = part.getWord(i-1).word;
+			// continue;
+			// }
+			// if(em.start!=em.end && i==em.start && pos1.equals("PN")) {
+			// mPRP = part.getWord(i-1).word;
+			// continue;
+			// }
+			thisWordSet.add(w1);
+		}
+		for (int j = ant.start; j <= ant.end; j++) {
+			String w2 = part.getWord(j).orig.toLowerCase();
+			String pos2 = part.getWord(j).posTag;
+			// if (pos2.startsWith("DEG") && j>ant.start) {
+			// mPRP = part.getWord(j-1).word;
+			// continue;
+			// }
+			// if(ant.start!=ant.end && j==ant.start && pos2.equals("PN")) {
+			// antPRP = part.getWord(j).word;
+			// continue;
+			// }
+			antWordSet.add(w2);
+		}
+		for (String w : thisWordSet) {
+			if (!antWordSet.contains(w)) {
+				thisHasExtra = true;
+			}
+		}
+		boolean hasLocationModifier = false;
+		for (String l : locationModifier) {
+			if (antWordSet.contains(l) && !thisWordSet.contains(l)) {
+				hasLocationModifier = true;
+			}
+		}
+		if (thisHasExtra || hasLocationModifier) {
+			return 1;
+		}
+		return 2;
+	}
 
-                short nearest = 1;
-                for (int i = ant.end + 1; i < pronoun.start; i++) {
-                        CoNLLWord w = part.getWord(i);
-                        MyTreeNode leaf = w.sentence.syntaxTree.leaves
-                                        .get(w.indexInSentence);
-                        if (leaf.getFirstXAncestor("NP") != null) {
-                                nearest = 0;
-                                break;
-                        }
-                }
+	private static void moreFea(short antPos, short proPos, short antSynactic,
+			short antType, short nearest, short NPClause, short VPClause,
+			short[] feas) {
+		// feas[1] = nearest;
+		feas[2] = antPos;
+		feas[3] = antSynactic;
+		feas[4] = proPos;
+		feas[5] = antType;
+		// feas[11] = NPClause;
+		// feas[12] = VPClause;
+	}
 
-                short proNP = 0;
-                if (pronoun.V.getFirstXAncestor("NP") != null) {
-                        proNP = 1;
-                }
+	public static double voP = 0;
+	public static double svoP = 0;
+	public static double MI = 0;
 
-                short proVP = 0;
-                if (pronoun.V.getFirstXAncestor("VP") != null) {
-                        proVP = 1;
-                }
+	public static String message;
 
-                short NPClause = getClauseType(ant.NP, antS.syntaxTree.root);
-                short VPClause = getClauseType(pronoun.V, pronounS.syntaxTree.root);
+	public static HashSet<String> ss = new HashSet<String>();
+	public static HashSet<String> vs = new HashSet<String>();
 
-                short sameVerb = 0;
-                if (ant.gram == EMUtil.Grammatic.subject && ant.V != null
-                                && pronoun.V != null) {
-                        String antV = EMUtil.getFirstVerb(ant.V);
-                        String proV = EMUtil.getFirstVerb(pronoun.V);
-                        if (antV.equals(proV)) {
-                                if (!antV.equals("是") && !proV.equals("要") && !proV.equals("会")) {
-                                        sameVerb = 1;
-                                }
-                        }
-                }
-                // maximum 18 features because of the restriction of Long
-                feas[15] = senDis;
+	public static double calMI2(Mention ant, Mention pronoun) {
+		if (svoStat == null) {
+			svoStat = new SVOStat();
+			svoStat.loadMIInfo();
+		}
+		String v = EMUtil.getFirstVerb(pronoun.V);
+		String o = EMUtil.getObjectNP(pronoun.V);
 
-//               moreFea(antPos, proPos, antSynactic, antType, nearest, NPClause,
-//               VPClause, feas);
+		String s = EMUtil.getAntAnimacy(ant).name();
+		double subjC = getValue(svoStat.unigrams, s);
+		// System.out.println(subjC + "##" + s + "###" +
+		// svoStat.unigrams.size());
 
-                feas[6] = antNP;
-                feas[7] = antVP;
+		double subjP = (subjC + 1)
+				/ (svoStat.unigramAll + svoStat.unigrams.size());
 
-                feas[8] = proNP;
-                feas[9] = proVP;
-                feas[10] = proStart;
+		// if (o != null && svoStat.voCounts.containsKey(v + " " + o)) {
+		// double voC = getValue(svoStat.voCounts, v + " " + o);
+		// voP = (voC) / (svoStat.svoAll);
+		//
+		// double svoC = getValue(svoStat.svoCounts, s + " " + v + " " + o);
+		// svoP = (svoC) / (svoStat.svoAll);
+		//
+		// } else {
+		if (!svoStat.vCounts.containsKey(v) || svoStat.vCounts.get(v) < 1000) {
+			return 1;
+		}
 
-                feas[13] = sameVerb;
+		double voC = getValue(svoStat.vCounts, v);
+		voP = (voC) / (svoStat.svoAll);
 
-                if (isFS && MI > 0) {
-                        feas[0] = 1;
-                } else if (ant.isBest) {
-                        feas[0] = 2;
-                } else if (ant.s == ant.s && ant.gram == Grammatic.object
-                                && ant.end + 2 == pronoun.start
-                                && part.getWord(ant.end + 1).word.equals("，") && pronoun.MI > 0) {
-//                      feas[0] = 3;
-//                      Common.bangErrorPOS("!!");
-                } else {
-                        feas[0] = 0;
-                }
+		double svoC = getValue(svoStat.svCounts, s + " " + v);
+		svoP = (svoC) / (svoStat.svoAll);
+		// }
 
-                return Context.getContext(feas);
-        }
+		// }
 
-        private static void moreFea(short antPos, short proPos, short antSynactic,
-                        short antType, short nearest, short NPClause, short VPClause,
-                        short[] feas) {
-//              feas[1] = nearest;
-                feas[2] = antPos;
-                feas[3] = antSynactic;
-                 feas[4] = proPos;
-                feas[5] = antType;
-//              feas[11] = NPClause;
-//              feas[12] = VPClause;
-        }
+		double MI = Math.log(svoP / (voP * subjP));
+		// System.out.println(subjP + " " + voP + " " + svoP);
+		// System.out.println(MI + s + " " + v + " " + o);
+		// System.out.println("======");
 
-        public static double voP = 0;
-        public static double svoP = 0;
-        public static double MI = 0;
+		message = subjP + " " + voP + " " + svoP + '\n' + MI + s + " " + v
+				+ " " + o + '\n' + "======";
+		return MI;
+	}
 
-        public static String message;
+	public static double calMI(Mention ant, Mention pronoun) {
+		if (true)
+			return 1;
+		if (svoStat == null) {
+			long start = System.currentTimeMillis();
+			ObjectInputStream modelInput;
+			// try {
+			// modelInput = new ObjectInputStream(new FileInputStream(
+			// "/dev/shm/svoStat"));
+			// svoStat = (SVOStat) modelInput.readObject();
+			svoStat = new SVOStat();
+			svoStat.loadMIInfo();
+			// } catch (FileNotFoundException e) {
+			// // TODO Auto-generated catch block
+			// e.printStackTrace();
+			// } catch (IOException e) {
+			// // TODO Auto-generated catch block
+			// e.printStackTrace();
+			// } catch (ClassNotFoundException e) {
+			// // TODO Auto-generated catch block
+			// e.printStackTrace();
+			// }
+			// System.out.println(System.currentTimeMillis() - start);
+		}
+		String s = ant.head;
+		String pos = ant.s.getWord(ant.headInS).posTag;
+		String v = EMUtil.getFirstVerb(pronoun.V);
+		String o = EMUtil.getObjectNP(pronoun.V);
 
-        public static HashSet<String> ss = new HashSet<String>();
-        public static HashSet<String> vs = new HashSet<String>();
+		// System.out.println(s + " " + v + " " + o);
+		String NE = ant.NE;
+		if (ant.NE.equals("OTHER") && EMUtil.NEMap != null
+				&& EMUtil.NEMap.containsKey(ant.head)) {
+			NE = EMUtil.NEMap.get(ant.head);
+		}
 
-        public static double calMI2(Mention ant, Mention pronoun) {
-                if (svoStat == null) {
-                        svoStat = new SVOStat();
-                        svoStat.loadMIInfo();
-                }
-                String v = EMUtil.getFirstVerb(pronoun.V);
-                String o = EMUtil.getObjectNP(pronoun.V);
+		if (NE.equals("PERSON")) {
+			s = "他";
+			pos = "PN";
+		} else if (NE.equals("LOC") || NE.equals("GPE") || NE.equals("ORG")) {
+			s = "它";
+			pos = "PN";
+		}
+		// else if(NE.equals("ORG")) {
+		// s = "公司";
+		// pos = "NN";
+		// }
 
-                String s = EMUtil.getAntAnimacy(ant).name();
-                double subjC = getValue(svoStat.unigrams, s);
-                // System.out.println(subjC + "##" + s + "###" +
-                // svoStat.unigrams.size());
+		if (!svoStat.unigrams.containsKey(s + " " + pos)
+				|| svoStat.unigrams.get(s + " " + pos) < 15000) {
+			return 1;
+		}
 
-                double subjP = (subjC + 1)
-                                / (svoStat.unigramAll + svoStat.unigrams.size());
+		if (EMUtil.train) {
+			ss.add(s);
+			vs.add(v);
+		} else if (!ss.contains(s) || vs.contains(v)) {
+			// return 1;
+		}
 
-                // if (o != null && svoStat.voCounts.containsKey(v + " " + o)) {
-                // double voC = getValue(svoStat.voCounts, v + " " + o);
-                // voP = (voC) / (svoStat.svoAll);
-                //
-                // double svoC = getValue(svoStat.svoCounts, s + " " + v + " " + o);
-                // svoP = (svoC) / (svoStat.svoAll);
-                //
-                // } else {
-                if (!svoStat.vCounts.containsKey(v) || svoStat.vCounts.get(v) < 1000) {
-                        return 1;
-                }
+		double subjC = getValue(svoStat.unigrams, s + " " + pos);
+		double subjP = (subjC + 1)
+				/ (svoStat.unigramAll + svoStat.unigrams.size());
 
-                double voC = getValue(svoStat.vCounts, v);
-                voP = (voC) / (svoStat.svoAll);
+		// if (o != null && svoStat.voCounts.containsKey(v + " " + o)) {
+		// double voC = getValue(svoStat.voCounts, v + " " + o);
+		// voP = (voC) / (svoStat.svoAll);
+		//
+		// double svoC = getValue(svoStat.svoCounts, s + " " + v + " " + o);
+		// svoP = (svoC) / (svoStat.svoAll);
+		// } else {
+		if (!svoStat.vCounts.containsKey(v) || svoStat.vCounts.get(v) < 1000) {
+			return 1;
+		}
 
-                double svoC = getValue(svoStat.svCounts, s + " " + v);
-                svoP = (svoC) / (svoStat.svoAll);
-                // }
+		double voC = getValue(svoStat.vCounts, v);
+		voP = (voC) / (svoStat.svoAll);
 
-                // }
+		double svoC = getValue(svoStat.svCounts, s + " " + v);
+		svoP = (svoC) / (svoStat.svoAll);
+		// }
 
-                double MI = Math.log(svoP / (voP * subjP));
-                // System.out.println(subjP + " " + voP + " " + svoP);
-                // System.out.println(MI + s + " " + v + " " + o);
-                // System.out.println("======");
+		double MI = Math.log(svoP / (voP * subjP));
+		// System.out.println(subjP + " " + voP + " " + svoP);
+		// System.out.println(MI + s + " " + v + " " + o);
+		// System.out.println("======");
 
-                message = subjP + " " + voP + " " + svoP + '\n' + MI + s + " " + v
-                                + " " + o + '\n' + "======";
-                return MI;
-        }
+		message = subjP + " " + voP + " " + svoP + '\n' + MI + s + " " + NE
+				+ " " + v + " " + o + '\n' + "======";
+		return MI;
+	}
 
-        public static double calMI(Mention ant, Mention pronoun) {
-//               if(true)
-//               return 1;
-                if (svoStat == null) {
-                        long start = System.currentTimeMillis();
-                        ObjectInputStream modelInput;
-//                      try {
-//                              modelInput = new ObjectInputStream(new FileInputStream(
-//                                              "/dev/shm/svoStat"));
-//                              svoStat = (SVOStat) modelInput.readObject();
-                                 svoStat = new SVOStat();
-                                 svoStat.loadMIInfo();
-//                      } catch (FileNotFoundException e) {
-//                              // TODO Auto-generated catch block
-//                              e.printStackTrace();
-//                      } catch (IOException e) {
-//                              // TODO Auto-generated catch block
-//                              e.printStackTrace();
-//                      } catch (ClassNotFoundException e) {
-//                              // TODO Auto-generated catch block
-//                              e.printStackTrace();
-//                      }
-//                      System.out.println(System.currentTimeMillis() - start);
-                }
-                String s = ant.head;
-                String pos = ant.s.getWord(ant.headInS).posTag;
-                String v = EMUtil.getFirstVerb(pronoun.V);
-                String o = EMUtil.getObjectNP(pronoun.V);
+	public static double getValue(HashMap<String, Integer> map, String key) {
+		if (map.containsKey(key)) {
+			return map.get(key);
+		} else {
+			return 0.00000001;
+		}
+	}
 
-                // System.out.println(s + " " + v + " " + o);
-                String NE = ant.NE;
-                if (ant.NE.equals("OTHER") && EMUtil.NEMap != null
-                                && EMUtil.NEMap.containsKey(ant.head)) {
-                        NE = EMUtil.NEMap.get(ant.head);
-                }
-
-                if (NE.equals("PERSON")) {
-                        s = "他";
-                        pos = "PN";
-                } else if (NE.equals("LOC") || NE.equals("GPE") || NE.equals("ORG")) {
-                        s = "它";
-                        pos = "PN";
-                }
-                // else if(NE.equals("ORG")) {
-                // s = "公司";
-                // pos = "NN";
-                // }
-
-                if (!svoStat.unigrams.containsKey(s + " " + pos)
-                                || svoStat.unigrams.get(s + " " + pos) < 15000) {
-                        return 1;
-                }
-
-                if (EMUtil.train) {
-                        ss.add(s);
-                        vs.add(v);
-                } else if (!ss.contains(s) || vs.contains(v)) {
-                        // return 1;
-                }
-
-                double subjC = getValue(svoStat.unigrams, s + " " + pos);
-                double subjP = (subjC + 1)
-                                / (svoStat.unigramAll + svoStat.unigrams.size());
-
-                // if (o != null && svoStat.voCounts.containsKey(v + " " + o)) {
-                // double voC = getValue(svoStat.voCounts, v + " " + o);
-                // voP = (voC) / (svoStat.svoAll);
-                //
-                // double svoC = getValue(svoStat.svoCounts, s + " " + v + " " + o);
-                // svoP = (svoC) / (svoStat.svoAll);
-                // } else {
-                if (!svoStat.vCounts.containsKey(v) || svoStat.vCounts.get(v) < 1000) {
-                        return 1;
-                }
-
-                double voC = getValue(svoStat.vCounts, v);
-                voP = (voC) / (svoStat.svoAll);
-
-                double svoC = getValue(svoStat.svCounts, s + " " + v);
-                svoP = (svoC) / (svoStat.svoAll);
-                // }
-
-                double MI = Math.log(svoP / (voP * subjP));
-                // System.out.println(subjP + " " + voP + " " + svoP);
-                // System.out.println(MI + s + " " + v + " " + o);
-                // System.out.println("======");
-
-                message = subjP + " " + voP + " " + svoP + '\n' + MI + s + " " + NE
-                                + " " + v + " " + o + '\n' + "======";
-                return MI;
-        }
-
-        public static double getValue(HashMap<String, Integer> map, String key) {
-                if (map.containsKey(key)) {
-                        return map.get(key);
-                } else {
-                        return 0.00000001;
-                }
-        }
-
-        public static short getClauseType(MyTreeNode node, MyTreeNode root) {
-                int IPCounts = node.getXAncestors("IP").size();
-                if (IPCounts > 1) {
-                        // subordinate clause
-                        return 2;
-                } else {
-                        int totalIPCounts = 0;
-                        ArrayList<MyTreeNode> frontie = new ArrayList<MyTreeNode>();
-                        frontie.add(root);
-                        while (frontie.size() > 0) {
-                                MyTreeNode tn = frontie.remove(0);
-                                if (tn.value.toLowerCase().startsWith("ip")) {
-                                        totalIPCounts++;
-                                }
-                                frontie.addAll(tn.children);
-                        }
-                        if (totalIPCounts > 1) {
-                                // matrix clause
-                                return 1;
-                        } else {
-                                // independent clause
-                                return 0;
-                        }
-                }
-        }
+	public static short getClauseType(MyTreeNode node, MyTreeNode root) {
+		int IPCounts = node.getXAncestors("IP").size();
+		if (IPCounts > 1) {
+			// subordinate clause
+			return 2;
+		} else {
+			int totalIPCounts = 0;
+			ArrayList<MyTreeNode> frontie = new ArrayList<MyTreeNode>();
+			frontie.add(root);
+			while (frontie.size() > 0) {
+				MyTreeNode tn = frontie.remove(0);
+				if (tn.value.toLowerCase().startsWith("ip")) {
+					totalIPCounts++;
+				}
+				frontie.addAll(tn.children);
+			}
+			if (totalIPCounts > 1) {
+				// matrix clause
+				return 1;
+			} else {
+				// independent clause
+				return 0;
+			}
+		}
+	}
 }

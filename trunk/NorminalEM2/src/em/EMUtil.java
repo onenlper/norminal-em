@@ -684,8 +684,13 @@ public class EMUtil {
 		ArrayList<Mention> removes = new ArrayList<Mention>();
 		for (Mention s : nounPhrases) {
 			for (Mention l : nounPhrases) {
-				if (s.headInS == l.headInS && l.end - l.start > s.end - s.start) {
-					removes.add(s);
+				if (s.end == l.end && l.end - l.start > s.end - s.start) {
+					if(!sentence.part.folder.equals("nw")) {
+						removes.add(s);		
+					}
+				}
+				if(s.end==s.start && sentence.getWord(s.headInS).posTag.equals("PN")) {
+//					removes.add(s);
 				}
 			}
 		}

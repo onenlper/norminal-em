@@ -1,9 +1,7 @@
 package em;
 
-import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
@@ -11,18 +9,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import mentionDetect.ParseTreeMention;
+import model.Element;
 import model.Entity;
 import model.Mention;
 import model.CoNLL.CoNLLDocument;
 import model.CoNLL.CoNLLPart;
 import model.CoNLL.CoNLLSentence;
 import model.CoNLL.CoNLLWord;
-import model.CoNLL.OntoCorefXMLReader;
 import model.syntaxTree.MyTreeNode;
 import util.Common;
 import edu.stanford.nlp.classify.LinearClassifier;
-import em.EMUtil.Grammatic;
 
 public class ApplyEM {
 
@@ -31,8 +27,8 @@ public class ApplyEM {
 	Parameter numberP;
 	Parameter genderP;
 	Parameter animacyP;
-	Parameter personP;
-	Parameter personQP;
+//	Parameter personP;
+//	Parameter personQP;
 
 	double contextOverall;
 
@@ -49,7 +45,6 @@ public class ApplyEM {
 
 	LinearClassifier<String, String> classifier;
 
-
 	@SuppressWarnings("unchecked")
 	public ApplyEM(String folder) {
 		this.folder = folder;
@@ -59,8 +54,8 @@ public class ApplyEM {
 			numberP = (Parameter) modelInput.readObject();
 			genderP = (Parameter) modelInput.readObject();
 			animacyP = (Parameter) modelInput.readObject();
-			personP = (Parameter) modelInput.readObject();
-			personQP = (Parameter) modelInput.readObject();
+//			personP = (Parameter) modelInput.readObject();
+//			personQP = (Parameter) modelInput.readObject();
 			fracContextCount = (HashMap<String, Double>) modelInput
 					.readObject();
 			contextPrior = (HashMap<String, Double>) modelInput.readObject();
@@ -83,7 +78,7 @@ public class ApplyEM {
 			// modelInput2.readObject();
 
 			// modelInput2.close();
-//			loadGuessProb();
+			// loadGuessProb();
 			EMUtil.loadPredictNE(folder, "dev");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -93,123 +88,6 @@ public class ApplyEM {
 			e.printStackTrace();
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
-		calContextStat();
-	}
-
-	public void calContextStat() {
-
-		// fracContextCount = (HashMap<String, Double>) modelInput
-		// .readObject();
-		// contextPrior = (HashMap<String, Double>) modelInput.readObject();
-		HashSet<String> allContext = new HashSet<String>();
-		allContext.addAll(contextPrior.keySet());
-
-		HashMap<String, Double> allProbs = new HashMap<String, Double>();
-
-		for (String context : allContext) {
-			double p_context = 1;
-			if (fracContextCount.containsKey(context.toString())) {
-				p_context = (1.0 * EMUtil.alpha + fracContextCount.get(context
-						.toString()))
-						/ (2592.0 * EMUtil.alpha + contextPrior.get(context
-								.toString()));
-			} else {
-				p_context = 1.0 / 2592.0;
-			}
-			allProbs.put(context, p_context);
-//			System.out.println(context + " " + p_context);
-		}
-
-		int[] ids = { 0, 6, 7, 8, 9, 10, 13, 15 };
-		HashMap<Integer, HashSet<Character>> valses = new HashMap<Integer, HashSet<Character>>();
-		for (Integer id : ids) {
-			HashSet<Character> vals = new HashSet<Character>();
-			for (String context : allContext) {
-				vals.add(context.charAt(id));
-			}
-			valses.put(id, vals);
-		}
-
-		for (Integer id : ids) {
-			HashSet<Character> vals = valses.get(id);
-			for (Character val : vals) {
-				double count = 0;
-				for (String context : allProbs.keySet()) {
-					if (context.charAt(id) == val) {
-						count++;
-					}
-				}
-
-				double p = 1;
-				for (String context : allProbs.keySet()) {
-					double prob = allProbs.get(context);
-					if (context.charAt(id) == val) {
-						double mean = Math.pow(prob, 1 / count);
-						p *= mean;
-					}
-				}
-//				System.out.println(id + " : " + val + " : " + p);
-			}
-		}
-//		Common.pause("");
-	}
-
-	public void loadGuessProb() throws Exception {
-		BufferedReader reader = new BufferedReader(new FileReader(
-				"guessPronoun.train.nb"));
-		String line;
-		pronounPrior = new HashMap<Short, Double>();
-		counts = new HashMap<Integer, HashMap<Short, Integer>>();
-		denomCounts = new HashMap<Integer, Integer>();
-		subSpace = new HashMap<Integer, HashSet<Integer>>();
-		overallGuessPronoun = 0;
-		while ((line = reader.readLine()) != null) {
-			int k = line.indexOf(' ');
-			short label = (short) Integer.parseInt(line.substring(0, k));
-			overallGuessPronoun++;
-
-			Double priorPro = pronounPrior.get(label);
-			if (priorPro == null) {
-				pronounPrior.put(label, 1.0);
-			} else {
-				pronounPrior.put(label, 1.0 + priorPro.doubleValue());
-			}
-
-			String feas[] = line.substring(k + 1).split("#");
-			for (int i = 0; i < feas.length; i++) {
-				String fea = feas[i];
-				String tks[] = fea.trim().split("\\s+");
-				for (String tk : tks) {
-					int idx = Integer.parseInt(tk);
-					HashSet<Integer> subS = subSpace.get(i);
-					if (subS == null) {
-						subS = new HashSet<Integer>();
-						subSpace.put(i, subS);
-					}
-
-					HashMap<Short, Integer> count = counts.get(idx);
-					if (count == null) {
-						count = new HashMap<Short, Integer>();
-						counts.put(idx, count);
-					}
-					Integer c = count.get(label);
-					if (c == null) {
-						count.put(label, 1);
-					} else {
-						count.put(label, c.intValue() + 1);
-					}
-
-					Integer dc = denomCounts.get(idx);
-					if (dc == null) {
-						denomCounts.put(idx, 1);
-					} else {
-						denomCounts.put(idx, 1 + dc.intValue());
-					}
-
-				}
-			}
-
 		}
 	}
 
@@ -226,23 +104,24 @@ public class ApplyEM {
 		ArrayList<ArrayList<Mention>> corefResults = new ArrayList<ArrayList<Mention>>();
 		ArrayList<ArrayList<Entity>> goldEntities = new ArrayList<ArrayList<Entity>>();
 
+		ArrayList<HashSet<String>> goldAnaphorses = new ArrayList<HashSet<String>>();
+
 		for (String file : files) {
 			System.out.println(file);
 			CoNLLDocument document = new CoNLLDocument(file.replace(
 					"auto_conll", "gold_conll"));
-			OntoCorefXMLReader.addGoldZeroPronouns(document, false);
 
 			for (int k = 0; k < document.getParts().size(); k++) {
 				CoNLLPart part = document.getParts().get(k);
 
-				for (CoNLLSentence s : part.getCoNLLSentences()) {
-					for (CoNLLWord w : s.words) {
-						if (!w.speaker.equals("-")) {
-							// System.out.println(w.speaker + "#" +
-							// s.getText());
-						}
-					}
+				HashSet<String> neSet = new HashSet<String>();
+				for (Element NE : part.getNameEntities()) {
+					neSet.add(NE.start + "," + NE.end);
 				}
+
+				HashSet<String> goldAnaphors = getGoldAnaphorNouns(
+						part.getChains(), neSet, part);
+				goldAnaphorses.add(goldAnaphors);
 
 				ArrayList<Entity> goldChains = part.getChains();
 
@@ -254,30 +133,31 @@ public class ApplyEM {
 				ArrayList<Mention> corefResult = new ArrayList<Mention>();
 				corefResults.add(corefResult);
 
-				ParseTreeMention ptm = new ParseTreeMention();
-				ArrayList<Mention> goldBoundaryNPMentions = ptm
-						.getMentions(part);
+				ArrayList<Mention> goldBoundaryNPMentions = EMUtil.extractMention(part);
 
 				Collections.sort(goldBoundaryNPMentions);
-
-				ArrayList<Mention> anaphorZeros = EMUtil.getAnaphorZeros(part
-						.getChains());
-//				ArrayList<Mention> anaphorZeros = ZeroDetect.getHeuristicZeros(part);
-				// anaphorZeros = zeroDetectTest.detectZeros(part, null);
 
 				ArrayList<Mention> candidates = new ArrayList<Mention>();
 				candidates.addAll(goldBoundaryNPMentions);
 
-				if (!file.contains("/nw/")
-				// && !file.contains("/mz/")&& !file.contains("/wb/")
-				) {
-					candidates.addAll(anaphorZeros);
-				}
 				Collections.sort(candidates);
 
-				Collections.sort(anaphorZeros);
-
-				findAntecedent(file, part, chainMap, corefResult, anaphorZeros,
+				ArrayList<Mention> anaphors = new ArrayList<Mention>();
+				for (Mention m : goldBoundaryNPMentions) {
+//					if (m.start == m.end
+//							&& part.getWord(m.end).posTag.equals("PN")) {
+//						continue;
+//					}
+//					if (neSet.contains(m.start + "," + m.end)) {
+//						continue;
+//					}
+					if (!goldAnaphors.contains(m.toName())) {
+						continue;
+					}
+					anaphors.add(m);
+				}
+				
+				findAntecedent(file, part, chainMap, corefResult, anaphors,
 						candidates);
 
 				// findAntecedentMaxEnt(file, part, chainMap, corefResult,
@@ -289,262 +169,108 @@ public class ApplyEM {
 		System.out.println("Bad: " + bad);
 		System.out.println("Precission: " + good / (good + bad) * 100);
 
-		evaluate(corefResults, goldEntities);
+		evaluate(corefResults, goldEntities, goldAnaphorses);
 	}
 
 	private void findAntecedent(String file, CoNLLPart part,
 			HashMap<String, Integer> chainMap, ArrayList<Mention> corefResult,
-			ArrayList<Mention> anaphorZeros, ArrayList<Mention> allCandidates) {
-		for (Mention zero : anaphorZeros) {
-			zero.sentenceID = part.getWord(zero.start).sentence
+			ArrayList<Mention> anaphors, ArrayList<Mention> allCandidates) {
+		for (Mention anaphor : anaphors) {
+			anaphor.sentenceID = part.getWord(anaphor.start).sentence
 					.getSentenceIdx();
-			zero.s = part.getWord(zero.start).sentence;
-			EMUtil.assignVNode(zero, part);
-			if (zero.notInChainZero) {
-				continue;
-			}
-			if (zero.V == null) {
-				continue;
-			}
+			anaphor.s = part.getWord(anaphor.start).sentence;
+
 			Mention antecedent = null;
 			double maxP = -1;
 			Collections.sort(allCandidates);
-			String proSpeaker = part.getWord(zero.start).speaker;
-			String overtPro = "";
 
 			ArrayList<Mention> cands = new ArrayList<Mention>();
-			boolean findFS = false;
 
-			ArrayList<String> taMSGs = new ArrayList<String>();
-			String taMSg = "";
-			String bestMSg = "";
 			for (int h = allCandidates.size() - 1; h >= 0; h--) {
 				Mention cand = allCandidates.get(h);
-				String antSpeaker = part.getWord(cand.start).speaker;
 				cand.sentenceID = part.getWord(cand.start).sentence
 						.getSentenceIdx();
 				cand.s = part.getWord(cand.start).sentence;
-				cand.isFS = false;
-				cand.isBest = false;
-				cand.MI = Context.calMI(cand, zero);
-				if (cand.start < zero.start
-						&& zero.sentenceID - cand.sentenceID <= 2) {
-					if (!findFS && cand.gram == EMUtil.Grammatic.subject
-					// && !cand.s.getWord(cand.headInS).posTag.equals("NT")
-					// && MI>0
-					) {
-						cand.isFS = true;
-						findFS = true;
-					}
-
+				if (cand.start < anaphor.start
+						&& anaphor.sentenceID - cand.sentenceID <= EMLearn.maxDistance) {
 					// if(cand.s==zero.s && cand.gram==Grammatic.object &&
 					// cand.end+2==zero.start &&
 					// part.getWord(cand.end+1).word.equals("，") && cand.MI>0){
 					// cand.isFS = true;
 					// findFS = true;
 					// }
-
 					cands.add(cand);
 				}
 			}
 
-			boolean findBest = findBest(zero, cands);
+			double probs[] = new double[cands.size()];
 
-			// if(zero.start==179) {
-			// for(Mention cand : cands) {
-			// System.out.println(cand.extent);
-			// }
-			// Common.bangErrorPOS("");
-			// }
-			int chose = -1;
-			double votes[] = new double[cands.size()];
-			for (int m = 0; m < EMUtil.pronounList.size(); m++) {
-				String pronoun = EMUtil.pronounList.get(m);
-				zero.extent = pronoun;
-				double norm = 0;
+			for (int i = 0; i < cands.size(); i++) {
+				Mention cand = cands.get(i);
 
-				double probs[] = new double[cands.size()];
+				cand.sentenceID = part.getWord(cand.start).sentence
+						.getSentenceIdx();
+				boolean coref = chainMap.containsKey(anaphor.toName())
+						&& chainMap.containsKey(cand.toName())
+						&& chainMap.get(anaphor.toName()).intValue() == chainMap
+								.get(cand.toName()).intValue();
 
-				for (int i = 0; i < cands.size(); i++) {
-					Mention cand = cands.get(i);
-					if (cand.extent.isEmpty()) {
-						continue;
-					}
+				// calculate P(overt-pronoun|ant-context)
+				String ant = cand.head;
 
-					// if(cand.gram != EMUtil.Grammatic.subject) {
-					// continue;
-					// }
-					// if(!cand.isBest) {
-					// continue;
-					// }
+				// TODO
+				Context context = Context.buildContext(cand, anaphor, part);
+				cand.msg = Context.message;
 
-					// if(!cand.isFS)
-					// continue;
+				cand.person = EMUtil.getAntPerson(ant);
+				double p_number = numberP.getVal(EMUtil.getAntNumber(cand)
+						.name(), EMUtil.getAntNumber(anaphor).name());
+				cand.number = EMUtil.getAntNumber(cand);
+				double p_animacy = animacyP.getVal(EMUtil.getAntAnimacy(cand)
+						.name(), EMUtil.getAntAnimacy(anaphor).name());
+				cand.animacy = EMUtil.getAntAnimacy(cand);
+				double p_gender = genderP.getVal(EMUtil.getAntGender(cand)
+						.name(), EMUtil.getAntGender(anaphor).name());
+				cand.gender = EMUtil.getAntGender(cand);
 
-					String antSpeaker = part.getWord(cand.start).speaker;
-					cand.sentenceID = part.getWord(cand.start).sentence
-							.getSentenceIdx();
-					boolean coref = chainMap.containsKey(zero.toName())
-							&& chainMap.containsKey(cand.toName())
-							&& chainMap.get(zero.toName()).intValue() == chainMap
-									.get(cand.toName()).intValue();
-
-					// calculate P(overt-pronoun|ant-context)
-					String ant = cand.head;
-
-					// TODO
-					Context context = Context.buildContext(cand, zero, part,
-							cand.isFS);
-					cand.msg = Context.message;
-					cand.MI = Context.MI;
-					if (cand.MI < -1) {
-						if (m == 0) {
-							if (coref) {
-								// System.out.println(coref);
-								// System.out.println(cand.msg);
-							} else {
-								// System.out.println(coref);
-								// System.out.println(cand.msg);
-							}
-						}
-						// continue;
-					}
-
-					if (m == 0) {
-						if (coref) {
-							goods.add(Double.toString(cand.MI));
-						} else {
-							bads.add(Double.toString(cand.MI));
-						}
-					}
-
-					boolean sameSpeaker = proSpeaker.equals(antSpeaker);
-					double p_person = 0;
-					if (sameSpeaker) {
-						p_person = personP.getVal(EMUtil.getAntPerson(ant)
-								.name(), EMUtil.getPerson(pronoun).name());
-					} else {
-						p_person = personQP.getVal(EMUtil.getAntPerson(ant)
-								.name(), EMUtil.getPerson(pronoun).name());
-					}
-					cand.person = EMUtil.getAntPerson(ant);
-					double p_number = numberP.getVal(EMUtil.getAntNumber(cand)
-							.name(), EMUtil.getNumber(pronoun).name());
-					cand.number = EMUtil.getAntNumber(cand);
-					double p_animacy = animacyP.getVal(
-							EMUtil.getAntAnimacy(cand).name(), EMUtil
-									.getAnimacy(pronoun).name());
-					cand.animacy = EMUtil.getAntAnimacy(cand);
-					double p_gender = genderP.getVal(EMUtil.getAntGender(cand)
-							.name(), EMUtil.getGender(pronoun).name());
-					cand.gender = EMUtil.getAntGender(cand);
-					// double p_number = numberP.getVal(cand.head,
-					// EMUtil.getNumber(pronoun).name());
-					// double p_animacy = animacyP.getVal(cand.head,
-					// EMUtil.getAnimacy(pronoun).name());
-					// double p_gender = genderP.getVal(cand.head,
-					// EMUtil.getGender(pronoun).name());
-
-					double p_context = 0.0000000000000000000000000000000000000000000001;
-					if (fracContextCount.containsKey(context.toString())) {
-						p_context = (1.0 * EMUtil.alpha + fracContextCount
-								.get(context.toString()))
-								/ (2592.0 * EMUtil.alpha + contextPrior
-										.get(context.toString()));
-					} else {
-						p_context = 1.0 / 2592.0;
-					}
-
-					// double p_context = 1;
-					// if(contextSuper.containsKey(context.toString())) {
-					// double[] s = contextSuper.get(context.toString());
-					// p_context = s[0]/(s[0]+s[1]);
-					// }
-
-//					double maxentP = this.getMaxEntProb(cand, zero,
-//							sameSpeaker, context, part);
-
-					double p2nd = p_person * p_number * p_gender * p_animacy
-							* p_context * 1;
-
-					if (pronoun.equals("它")) {
-						String msg = p_person + "\t" + p_number + "\t"
-								+ p_gender + "\t" + p_animacy + "\t"
-								+ p_context;
-						taMSGs.add(msg);
-					}
-
-					double p = p2nd;
-					norm += p;
-					probs[i] = p;
-					// p = 1;
-					// System.out.println(p);
-
-					// p = maxentP;
-
-					if (p > maxP) {
-						antecedent = cand;
-						maxP = p;
-						overtPro = pronoun;
-						bestMSg = p_person + "\t" + p_number + "\t" + p_gender
-								+ "\t" + p_animacy + "\t" + p_context;
-						chose = i;
-					}
-					// if(coref) {
-					// antecedent = cand;
-					// }
+				double p_context = 0.0000000000000000000000000000000000000000000001;
+				if (fracContextCount.containsKey(context.toString())) {
+					p_context = (1.0 * EMUtil.alpha + fracContextCount
+							.get(context.toString()))
+							/ (EMLearn.contextSize * EMUtil.alpha + contextPrior.get(context
+									.toString()));
+				} else {
+					p_context = 1.0 / EMLearn.contextSize;
 				}
 
-				// normalize
-				for (int i = 0; i < probs.length; i++) {
-					probs[i] = probs[i] / norm;
-				}
+				double p2nd = p_number * p_gender * p_animacy * p_context * 1;
 
-				for (int i = 0; i < probs.length; i++) {
-					double prob = probs[i];
-					votes[i] += prob;
-				}
-			}
+				double p = p2nd;
+				probs[i] = p;
 
-			if (votes.length != 0) {
-				double maxProb = 0;
-				int maxIndex = -1;
-				for (int i = 0; i < votes.length; i++) {
-					double vote = votes[i];
-					if (vote > maxProb) {
-						maxProb = vote;
-						maxIndex = i;
-					}
+				if (p > maxP) {
+					antecedent = cand;
+					maxP = p;
 				}
-				// antecedent = cands.get(maxIndex);
 			}
 
 			if (antecedent != null) {
 				if (antecedent.end != -1) {
-					zero.antecedent = antecedent;
+					anaphor.antecedent = antecedent;
 				} else {
-					zero.antecedent = antecedent.antecedent;
+					anaphor.antecedent = antecedent.antecedent;
 				}
-				zero.extent = antecedent.extent;
-				zero.head = antecedent.head;
-				zero.gram = Grammatic.subject;
-				zero.mType = antecedent.mType;
-				zero.NE = antecedent.NE;
-				this.addEmptyCategoryNode(zero);
-				// System.out.println(zero.start);
-				// System.out.println(antecedent.extent);
-				taMSg = taMSGs.get(chose);
 			}
-			if (zero.antecedent != null
-					&& zero.antecedent.end != -1
-					&& chainMap.containsKey(zero.toName())
-					&& chainMap.containsKey(zero.antecedent.toName())
-					&& chainMap.get(zero.toName()).intValue() == chainMap.get(
-							zero.antecedent.toName()).intValue()) {
+			if (anaphor.antecedent != null
+					&& anaphor.antecedent.end != -1
+					&& chainMap.containsKey(anaphor.toName())
+					&& chainMap.containsKey(anaphor.antecedent.toName())
+					&& chainMap.get(anaphor.toName()).intValue() == chainMap
+							.get(anaphor.antecedent.toName()).intValue()) {
 				good++;
 				String key = part.docName + ":" + part.getPartID() + ":"
-						+ zero.start + "-" + zero.antecedent.start + ","
-						+ zero.antecedent.end + ":GOOD";
+						+ anaphor.start + "-" + anaphor.antecedent.start + ","
+						+ anaphor.antecedent.end + ":GOOD";
 				corrects.add(key);
 				// if(antecedent.mType==MentionType.tmporal) {
 				// System.out.println(antecedent.extent + "GOOD!");
@@ -563,29 +289,29 @@ public class ApplyEM {
 				// if(!zero.antecedent.isFS) {
 				System.out.println("==========");
 				System.out.println("Correct!!! " + good + "/" + bad);
-				if (zero.antecedent != null) {
-					System.out.println(zero.antecedent.extent + ":"
-							+ zero.antecedent.NE + "#" + zero.antecedent.number
-							+ "#" + zero.antecedent.gender + "#"
-							+ zero.antecedent.person + "#"
-							+ zero.antecedent.animacy);
-					System.out.println(zero);
-					printResult(zero, zero.antecedent, part);
-					System.out.println(overtPro + "#");
+				if (anaphor.antecedent != null) {
+					System.out.println(anaphor.antecedent.extent + ":"
+							+ anaphor.antecedent.NE + "#"
+							+ anaphor.antecedent.number + "#"
+							+ anaphor.antecedent.gender + "#"
+							+ anaphor.antecedent.person + "#"
+							+ anaphor.antecedent.animacy);
+					System.out.println(anaphor);
+					printResult(anaphor, anaphor.antecedent, part);
 				}
 				// System.out.println(overtPro + "#" + bestMSg);
 				// System.out.println("它: " + taMSg);
 				// }
 				// }
 			} else {
-				if(zero.antecedent==null) {
+				if (anaphor.antecedent == null) {
 					String key = part.docName + ":" + part.getPartID() + ":"
-							+ zero.start + "-NULL:BAD";
+							+ anaphor.start + "-NULL:BAD";
 					corrects.add(key);
 				} else {
 					String key = part.docName + ":" + part.getPartID() + ":"
-						+ zero.start + "-" + zero.antecedent.start + ","
-						+ zero.antecedent.end + ":BAD";
+							+ anaphor.start + "-" + anaphor.antecedent.start
+							+ "," + anaphor.antecedent.end + ":BAD";
 					corrects.add(key);
 				}
 				// if(antecedent!=null && antecedent.mType==MentionType.tmporal)
@@ -595,16 +321,15 @@ public class ApplyEM {
 				bad++;
 				System.out.println("==========");
 				System.out.println("Error??? " + good + "/" + bad);
-				if (zero.antecedent != null) {
-					System.out.println(zero.antecedent.extent + ":"
-							+ zero.antecedent.NE + "#" + zero.antecedent.number
-							+ "#" + zero.antecedent.gender + "#"
-							+ zero.antecedent.person + "#"
-							+ zero.antecedent.animacy);
-					System.out.println(zero);
-					printResult(zero, zero.antecedent, part);
-					System.out.println(overtPro + "#" + bestMSg);
-					System.out.println("它: " + taMSg);
+				if (anaphor.antecedent != null) {
+					System.out.println(anaphor.antecedent.extent + ":"
+							+ anaphor.antecedent.NE + "#"
+							+ anaphor.antecedent.number + "#"
+							+ anaphor.antecedent.gender + "#"
+							+ anaphor.antecedent.person + "#"
+							+ anaphor.antecedent.animacy);
+					System.out.println(anaphor);
+					printResult(anaphor, anaphor.antecedent, part);
 				}
 			}
 			String conllPath = file;
@@ -614,7 +339,6 @@ public class ApplyEM {
 			String path = prefix + middle + suffix;
 			System.out.println(path);
 			// System.out.println("=== " + file);
-			EMUtil.addEmptyCategoryNode(zero);
 
 			// if (antecedent != null) {
 			// CoNLLWord candWord = part.getWord(antecedent.start);
@@ -639,7 +363,7 @@ public class ApplyEM {
 			//
 			// }
 		}
-		for (Mention zero : anaphorZeros) {
+		for (Mention zero : anaphors) {
 			if (zero.antecedent != null) {
 				corefResult.add(zero);
 			}
@@ -678,74 +402,56 @@ public class ApplyEM {
 		zero.NP = newNP;
 	}
 
-	public static boolean findBest(Mention zero, ArrayList<Mention> cands) {
-		boolean findBest = false;
-		for (int i = 0; i < cands.size(); i++) {
-			Mention cand = cands.get(i);
-			if (cand.gram == EMUtil.Grammatic.subject && cand.MI > 0
-					&& cand.s == zero.s) {
-				findBest = true;
-				cand.isBest = true;
-				break;
-			}
-		}
-
-		if (!findBest) {
-			for (int i = 0; i < cands.size(); i++) {
-				Mention cand = cands.get(i);
-				if (cand.MI > 0 && cand.s == zero.s) {
-					findBest = true;
-					cand.isBest = true;
-					break;
-				}
-			}
-		}
-
-		if (!findBest) {
-			for (int i = 0; i < cands.size(); i++) {
-				Mention cand = cands.get(i);
-				if (cand.MI > 0 && cand.gram == EMUtil.Grammatic.subject) {
-					findBest = true;
-					cand.isBest = true;
-					break;
-				}
-			}
-		}
-
-		if (!findBest) {
-			for (int i = 0; i < cands.size(); i++) {
-				Mention cand = cands.get(i);
-				if (cand.MI > 0) {
-					findBest = true;
-					cand.isBest = true;
-					break;
-				}
-			}
-		}
-		return findBest;
-	}
-
 	static String prefix = "/shared/mlrdir1/disk1/mlr/corpora/CoNLL-2012/conll-2012-train-v0/data/files/data/chinese/annotations/";
 	static String anno = "annotations/";
 	static String suffix = ".coref";
 
-	public static void evaluate(ArrayList<ArrayList<Mention>> zeroses,
-			ArrayList<ArrayList<Entity>> entitieses) {
+	private static HashSet<String> getGoldAnaphorNouns(
+			ArrayList<Entity> entities, HashSet<String> neSet, CoNLLPart part) {
+		HashSet<String> anaphorNouns = new HashSet<String>();
+		for (Entity e : entities) {
+			Collections.sort(e.mentions);
+			for (int i = 1; i < e.mentions.size(); i++) {
+				Mention m1 = e.mentions.get(i);
+				if (m1.start == m1.end
+						&& part.getWord(m1.start).posTag.equals("PN")) {
+					continue;
+				}
+				if (neSet.contains(m1.start + "," + m1.end)) {
+					continue;
+				}
+
+				for (int j = i - 1; j >= 0; j--) {
+					Mention m2 = e.mentions.get(j);
+					if (m2.start == m2.end
+							&& part.getWord(m2.start).posTag.equals("PN")) {
+						continue;
+					}
+					anaphorNouns.add(m1.toName());
+//					System.out.println(m1.extent);
+					break;
+				}
+			}
+		}
+		return anaphorNouns;
+	}
+
+	public static void evaluate(ArrayList<ArrayList<Mention>> anaphorses,
+			ArrayList<ArrayList<Entity>> entitieses,
+			ArrayList<HashSet<String>> goldAnaphorses) {
 		double gold = 0;
 		double system = 0;
 		double hit = 0;
 
-		for (int i = 0; i < zeroses.size(); i++) {
-			ArrayList<Mention> zeros = zeroses.get(i);
+		for (int i = 0; i < anaphorses.size(); i++) {
+			ArrayList<Mention> anaphors = anaphorses.get(i);
 			ArrayList<Entity> entities = entitieses.get(i);
-			ArrayList<Mention> goldInChainZeroses = EMUtil
-					.getAnaphorZeros(entities);
 			HashMap<String, Integer> chainMap = EMUtil.formChainMap(entities);
-			gold += goldInChainZeroses.size();
-			system += zeros.size();
-			for (Mention zero : zeros) {
-				Mention ant = zero.antecedent;
-				Integer zID = chainMap.get(zero.toName());
+			gold += goldAnaphorses.get(i).size();
+			system += anaphors.size();
+			for (Mention anaphor : anaphors) {
+				Mention ant = anaphor.antecedent;
+				Integer zID = chainMap.get(anaphor.toName());
 				Integer aID = chainMap.get(ant.toName());
 				if (zID != null && aID != null
 						&& zID.intValue() == aID.intValue()) {
@@ -794,15 +500,15 @@ public class ApplyEM {
 		Common.outputLines(goods, "goods");
 		Common.outputLines(bads, "bas");
 
-//		Common.outputHashMap(EMUtil.NEMap, "NEMAP");
+		// Common.outputHashMap(EMUtil.NEMap, "NEMAP");
 
-//		Common.outputHashSet(Context.ss, "miniS");
-//		Common.outputHashSet(Context.vs, "miniV");
+		// Common.outputHashSet(Context.ss, "miniS");
+		// Common.outputHashSet(Context.vs, "miniV");
 
 		// System.out.println(Context.svoStat.unigramAll);
 		// System.out.println(Context.svoStat.svoAll);
 
-//		Common.outputLines(corrects, "EM.correct.all");
+		// Common.outputLines(corrects, "EM.correct.all");
 		Common.pause("!!#");
 	}
 }
