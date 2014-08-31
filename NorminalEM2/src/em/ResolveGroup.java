@@ -18,13 +18,21 @@ public class ResolveGroup implements Serializable {
 
 //	String pronoun;
 	
-	short pronoun;
-
-	ArrayList<Entry> entries;
+	String anaphor;
 	
-	public ResolveGroup(short pro) {
-		this.pronoun = pro;
+	ArrayList<Entry> entries;
+	Animacy animacy;
+	Gender gender;
+	Number number;
+	
+	public ResolveGroup(Mention m) {
+		this.anaphor = m.extent;
 		this.entries = new ArrayList<Entry>();
+		
+		this.animacy = EMUtil.getAntAnimacy(m);
+		this.gender = EMUtil.getAntGender(m);
+		this.number = EMUtil.getAntNumber(m);
+		
 	}
 
 	public static class Entry implements Serializable {
@@ -42,10 +50,9 @@ public class ResolveGroup implements Serializable {
 		
 		double p;
 		boolean sameSpeaker;
-		boolean firstSubj;
 		
 
-		public Entry(Mention ant, Context context, boolean sameSpeaker, boolean firstSubj) {
+		public Entry(Mention ant, Context context, boolean sameSpeaker) {
 			this.head = ant.head;
 			this.context = context;
 			this.sameSpeaker = sameSpeaker;
@@ -55,7 +62,6 @@ public class ResolveGroup implements Serializable {
 			
 			this.gender = EMUtil.getAntGender(ant);
 			this.number = EMUtil.getAntNumber(ant);
-			this.firstSubj = firstSubj;
 		}
 	}
 }
