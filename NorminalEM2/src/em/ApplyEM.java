@@ -238,12 +238,9 @@ public class ApplyEM {
 //					p_context = 1.0 / EMLearn.contextSize;
 					p_context = 1.0 / 2;
 				}
-
 				double p2nd = p_number * p_gender * p_animacy * p_context * 1;
-
 				double p = p2nd;
 				probs[i] = p;
-
 				if (p > maxP) {
 					antecedent = cand;
 					maxP = p;
