@@ -102,7 +102,6 @@ public class ApplyEM {
 				+ "_development");
 
 		ArrayList<ArrayList<Mention>> corefResults = new ArrayList<ArrayList<Mention>>();
-		ArrayList<ArrayList<Entity>> goldEntities = new ArrayList<ArrayList<Entity>>();
 
 		// ArrayList<HashSet<String>> goldAnaphorses = new
 		// ArrayList<HashSet<String>>();
@@ -119,18 +118,11 @@ public class ApplyEM {
 
 				CoNLLPart goldPart = EMUtil.getGoldPart(part, "development");
 
-				HashSet<String> neSet = new HashSet<String>();
-				for (Element NE : part.getNameEntities()) {
-					neSet.add(NE.start + "," + NE.end);
-				}
-
 				HashMap<String, HashSet<String>> goldAnaphors = getGoldAnaphorNouns(
 						part.getChains(), goldPart);
 				goldKeyses.add(goldAnaphors);
 
 				ArrayList<Entity> goldChains = part.getChains();
-
-				goldEntities.add(goldChains);
 
 				HashMap<String, Integer> chainMap = EMUtil
 						.formChainMap(goldChains);
@@ -140,11 +132,14 @@ public class ApplyEM {
 
 				ArrayList<Mention> goldBoundaryNPMentions = EMUtil
 						.extractMention(part);
-
 				Collections.sort(goldBoundaryNPMentions);
 
 				ArrayList<Mention> candidates = new ArrayList<Mention>();
-				candidates.addAll(goldBoundaryNPMentions);
+				for(Mention m : goldBoundaryNPMentions) {
+					if(!part.getWord(m.end).posTag.equals("PN")) {
+						candidates.add(m);
+					}
+				}
 
 				Collections.sort(candidates);
 

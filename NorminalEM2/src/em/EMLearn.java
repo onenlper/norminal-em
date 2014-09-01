@@ -106,7 +106,12 @@ public class EMLearn {
 
 			for (int j = maxDistance; j >= 0; j--) {
 				if (i - j >= 0) {
-					precedMs.addAll(part.getCoNLLSentences().get(i - j).mentions);
+					for (Mention m : part.getCoNLLSentences().get(i - j).mentions) {
+						if (part.getWord(m.end).posTag.equals("PN")) {
+							continue;
+						}
+						precedMs.add(m);
+					}
 				}
 			}
 
@@ -119,11 +124,19 @@ public class EMLearn {
 					continue;
 				}
 				qid++;
+
 				ArrayList<Mention> ants = new ArrayList<Mention>();
 				ants.addAll(precedMs);
+
 				if (j > 0) {
-					ants.addAll(s.mentions.subList(0, j - 1));
+					for (Mention precedM : s.mentions.subList(0, j - 1)) {
+						if (part.getWord(precedM.end).posTag.equals("PN")) {
+							continue;
+						}
+						ants.add(precedM);
+					}
 				}
+
 				ResolveGroup rg = new ResolveGroup(m);
 
 				Collections.sort(ants);
