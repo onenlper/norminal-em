@@ -27,8 +27,8 @@ public class ApplyEM {
 	Parameter numberP;
 	Parameter genderP;
 	Parameter animacyP;
-//	Parameter personP;
-//	Parameter personQP;
+	// Parameter personP;
+	// Parameter personQP;
 
 	double contextOverall;
 
@@ -54,8 +54,8 @@ public class ApplyEM {
 			numberP = (Parameter) modelInput.readObject();
 			genderP = (Parameter) modelInput.readObject();
 			animacyP = (Parameter) modelInput.readObject();
-//			personP = (Parameter) modelInput.readObject();
-//			personQP = (Parameter) modelInput.readObject();
+			// personP = (Parameter) modelInput.readObject();
+			// personQP = (Parameter) modelInput.readObject();
 			fracContextCount = (HashMap<String, Double>) modelInput
 					.readObject();
 			contextPrior = (HashMap<String, Double>) modelInput.readObject();
@@ -104,10 +104,11 @@ public class ApplyEM {
 		ArrayList<ArrayList<Mention>> corefResults = new ArrayList<ArrayList<Mention>>();
 		ArrayList<ArrayList<Entity>> goldEntities = new ArrayList<ArrayList<Entity>>();
 
-//		ArrayList<HashSet<String>> goldAnaphorses = new ArrayList<HashSet<String>>();
+		// ArrayList<HashSet<String>> goldAnaphorses = new
+		// ArrayList<HashSet<String>>();
 
 		ArrayList<HashMap<String, HashSet<String>>> goldKeyses = new ArrayList<HashMap<String, HashSet<String>>>();
-		
+
 		for (String file : files) {
 			System.out.println(file);
 			CoNLLDocument document = new CoNLLDocument(file.replace(
@@ -117,7 +118,7 @@ public class ApplyEM {
 				CoNLLPart part = document.getParts().get(k);
 
 				CoNLLPart goldPart = EMUtil.getGoldPart(part, "development");
-				
+
 				HashSet<String> neSet = new HashSet<String>();
 				for (Element NE : part.getNameEntities()) {
 					neSet.add(NE.start + "," + NE.end);
@@ -137,7 +138,8 @@ public class ApplyEM {
 				ArrayList<Mention> corefResult = new ArrayList<Mention>();
 				corefResults.add(corefResult);
 
-				ArrayList<Mention> goldBoundaryNPMentions = EMUtil.extractMention(part);
+				ArrayList<Mention> goldBoundaryNPMentions = EMUtil
+						.extractMention(part);
 
 				Collections.sort(goldBoundaryNPMentions);
 
@@ -148,19 +150,19 @@ public class ApplyEM {
 
 				ArrayList<Mention> anaphors = new ArrayList<Mention>();
 				for (Mention m : goldBoundaryNPMentions) {
-//					if (m.start == m.end
-//							&& part.getWord(m.end).posTag.equals("PN")) {
-//						continue;
-//					}
-//					if (neSet.contains(m.start + "," + m.end)) {
-//						continue;
-//					}
+					// if (m.start == m.end
+					// && part.getWord(m.end).posTag.equals("PN")) {
+					// continue;
+					// }
+					// if (neSet.contains(m.start + "," + m.end)) {
+					// continue;
+					// }
 					if (!goldAnaphors.containsKey(m.toName())) {
 						continue;
 					}
 					anaphors.add(m);
 				}
-				
+
 				findAntecedent(file, part, chainMap, corefResult, anaphors,
 						candidates);
 
@@ -197,12 +199,6 @@ public class ApplyEM {
 				cand.s = part.getWord(cand.start).sentence;
 				if (cand.start < anaphor.start
 						&& anaphor.sentenceID - cand.sentenceID <= EMLearn.maxDistance) {
-					// if(cand.s==zero.s && cand.gram==Grammatic.object &&
-					// cand.end+2==zero.start &&
-					// part.getWord(cand.end+1).word.equals("，") && cand.MI>0){
-					// cand.isFS = true;
-					// findFS = true;
-					// }
 					cands.add(cand);
 				}
 			}
@@ -241,8 +237,8 @@ public class ApplyEM {
 				if (fracContextCount.containsKey(context.toString())) {
 					p_context = (1.0 * EMUtil.alpha + fracContextCount
 							.get(context.toString()))
-							/ (EMLearn.contextSize * EMUtil.alpha + contextPrior.get(context
-									.toString()));
+							/ (EMLearn.contextSize * EMUtil.alpha + contextPrior
+									.get(context.toString()));
 				} else {
 					p_context = 1.0 / EMLearn.contextSize;
 				}
@@ -430,7 +426,7 @@ public class ApplyEM {
 					}
 					ants.add(m2.toName());
 				}
-				if(ants.size()!=0) {
+				if (ants.size() != 0) {
 					anaphorKeys.put(m1.toName(), ants);
 				}
 			}
@@ -451,7 +447,8 @@ public class ApplyEM {
 			system += anaphors.size();
 			for (Mention anaphor : anaphors) {
 				Mention ant = anaphor.antecedent;
-				if (keys.containsKey(anaphor.toName()) && keys.get(anaphor.toName()).contains(ant.toName())) {
+				if (keys.containsKey(anaphor.toName())
+						&& keys.get(anaphor.toName()).contains(ant.toName())) {
 					hit++;
 				}
 			}

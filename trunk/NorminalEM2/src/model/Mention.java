@@ -15,241 +15,238 @@ import em.EMUtil.MentionType;
 
 public class Mention implements Comparable<Mention>, Serializable {
 
-        /**
+	/**
          *
          */
-        double th = 0.0;
+	double th = 0.0;
 
-        public boolean isFake = false;
-       
-        public int PRONOUN_TYPE;
+	public boolean isFake = false;
 
-        public MentionType mentionType;
+	public int PRONOUN_TYPE;
 
-        public boolean isNNP = false;
+	public MentionType mentionType;
 
-        public ArrayList<String> modifyList = new ArrayList<String>();
+	public boolean isNNP = false;
 
-        public boolean isProperNoun = false;
+	public ArrayList<String> modifyList = new ArrayList<String>();
 
-        public boolean isPronoun = false;
+	public boolean isProperNoun = false;
 
-        public boolean generic = false;
+	public boolean isPronoun = false;
 
-        public static int assignMode = 0;
+	public boolean generic = false;
 
-        public int xSpanType = 0;
+	public static int assignMode = 0;
 
-        public double alignProb = 0;
+	public int xSpanType = 0;
 
-        public boolean isAZP = false;
+	public double alignProb = 0;
 
-        private static final long serialVersionUID = 1L;
-        public int start = -1;
-        public int end = -1;
-        public String extent = "";
+	public boolean isAZP = false;
 
-        public Entity entity;
+	private static final long serialVersionUID = 1L;
+	public int start = -1;
+	public int end = -1;
+	public String extent = "";
 
-        public Mention antecedent;
+	public Entity entity;
 
-        public String msg;
+	public Mention antecedent;
 
-        public double MI;
+	public String msg;
 
-        public boolean notInChainZero;
+	public double MI;
 
-        public int sentenceID;
+	public boolean notInChainZero;
 
-        public CoNLLSentence s;
+	public int sentenceID;
 
-        public String head = "";
+	public CoNLLSentence s;
 
-        public int entityIndex;
+	public String head = "";
 
-        public int startInS;
-        public int endInS;
+	public int entityIndex;
 
-        public int headInS;
+	public int startInS;
+	public int endInS;
 
-        public int headID;
+	public int headInS;
 
-        public EMUtil.Grammatic gram;
-        public EMUtil.MentionType mType;
+	public int headID;
 
-        public EMUtil.Number number;
-        public EMUtil.Gender gender;
-        public EMUtil.Person person;
-        public EMUtil.Animacy animacy;
+	public EMUtil.Grammatic gram;
+	public EMUtil.MentionType mType;
 
-        public EMUtil.PersonEng personEng;
+	public EMUtil.Number number;
+	public EMUtil.Gender gender;
+	public EMUtil.Person person;
+	public EMUtil.Animacy animacy;
 
-        public MyTreeNode V;
+	public EMUtil.PersonEng personEng;
 
-        public MyTreeNode NP;
+	public MyTreeNode V;
 
-        public String NE = "OTHER";
+	public MyTreeNode NP;
 
-        public boolean isFS = false;
+	public String NE = "OTHER";
 
-        public boolean isBest = false;
+	public boolean isFS = false;
 
-        // TODO
-        public boolean isQuoted = false;
+	public boolean isBest = false;
 
-        public int getSentenceID() {
-                return sentenceID;
-        }
+	// TODO
+	public boolean isQuoted = false;
 
-        public void setSentenceID(int sentenceID) {
-                this.sentenceID = sentenceID;
-        }
+	public int getSentenceID() {
+		return sentenceID;
+	}
 
-        public int hashCode() {
-                if (this.s != null && this.s.part != null) {
-                        String str = this.s.part.getPartName() + "#" + this.start + ","
-                                        + this.end;
-                        return str.hashCode();
-                } else {
-                        String str = this.start + "," + this.end;
-                        return str.hashCode();
-                }
+	public void setSentenceID(int sentenceID) {
+		this.sentenceID = sentenceID;
+	}
 
-        }
+	public int hashCode() {
+		if (this.s != null && this.s.part != null) {
+			String str = this.s.part.getPartName() + "#" + this.start + ","
+					+ this.end;
+			return str.hashCode();
+		} else {
+			String str = this.start + "," + this.end;
+			return str.hashCode();
+		}
 
-        public boolean equals(Object em2) {
-                if (this.start == ((Mention) em2).start
-                                && this.end == ((Mention) em2).end) {
-                        return true;
-                } else {
-                        return false;
-                }
-        }
+	}
 
-        public int getStart() {
-                return start;
-        }
+	public boolean equals(Object em2) {
+		if (this.start == ((Mention) em2).start
+				&& this.end == ((Mention) em2).end) {
+			return true;
+		} else {
+			return false;
+		}
+	}
 
-        public void setStart(int start) {
-                this.start = start;
-        }
+	public int getStart() {
+		return start;
+	}
 
-        public int getEnd() {
-                return end;
-        }
+	public void setStart(int start) {
+		this.start = start;
+	}
 
-        public void setEnd(int end) {
-                this.end = end;
-        }
+	public int getEnd() {
+		return end;
+	}
 
-        public String getExtent() {
-                return extent;
-        }
+	public void setEnd(int end) {
+		this.end = end;
+	}
 
-        public void setExtent(String extent) {
-                this.extent = extent;
-        }
+	public String getExtent() {
+		return extent;
+	}
 
-        public String getHead() {
-                return head;
-        }
+	public void setExtent(String extent) {
+		this.extent = extent;
+	}
 
-        public void setHead(String head) {
-                this.head = head;
-        }
+	public String getHead() {
+		return head;
+	}
 
-        public Mention() {
+	public void setHead(String head) {
+		this.head = head;
+	}
 
-        }
+	public Mention() {
 
-        public Mention(int start, int end) {
-                this.start = start;
-                this.end = end;
-        }
+	}
 
-        // (14, 15) (20, -1) (10, 20)
-        public int compareTo(Mention emp2) {
-                int diff = this.start - emp2.start;
-                if (diff == 0)
-//                        return emp2.end - this.end;
-                	return this.end - emp2.end;
-                else
-                        return diff;
-                // if(this.getE()!=-1 && emp2.getE()!=-1) {
-                // int diff = this.getE() - emp2.getE();
-                // if(diff==0) {
-                // return this.getS() - emp2.getS();
-                // } else
-                // return diff;
-                // } else if(this.getE()==-1 && emp2.headEnd!=-1){
-                // int diff = this.getS() - emp2.getE();
-                // if(diff==0) {
-                // return -1;
-                // } else
-                // return diff;
-                // } else if(this.headEnd!=-1 && emp2.headEnd==-1){
-                // int diff = this.getE() - emp2.getS();
-                // if(diff==0) {
-                // return 1;
-                // } else
-                // return diff;
-                // } else {
-                // return this.getS()-emp2.getS();
-                // }
-        }
+	public Mention(int start, int end) {
+		this.start = start;
+		this.end = end;
+	}
 
-        public String toName() {
-                String str = this.start + "," + this.end;
-                return str;
-        }
+	// (14, 15) (20, -1) (10, 20)
+	public int compareTo(Mention emp2) {
+		int diff = this.start - emp2.start;
+		if (diff == 0)
+			// return emp2.end - this.end;
+			return this.end - emp2.end;
+		else
+			return diff;
+		// if(this.getE()!=-1 && emp2.getE()!=-1) {
+		// int diff = this.getE() - emp2.getE();
+		// if(diff==0) {
+		// return this.getS() - emp2.getS();
+		// } else
+		// return diff;
+		// } else if(this.getE()==-1 && emp2.headEnd!=-1){
+		// int diff = this.getS() - emp2.getE();
+		// if(diff==0) {
+		// return -1;
+		// } else
+		// return diff;
+		// } else if(this.headEnd!=-1 && emp2.headEnd==-1){
+		// int diff = this.getE() - emp2.getS();
+		// if(diff==0) {
+		// return 1;
+		// } else
+		// return diff;
+		// } else {
+		// return this.getS()-emp2.getS();
+		// }
+	}
 
-        public String toString() {
-                String str = this.start + "," + this.end;
-                return str;
-        }
+	public String toName() {
+		String str = this.start + "," + this.end;
+		return str;
+	}
 
-        // enforce one-one map
-        public static HashMap<String, Mention> chiSpanMaps = new HashMap<String, Mention>();
-        public static HashMap<String, Mention> engSpanMaps = new HashMap<String, Mention>();
+	public String toString() {
+		String str = this.start + "," + this.end;
+		return str;
+	}
 
-        public static HashMap<String, HashSet<String>> headMaps = new HashMap<String, HashSet<String>>();
+	// enforce one-one map
+	public static HashMap<String, Mention> chiSpanMaps = new HashMap<String, Mention>();
+	public static HashMap<String, Mention> engSpanMaps = new HashMap<String, Mention>();
 
-        public String getReadName() {
-                return this.s.part.getPartName() + ":" + this.s.part.lang + ":"
-                                + this.start + "," + this.end;
-        }
+	public static HashMap<String, HashSet<String>> headMaps = new HashMap<String, HashSet<String>>();
 
-        private Mention getXSpanFromCache() {
-                if (this.s.part.lang.equals("chi")) {
-                        Mention xSpan = chiSpanMaps.get(this.getReadName());
-                        if (xSpan != null) {
-                                this.xSpanType = xSpan.xSpanType;
-                                this.alignProb = xSpan.alignProb;
-                        }
-                        return xSpan;
-                } else {
-                        Mention xSpan = engSpanMaps.get(this.getReadName());
-                        if (xSpan != null) {
-                                this.xSpanType = xSpan.xSpanType;
-                                this.alignProb = xSpan.alignProb;
-                        }
-                        return xSpan;
-                }
-        }
+	public String getReadName() {
+		return this.s.part.getPartName() + ":" + this.s.part.lang + ":"
+				+ this.start + "," + this.end;
+	}
 
+	private Mention getXSpanFromCache() {
+		if (this.s.part.lang.equals("chi")) {
+			Mention xSpan = chiSpanMaps.get(this.getReadName());
+			if (xSpan != null) {
+				this.xSpanType = xSpan.xSpanType;
+				this.alignProb = xSpan.alignProb;
+			}
+			return xSpan;
+		} else {
+			Mention xSpan = engSpanMaps.get(this.getReadName());
+			if (xSpan != null) {
+				this.xSpanType = xSpan.xSpanType;
+				this.alignProb = xSpan.alignProb;
+			}
+			return xSpan;
+		}
+	}
 
-        private boolean ccStruct() {
-                boolean cc = false;
-                for (int i = this.startInS; i <= this.endInS; i++) {
-                        String tag = this.s.getWord(i).posTag;
-                        if (tag.equalsIgnoreCase("CC")) {
-                                cc = true;
-                                break;
-                        }
-                }
-                return cc;
-        }
-
+	private boolean ccStruct() {
+		boolean cc = false;
+		for (int i = this.startInS; i <= this.endInS; i++) {
+			String tag = this.s.getWord(i).posTag;
+			if (tag.equalsIgnoreCase("CC")) {
+				cc = true;
+				break;
+			}
+		}
+		return cc;
+	}
 
 }
-

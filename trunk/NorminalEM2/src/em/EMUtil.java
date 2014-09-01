@@ -726,7 +726,7 @@ public class EMUtil {
 				}
 			}
 			if(s.start==s.end && sentence.part.getWord(s.end).posTag.equals("PN")) {
-//				removes.add(s);
+				removes.add(s);
 			}
 		}
 		nounPhrases.removeAll(removes);
