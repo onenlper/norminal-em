@@ -561,7 +561,7 @@ public class EMUtil {
 		return numerator / denominator;
 	}
 	
-	public static void setMentionAttri(Mention em, CoNLLPart part, MyTreeNode treeNode2) {
+	public static void setMentionAttri(Mention em, CoNLLPart part) {
 		int startIdx = part.getWord(em.start).indexInSentence;
 		int endIdx = part.getWord(em.end).indexInSentence;
 		CoNLLSentence sentence = part.getWord(em.start).sentence;
@@ -614,7 +614,10 @@ public class EMUtil {
 //			System.out.println(treeNode.getPlainText(true) + " @ " + treeNode2.getPlainText(true));
 //			Common.pause("!!!");
 //		}
-		
+		if(treeNode==null) {
+//			System.out.println(em.extent);
+			treeNode = rightLeaf.parent;
+		}
 		MyTreeNode head = treeNode.getHeadLeaf();
 		// head = treeNode.getLeaves().get(treeNode.getLeaves().size());
 		em.headID = sentence.getWord(head.leafIdx).index;
@@ -695,7 +698,7 @@ public class EMUtil {
 			sb.append(sentence.getWord(i).word).append(" ");
 		}
 		em.extent = sb.toString().trim();
-		setMentionAttri(em, sentence.part, treeNode);
+		setMentionAttri(em, sentence.part);
 		// changeStr(em);
 		return em;
 	}
@@ -771,7 +774,7 @@ public class EMUtil {
 			}
 		}
 		nounPhrases.removeAll(removes);
-//		removeDuplicateMentions(nounPhrases);
+		removeDuplicateMentions(nounPhrases);
 		Collections.sort(nounPhrases);
 		return nounPhrases;
 	}

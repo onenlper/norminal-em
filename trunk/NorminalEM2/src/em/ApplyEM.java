@@ -118,7 +118,7 @@ public class ApplyEM {
 
 				CoNLLPart goldPart = EMUtil.getGoldPart(part, "development");
 
-				HashMap<String, HashSet<String>> goldAnaphors = getGoldAnaphorNouns(
+				HashMap<String, HashSet<String>> goldAnaphors = getGoldAnaphorKeys(
 						part.getChains(), goldPart);
 				goldKeyses.add(goldAnaphors);
 
@@ -143,6 +143,8 @@ public class ApplyEM {
 
 				Collections.sort(candidates);
 
+//				ArrayList<Mention> anaphors = getGoldAnaphorNouns(part.getChains(), goldPart);
+				
 				ArrayList<Mention> anaphors = new ArrayList<Mention>();
 				for (Mention m : goldBoundaryNPMentions) {
 					// if (m.start == m.end
@@ -356,9 +358,9 @@ public class ApplyEM {
 			//
 			// }
 		}
-		for (Mention zero : anaphors) {
-			if (zero.antecedent != null) {
-				corefResult.add(zero);
+		for (Mention anaphor : anaphors) {
+			if (anaphor.antecedent != null) {
+				corefResult.add(anaphor);
 			}
 		}
 	}
@@ -399,7 +401,38 @@ public class ApplyEM {
 	static String anno = "annotations/";
 	static String suffix = ".coref";
 
-	private static HashMap<String, HashSet<String>> getGoldAnaphorNouns(
+	private static ArrayList<Mention> getGoldAnaphorNouns(ArrayList<Entity> entities, CoNLLPart goldPart) {
+		ArrayList<Mention> goldAnaphors = new ArrayList<Mention>();
+		for (Entity e : entities) {
+			Collections.sort(e.mentions);
+			for (int i = 1; i < e.mentions.size(); i++) {
+				Mention m1 = e.mentions.get(i);
+				String pos1 = goldPart.getWord(m1.end).posTag;
+				if (pos1.equals("PN") || pos1.equals("NR") || pos1.equals("NT")) {
+					continue;
+				}
+				HashSet<String> ants = new HashSet<String>();
+				for (int j = i - 1; j >= 0; j--) {
+					Mention m2 = e.mentions.get(j);
+					String pos2 = goldPart.getWord(m2.end).posTag;
+					if (pos2.equals("PN")) {
+						continue;
+					}
+					ants.add(m2.toName());
+				}
+				if (ants.size() != 0) {
+					goldAnaphors.add(m1);
+				}
+			}
+		}
+		Collections.sort(goldAnaphors);
+		for(Mention m : goldAnaphors) {
+			EMUtil.setMentionAttri(m, goldPart);
+		}
+		return goldAnaphors;
+	}
+	
+	private static HashMap<String, HashSet<String>> getGoldAnaphorKeys(
 			ArrayList<Entity> entities, CoNLLPart part) {
 		HashMap<String, HashSet<String>> anaphorKeys = new HashMap<String, HashSet<String>>();
 		for (Entity e : entities) {
