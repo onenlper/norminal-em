@@ -287,7 +287,7 @@ public class CoNLLPart {
 		formSRLs();
 	}
 	
-	public static boolean processDiscourse = true;
+	public static boolean processDiscourse = false;
 
 	public boolean isPU(String word) {
 		HashSet<String> PUs = new HashSet<String>();
