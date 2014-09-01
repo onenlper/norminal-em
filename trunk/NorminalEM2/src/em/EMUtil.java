@@ -560,28 +560,61 @@ public class EMUtil {
 		}
 		return numerator / denominator;
 	}
-
-	public static Mention formPhrase(MyTreeNode treeNode, CoNLLSentence sentence) {
-		ArrayList<MyTreeNode> leaves = treeNode.getLeaves();
-
-		int startIdx = leaves.get(0).leafIdx;
-		int endIdx = leaves.get(leaves.size() - 1).leafIdx;
-		int start = sentence.getWord(startIdx).index;
-		int end = sentence.getWord(endIdx).index;
-		StringBuilder sb = new StringBuilder();
-		for (int i = startIdx; i <= endIdx; i++) {
-			sb.append(sentence.getWord(i).word).append(" ");
-		}
-		Mention em = new Mention();
-		em.start = start;
-		em.end = end;
-		em.extent = sb.toString().trim();
-
+	
+	public static void setMentionAttri(Mention em, CoNLLPart part, MyTreeNode treeNode2) {
+		int startIdx = part.getWord(em.start).indexInSentence;
+		int endIdx = part.getWord(em.end).indexInSentence;
+		CoNLLSentence sentence = part.getWord(em.start).sentence;
 		em.startInS = startIdx;
 		em.endInS = endIdx;
 		em.sentenceID = sentence.getSentenceIdx();
 		em.s = sentence;
-
+		
+//		System.out.println(sentence.getSyntaxTree().leaves.size() + "#" + sentence.getWords().size());
+		
+		MyTreeNode leftLeaf = sentence.getSyntaxTree().leaves.get(startIdx);
+		MyTreeNode rightLeaf = sentence.getSyntaxTree().leaves.get(endIdx);
+		
+		ArrayList<MyTreeNode> leftAns = leftLeaf.getAncestors();
+		ArrayList<MyTreeNode> rightAns = rightLeaf.getAncestors();
+		
+//		MyTreeNode treeNode = treeNode2;
+		MyTreeNode treeNode = null;
+		for(int i=0;i<leftAns.size()&&i<rightAns.size();i++) {
+//			System.out.println(leftAns.get(i).value + "#" + rightAns.get(i) + " : " + (leftAns.get(i)==rightAns.get(i)));
+			if(leftAns.get(i)==rightAns.get(i) && leftAns.get(i).value.equals("NP")) {
+				ArrayList<MyTreeNode> leaves = leftAns.get(i).getLeaves();
+				if(leaves.get(leaves.size()-1)==rightLeaf) {
+					treeNode = leftAns.get(i);
+					if(leaves.get(0)==leftLeaf) {
+						break;
+					}
+				}
+			} else if(leftAns.get(i)!=rightAns.get(i)){
+				break;
+			}
+		}
+		
+		if(treeNode==null) {
+			for(int i=0;i<leftAns.size()&&i<rightAns.size();i++) {
+//				System.out.println(leftAns.get(i).value + "#" + rightAns.get(i) + " : " + (leftAns.get(i)==rightAns.get(i)));
+				if(leftAns.get(i)==rightAns.get(i) && leftAns.get(i).value.equals("NP")) {
+					treeNode = leftAns.get(i);
+				} else if(leftAns.get(i)!=rightAns.get(i)) {
+					break;
+				}
+			}
+		}
+		
+//		if(treeNode!=treeNode2) {
+//			System.out.println(em.extent);
+//			System.out.println(part.getPartName());
+//			System.out.println(treeNode);
+//			System.out.println(treeNode.value + " # " + treeNode2.value);
+//			System.out.println(treeNode.getPlainText(true) + " @ " + treeNode2.getPlainText(true));
+//			Common.pause("!!!");
+//		}
+		
 		MyTreeNode head = treeNode.getHeadLeaf();
 		// head = treeNode.getLeaves().get(treeNode.getLeaves().size());
 		em.headID = sentence.getWord(head.leafIdx).index;
@@ -645,17 +678,28 @@ public class EMUtil {
 				}
 			}
 		}
-		em.s = sentence;
+	}
+
+	public static Mention formPhrase(MyTreeNode treeNode, CoNLLSentence sentence) {
+		ArrayList<MyTreeNode> leaves = treeNode.getLeaves();
+		int startIdx = leaves.get(0).leafIdx;
+		int endIdx = leaves.get(leaves.size() - 1).leafIdx;
+		int start = sentence.getWord(startIdx).index;
+		int end = sentence.getWord(endIdx).index;
+		Mention em = new Mention();
+		em.start = start;
+		em.end = end;
+		
+		StringBuilder sb = new StringBuilder();
+		for (int i = startIdx; i <= endIdx; i++) {
+			sb.append(sentence.getWord(i).word).append(" ");
+		}
+		em.extent = sb.toString().trim();
+		setMentionAttri(em, sentence.part, treeNode);
 		// changeStr(em);
 		return em;
 	}
 	
-	public static void assignMentionAttri(Mention m, CoNLLPart part) {
-		CoNLLSentence s = part.getWord(m.start).sentence;
-		
-	}
-	
-
 	public static void changeStr(Mention em) {
 		if (em.extent.equals("这些")) {
 			em.extent = "它们";
@@ -727,8 +771,16 @@ public class EMUtil {
 			}
 		}
 		nounPhrases.removeAll(removes);
+//		removeDuplicateMentions(nounPhrases);
 		Collections.sort(nounPhrases);
 		return nounPhrases;
+	}
+	
+	private static void removeDuplicateMentions(ArrayList<Mention> mentions) {
+		HashSet<Mention> mentionsHash = new HashSet<Mention>();
+		mentionsHash.addAll(mentions);
+		mentions.clear();
+		mentions.addAll(mentionsHash);
 	}
 
 	// overall should be added 1
