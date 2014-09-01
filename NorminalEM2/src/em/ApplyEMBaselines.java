@@ -20,7 +20,7 @@ import model.syntaxTree.MyTreeNode;
 import util.Common;
 import edu.stanford.nlp.classify.LinearClassifier;
 
-public class ApplyEM {
+public class ApplyEMBaselines {
 
 	String folder;
 
@@ -46,7 +46,7 @@ public class ApplyEM {
 	LinearClassifier<String, String> classifier;
 
 	@SuppressWarnings("unchecked")
-	public ApplyEM(String folder) {
+	public ApplyEMBaselines(String folder) {
 		this.folder = folder;
 		try {
 			ObjectInputStream modelInput = new ObjectInputStream(
@@ -135,30 +135,30 @@ public class ApplyEM {
 				Collections.sort(goldBoundaryNPMentions);
 
 				ArrayList<Mention> candidates = new ArrayList<Mention>();
-				for(Mention m : goldBoundaryNPMentions) {
-					if(!part.getWord(m.end).posTag.equals("PN")) {
+				for (Mention m : goldBoundaryNPMentions) {
+					if (!part.getWord(m.end).posTag.equals("PN")) {
 						candidates.add(m);
 					}
 				}
 
 				Collections.sort(candidates);
 
-				ArrayList<Mention> anaphors = getGoldAnaphorNouns(part.getChains(), part);
-				
-//				ArrayList<Mention> anaphors = new ArrayList<Mention>();
-//				for (Mention m : goldBoundaryNPMentions) {
-//					// if (m.start == m.end
-//					// && part.getWord(m.end).posTag.equals("PN")) {
-//					// continue;
-//					// }
-//					// if (neSet.contains(m.start + "," + m.end)) {
-//					// continue;
-//					// }
-//					if (!goldAnaphors.containsKey(m.toName())) {
-//						continue;
-//					}
-//					anaphors.add(m);
-//				}
+				// ArrayList<Mention> anaphors =
+				// getGoldAnaphorNouns(part.getChains(), part);
+
+				ArrayList<Mention> anaphors = new ArrayList<Mention>();
+				for (Mention m : goldBoundaryNPMentions) {
+					if (part.getWord(m.end).posTag.equals("PN")) {
+						continue;
+					}
+					// if (neSet.contains(m.start + "," + m.end)) {
+					// continue;
+					// }
+					// if (!goldAnaphors.containsKey(m.toName())) {
+					// continue;
+					// }
+					anaphors.add(m);
+				}
 
 				findAntecedent(file, part, chainMap, corefResult, anaphors,
 						candidates);
@@ -200,52 +200,14 @@ public class ApplyEM {
 				}
 			}
 
-			double probs[] = new double[cands.size()];
-
 			for (int i = 0; i < cands.size(); i++) {
 				Mention cand = cands.get(i);
 
-				cand.sentenceID = part.getWord(cand.start).sentence
-						.getSentenceIdx();
-				boolean coref = chainMap.containsKey(anaphor.toName())
-						&& chainMap.containsKey(cand.toName())
-						&& chainMap.get(anaphor.toName()).intValue() == chainMap
-								.get(cand.toName()).intValue();
-
-				// calculate P(overt-pronoun|ant-context)
-				String ant = cand.head;
-
-				// TODO
-				Context context = Context.buildContext(cand, anaphor, part);
-				cand.msg = Context.message;
-
-				cand.person = EMUtil.getAntPerson(ant);
-				double p_number = numberP.getVal(EMUtil.getAntNumber(cand)
-						.name(), EMUtil.getAntNumber(anaphor).name());
-				cand.number = EMUtil.getAntNumber(cand);
-				double p_animacy = animacyP.getVal(EMUtil.getAntAnimacy(cand)
-						.name(), EMUtil.getAntAnimacy(anaphor).name());
-				cand.animacy = EMUtil.getAntAnimacy(cand);
-				double p_gender = genderP.getVal(EMUtil.getAntGender(cand)
-						.name(), EMUtil.getAntGender(anaphor).name());
-				cand.gender = EMUtil.getAntGender(cand);
-
-				double p_context = 0.0000000000000000000000000000000000000000000001;
-				if (fracContextCount.containsKey(context.toString())) {
-					p_context = (1.0 * EMUtil.alpha + fracContextCount
-							.get(context.toString()))
-							/ (2.0 * EMUtil.alpha + contextPrior
-									.get(context.toString()));
-				} else {
-//					p_context = 1.0 / EMLearn.contextSize;
-					p_context = 1.0 / 2;
-				}
-				double p2nd = p_number * p_gender * p_animacy * p_context * 1;
-				double p = p2nd;
-				probs[i] = p;
-				if (p > maxP) {
+				if (cand.head.equals(anaphor.head)) {
 					antecedent = cand;
-					maxP = p;
+					System.out.println(cand.extent + " # " + anaphor.extent);
+					System.out.println("Match: " + cand.head);
+					break;
 				}
 			}
 
@@ -292,7 +254,6 @@ public class ApplyEM {
 							+ anaphor.antecedent.person + "#"
 							+ anaphor.antecedent.animacy);
 					System.out.println(anaphor);
-					printResult(anaphor, anaphor.antecedent, part);
 				}
 				// System.out.println(overtPro + "#" + bestMSg);
 				// System.out.println("它: " + taMSg);
@@ -324,7 +285,6 @@ public class ApplyEM {
 							+ anaphor.antecedent.person + "#"
 							+ anaphor.antecedent.animacy);
 					System.out.println(anaphor);
-					printResult(anaphor, anaphor.antecedent, part);
 				}
 			}
 			String conllPath = file;
@@ -373,8 +333,8 @@ public class ApplyEM {
 			sb.append(s.words.get(i).word).append(" ");
 		}
 		System.out.println(sb.toString() + " # " + zero.start);
-		System.out.println(systemAnte != null ? systemAnte.extent + "#"
-				+ part.getWord(systemAnte.end + 1).word : "");
+//		System.out.println(systemAnte != null ? systemAnte.extent + "#"
+//				+ part.getWord(systemAnte.end + 1).word : "");
 
 		// System.out.println("========");
 	}
@@ -401,7 +361,8 @@ public class ApplyEM {
 	static String anno = "annotations/";
 	static String suffix = ".coref";
 
-	private static ArrayList<Mention> getGoldAnaphorNouns(ArrayList<Entity> entities, CoNLLPart goldPart) {
+	private static ArrayList<Mention> getGoldAnaphorNouns(
+			ArrayList<Entity> entities, CoNLLPart goldPart) {
 		ArrayList<Mention> goldAnaphors = new ArrayList<Mention>();
 		for (Entity e : entities) {
 			Collections.sort(e.mentions);
@@ -426,12 +387,12 @@ public class ApplyEM {
 			}
 		}
 		Collections.sort(goldAnaphors);
-		for(Mention m : goldAnaphors) {
+		for (Mention m : goldAnaphors) {
 			EMUtil.setMentionAttri(m, goldPart);
 		}
 		return goldAnaphors;
 	}
-	
+
 	private static HashMap<String, HashSet<String>> getGoldAnaphorKeys(
 			ArrayList<Entity> entities, CoNLLPart part) {
 		HashMap<String, HashSet<String>> anaphorKeys = new HashMap<String, HashSet<String>>();
@@ -511,7 +472,7 @@ public class ApplyEM {
 
 	public static void run(String folder) {
 		EMUtil.train = false;
-		ApplyEM test = new ApplyEM(folder);
+		ApplyEMBaselines test = new ApplyEMBaselines(folder);
 		test.test();
 
 		// System.out.println(EMUtil.missed);
