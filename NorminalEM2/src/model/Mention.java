@@ -171,7 +171,8 @@ public class Mention implements Comparable<Mention>, Serializable {
         public int compareTo(Mention emp2) {
                 int diff = this.start - emp2.start;
                 if (diff == 0)
-                        return emp2.end - this.end;
+//                        return emp2.end - this.end;
+                	return this.end - emp2.end;
                 else
                         return diff;
                 // if(this.getE()!=-1 && emp2.getE()!=-1) {
