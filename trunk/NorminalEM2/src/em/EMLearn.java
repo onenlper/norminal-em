@@ -40,8 +40,7 @@ public class EMLearn {
 	static int maxDistance = 100000;
 
 	static int maxDisFeaValue = 10;
-
-	static int contextSize = 2 * 2 * 2 * 3 * 2 * (maxDisFeaValue + 1);
+//	static int contextSize = 2 * 2 * 2 * 3 * 2 * (maxDisFeaValue + 1);
 	public static int qid = 0;
 
 	static int count = 0;
