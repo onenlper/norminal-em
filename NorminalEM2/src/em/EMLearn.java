@@ -273,7 +273,6 @@ public class EMLearn {
 		for (ResolveGroup group : groups) {
 			double norm = 0;
 			for (Entry entry : group.entries) {
-				String ant = entry.head;
 				Context context = entry.context;
 
 				double p_number = numberP.getVal(entry.number.name(),
@@ -283,25 +282,17 @@ public class EMLearn {
 				double p_animacy = animacyP.getVal(entry.animacy.name(),
 						group.animacy.name());
 
-				// double p_number = numberP.getVal(entry.head, EMUtil
-				// .getNumber(pronoun).name());
-				// double p_gender = genderP.getVal(entry.head, EMUtil
-				// .getGender(pronoun).name());
-				// double p_animacy = animacyP.getVal(entry.head, EMUtil
-				// .getAnimacy(pronoun).name());
-
 				double p_context = 1;
 
 				if (fracContextCount.containsKey(context.toString())) {
 					p_context = (EMUtil.alpha + fracContextCount.get(context
 							.toString()))
-							/ (EMLearn.contextSize * EMUtil.alpha + contextPrior
+							/ (2.0 * EMUtil.alpha + contextPrior
 									.get(context.toString()));
 				} else {
-					p_context = 1.0 / EMLearn.contextSize;
+//					p_context = 1.0 / EMLearn.contextSize;
+					p_context = 1.0 / 2;
 				}
-
-				// System.out.println(p_context);
 
 				entry.p = 1 * p_number * p_gender * p_animacy * p_context * 1;
 				norm += entry.p;
@@ -322,7 +313,6 @@ public class EMLearn {
 		fracContextCount.clear();
 
 		for (ResolveGroup group : groups) {
-
 			for (Entry entry : group.entries) {
 				double p = entry.p;
 				Context context = entry.context;

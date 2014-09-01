@@ -232,10 +232,11 @@ public class ApplyEM {
 				if (fracContextCount.containsKey(context.toString())) {
 					p_context = (1.0 * EMUtil.alpha + fracContextCount
 							.get(context.toString()))
-							/ (EMLearn.contextSize * EMUtil.alpha + contextPrior
+							/ (2.0 * EMUtil.alpha + contextPrior
 									.get(context.toString()));
 				} else {
-					p_context = 1.0 / EMLearn.contextSize;
+//					p_context = 1.0 / EMLearn.contextSize;
+					p_context = 1.0 / 2;
 				}
 
 				double p2nd = p_number * p_gender * p_animacy * p_context * 1;
