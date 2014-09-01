@@ -112,48 +112,45 @@ public class EMLearn {
 
 			for (int j = 0; j < s.mentions.size(); j++) {
 				Mention m = s.mentions.get(j);
+				String headPOS = part.getWord(m.end).posTag;
 
-				if (m.mType == EMUtil.MentionType.common) {
-					qid++;
-
-					String proSpeaker = part.getWord(m.start).speaker;
-
-					ArrayList<Mention> ants = new ArrayList<Mention>();
-					ants.addAll(precedMs);
-					if (j > 0) {
-						ants.addAll(s.mentions.subList(0, j - 1));
-					}
-					ResolveGroup rg = new ResolveGroup(m);
-
-					Collections.sort(ants);
-					Collections.reverse(ants);
-					// TODO
-					for (int k = 0; k < ants.size(); k++) {
-						Mention ant = ants.get(k);
-						// add antecedents
-
-						String antSpeaker = part.getWord(ant.start).speaker;
-
-						Context context = Context.buildContext(ant, m, part);
-
-						boolean sameSpeaker = proSpeaker.equals(antSpeaker);
-						Entry entry = new Entry(ant, context, sameSpeaker);
-						rg.entries.add(entry);
-						count++;
-						Double d = contextPrior.get(context.toString());
-						if (d == null) {
-							contextPrior.put(context.toString(), 1.0);
-						} else {
-							contextPrior.put(context.toString(),
-									1.0 + d.doubleValue());
-						}
-						// boolean coref = chainMap.containsKey(m.toName())
-						// && chainMap.containsKey(ant.toName())
-						// && chainMap.get(m.toName()).intValue() == chainMap
-						// .get(ant.toName()).intValue();
-					}
-					groups.add(rg);
+				if (headPOS.equals("NT") || headPOS.equals("PN")
+						|| headPOS.equals("NR")) {
+					continue;
 				}
+				qid++;
+				ArrayList<Mention> ants = new ArrayList<Mention>();
+				ants.addAll(precedMs);
+				if (j > 0) {
+					ants.addAll(s.mentions.subList(0, j - 1));
+				}
+				ResolveGroup rg = new ResolveGroup(m);
+
+				Collections.sort(ants);
+				Collections.reverse(ants);
+				// TODO
+				for (int k = 0; k < ants.size(); k++) {
+					Mention ant = ants.get(k);
+					// add antecedents
+
+					Context context = Context.buildContext(ant, m, part);
+
+					Entry entry = new Entry(ant, context);
+					rg.entries.add(entry);
+					count++;
+					Double d = contextPrior.get(context.toString());
+					if (d == null) {
+						contextPrior.put(context.toString(), 1.0);
+					} else {
+						contextPrior.put(context.toString(),
+								1.0 + d.doubleValue());
+					}
+					// boolean coref = chainMap.containsKey(m.toName())
+					// && chainMap.containsKey(ant.toName())
+					// && chainMap.get(m.toName()).intValue() == chainMap
+					// .get(ant.toName()).intValue();
+				}
+				groups.add(rg);
 			}
 		}
 		return groups;

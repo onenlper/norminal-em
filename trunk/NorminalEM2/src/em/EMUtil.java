@@ -90,7 +90,37 @@ public class EMUtil {
 	public static enum MentionType {
 		pronoun, proper, common, tmporal
 	}
-
+	
+	
+	public static CoNLLPart getGoldPart(CoNLLPart part, String stage) {
+		String documentID = "/users/yzcchen/chen3/CoNLL/conll-2012/v4/data/" + stage + "/data/chinese/annotations/"
+				+ part.docName + ".v4_gold_skel";
+		// System.out.println(documentID);
+		CoNLLDocument document = new CoNLLDocument(documentID);
+		CoNLLPart goldPart = document.getParts().get(part.getPartID());
+		return goldPart;
+	}
+	
+	public static HashSet<Integer> getPRHeads(CoNLLPart part) {
+		HashSet<Integer> prSet = new HashSet<Integer>();
+		for(CoNLLSentence s : part.getCoNLLSentences()) {
+			for(CoNLLWord w : s.getWords()) {
+				if(w.posTag.equals("PN")) {
+					prSet.add(w.index);
+				}
+			}
+		}
+		return prSet;
+	}
+	
+	public static HashSet<Integer> getNEHeads(CoNLLPart part) {
+		HashSet<Integer> set = new HashSet<Integer>();
+		for(Element ele : part.getNameEntities()) {
+			set.add(ele.end);
+		}
+		return set;
+	}
+	
 	public static HashSet<String> firsts = new HashSet<String>(Arrays.asList(
 			"我", "我们"));
 
@@ -615,11 +645,16 @@ public class EMUtil {
 				}
 			}
 		}
-
-		CoNLLSentence s = em.s;
+		em.s = sentence;
 		// changeStr(em);
 		return em;
 	}
+	
+	public static void assignMentionAttri(Mention m, CoNLLPart part) {
+		CoNLLSentence s = part.getWord(m.start).sentence;
+		
+	}
+	
 
 	public static void changeStr(Mention em) {
 		if (em.extent.equals("这些")) {
@@ -689,9 +724,9 @@ public class EMUtil {
 						removes.add(s);		
 					}
 				}
-				if(s.end==s.start && sentence.getWord(s.headInS).posTag.equals("PN")) {
-//					removes.add(s);
-				}
+			}
+			if(s.start==s.end && sentence.part.getWord(s.end).posTag.equals("PN")) {
+//				removes.add(s);
 			}
 		}
 		nounPhrases.removeAll(removes);
