@@ -129,7 +129,7 @@ public class EMLearn {
 				ants.addAll(precedMs);
 
 				if (j > 0) {
-					for (Mention precedM : s.mentions.subList(0, j - 1)) {
+					for (Mention precedM : s.mentions.subList(0, j)) {
 						if (part.getWord(precedM.end).posTag.equals("PN")) {
 							continue;
 						}
