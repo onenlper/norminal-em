@@ -615,9 +615,9 @@ public class EMUtil {
 //			Common.pause("!!!");
 //		}
 		if(treeNode==null) {
-//			System.out.println(em.extent);
 			treeNode = rightLeaf.parent;
 		}
+//		System.out.println(em.extent + " # " + part.getPartName());
 		MyTreeNode head = treeNode.getHeadLeaf();
 		// head = treeNode.getLeaves().get(treeNode.getLeaves().size());
 		em.headID = sentence.getWord(head.leafIdx).index;
