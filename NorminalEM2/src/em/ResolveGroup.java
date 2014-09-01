@@ -45,21 +45,15 @@ public class ResolveGroup implements Serializable {
 		
 		Animacy animacy;
 		Gender gender;
-		Person person;
 		Number number;
 		
 		double p;
-		boolean sameSpeaker;
-		
 
-		public Entry(Mention ant, Context context, boolean sameSpeaker) {
+		public Entry(Mention ant, Context context) {
 			this.head = ant.head;
 			this.context = context;
-			this.sameSpeaker = sameSpeaker;
 			
 			this.animacy = EMUtil.getAntAnimacy(ant);
-			this.person = EMUtil.getAntPerson(ant.head);
-			
 			this.gender = EMUtil.getAntGender(ant);
 			this.number = EMUtil.getAntNumber(ant);
 		}

@@ -104,8 +104,10 @@ public class ApplyEM {
 		ArrayList<ArrayList<Mention>> corefResults = new ArrayList<ArrayList<Mention>>();
 		ArrayList<ArrayList<Entity>> goldEntities = new ArrayList<ArrayList<Entity>>();
 
-		ArrayList<HashSet<String>> goldAnaphorses = new ArrayList<HashSet<String>>();
+//		ArrayList<HashSet<String>> goldAnaphorses = new ArrayList<HashSet<String>>();
 
+		ArrayList<HashMap<String, HashSet<String>>> goldKeyses = new ArrayList<HashMap<String, HashSet<String>>>();
+		
 		for (String file : files) {
 			System.out.println(file);
 			CoNLLDocument document = new CoNLLDocument(file.replace(
@@ -114,14 +116,16 @@ public class ApplyEM {
 			for (int k = 0; k < document.getParts().size(); k++) {
 				CoNLLPart part = document.getParts().get(k);
 
+				CoNLLPart goldPart = EMUtil.getGoldPart(part, "development");
+				
 				HashSet<String> neSet = new HashSet<String>();
 				for (Element NE : part.getNameEntities()) {
 					neSet.add(NE.start + "," + NE.end);
 				}
 
-				HashSet<String> goldAnaphors = getGoldAnaphorNouns(
-						part.getChains(), neSet, part);
-				goldAnaphorses.add(goldAnaphors);
+				HashMap<String, HashSet<String>> goldAnaphors = getGoldAnaphorNouns(
+						part.getChains(), goldPart);
+				goldKeyses.add(goldAnaphors);
 
 				ArrayList<Entity> goldChains = part.getChains();
 
@@ -151,7 +155,7 @@ public class ApplyEM {
 //					if (neSet.contains(m.start + "," + m.end)) {
 //						continue;
 //					}
-					if (!goldAnaphors.contains(m.toName())) {
+					if (!goldAnaphors.containsKey(m.toName())) {
 						continue;
 					}
 					anaphors.add(m);
@@ -169,7 +173,7 @@ public class ApplyEM {
 		System.out.println("Bad: " + bad);
 		System.out.println("Precission: " + good / (good + bad) * 100);
 
-		evaluate(corefResults, goldEntities, goldAnaphorses);
+		evaluate(corefResults, goldKeyses);
 	}
 
 	private void findAntecedent(String file, CoNLLPart part,
@@ -406,55 +410,48 @@ public class ApplyEM {
 	static String anno = "annotations/";
 	static String suffix = ".coref";
 
-	private static HashSet<String> getGoldAnaphorNouns(
-			ArrayList<Entity> entities, HashSet<String> neSet, CoNLLPart part) {
-		HashSet<String> anaphorNouns = new HashSet<String>();
+	private static HashMap<String, HashSet<String>> getGoldAnaphorNouns(
+			ArrayList<Entity> entities, CoNLLPart part) {
+		HashMap<String, HashSet<String>> anaphorKeys = new HashMap<String, HashSet<String>>();
 		for (Entity e : entities) {
 			Collections.sort(e.mentions);
 			for (int i = 1; i < e.mentions.size(); i++) {
 				Mention m1 = e.mentions.get(i);
-				if (m1.start == m1.end
-						&& part.getWord(m1.start).posTag.equals("PN")) {
+				String pos1 = part.getWord(m1.end).posTag;
+				if (pos1.equals("PN") || pos1.equals("NR") || pos1.equals("NT")) {
 					continue;
 				}
-				if (neSet.contains(m1.start + "," + m1.end)) {
-					continue;
-				}
-
+				HashSet<String> ants = new HashSet<String>();
 				for (int j = i - 1; j >= 0; j--) {
 					Mention m2 = e.mentions.get(j);
-					if (m2.start == m2.end
-							&& part.getWord(m2.start).posTag.equals("PN")) {
+					String pos2 = part.getWord(m2.end).posTag;
+					if (pos2.equals("PN")) {
 						continue;
 					}
-					anaphorNouns.add(m1.toName());
-//					System.out.println(m1.extent);
-					break;
+					ants.add(m2.toName());
+				}
+				if(ants.size()!=0) {
+					anaphorKeys.put(m1.toName(), ants);
 				}
 			}
 		}
-		return anaphorNouns;
+		return anaphorKeys;
 	}
 
 	public static void evaluate(ArrayList<ArrayList<Mention>> anaphorses,
-			ArrayList<ArrayList<Entity>> entitieses,
-			ArrayList<HashSet<String>> goldAnaphorses) {
+			ArrayList<HashMap<String, HashSet<String>>> goldKeyses) {
 		double gold = 0;
 		double system = 0;
 		double hit = 0;
 
 		for (int i = 0; i < anaphorses.size(); i++) {
 			ArrayList<Mention> anaphors = anaphorses.get(i);
-			ArrayList<Entity> entities = entitieses.get(i);
-			HashMap<String, Integer> chainMap = EMUtil.formChainMap(entities);
-			gold += goldAnaphorses.get(i).size();
+			HashMap<String, HashSet<String>> keys = goldKeyses.get(i);
+			gold += keys.size();
 			system += anaphors.size();
 			for (Mention anaphor : anaphors) {
 				Mention ant = anaphor.antecedent;
-				Integer zID = chainMap.get(anaphor.toName());
-				Integer aID = chainMap.get(ant.toName());
-				if (zID != null && aID != null
-						&& zID.intValue() == aID.intValue()) {
+				if (keys.containsKey(anaphor.toName()) && keys.get(anaphor.toName()).contains(ant.toName())) {
 					hit++;
 				}
 			}
