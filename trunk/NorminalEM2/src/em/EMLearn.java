@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 
 import model.Element;
@@ -170,7 +171,9 @@ public class EMLearn {
 
 	private static void extractCoNLL(ArrayList<ResolveGroup> groups) {
 		// CoNLLDocument d = new CoNLLDocument("train_auto_conll");
+		long t1 = System.currentTimeMillis();
 		CoNLLDocument d = new CoNLLDocument("train_gold_conll");
+		System.out.println("Read in training documents: " + (System.currentTimeMillis() - t1));
 		ArrayList<CoNLLPart> parts = new ArrayList<CoNLLPart>();
 		parts.addAll(d.getParts());
 		int i = parts.size();
@@ -178,6 +181,8 @@ public class EMLearn {
 		int docNo = 0;
 		String previousDoc = "";
 
+		long t2 = System.currentTimeMillis();
+		
 		for (CoNLLPart part : parts) {
 			// System.out.println(part.docName + " " + part.getPartID());
 			if (!part.docName.equals(previousDoc)) {
@@ -189,6 +194,7 @@ public class EMLearn {
 			}
 			// System.out.println(i--);
 		}
+		System.out.println("Parse all groups: " + (System.currentTimeMillis() - t2));
 	}
 
 	static int percent = 10;
@@ -270,6 +276,7 @@ public class EMLearn {
 
 	public static void estep(ArrayList<ResolveGroup> groups) {
 		System.out.println("estep starts:");
+		long t1 = System.currentTimeMillis();
 		for (ResolveGroup group : groups) {
 			double norm = 0;
 			for (Entry entry : group.entries) {
@@ -302,10 +309,12 @@ public class EMLearn {
 				entry.p = entry.p / norm;
 			}
 		}
+		System.out.println(System.currentTimeMillis() - t1);
 	}
 
 	public static void mstep(ArrayList<ResolveGroup> groups) {
 		System.out.println("mstep starts:");
+		long t1 = System.currentTimeMillis();
 		genderP.resetCounts();
 		numberP.resetCounts();
 		animacyP.resetCounts();
@@ -345,6 +354,7 @@ public class EMLearn {
 		animacyP.setVals();
 		// personP.setVals();
 		// personQP.setVals();
+		System.out.println(System.currentTimeMillis() - t1);
 	}
 
 	public static void main(String args[]) throws Exception {
