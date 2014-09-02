@@ -298,7 +298,7 @@ public class ApplyEM {
 				// System.out.println("它: " + taMSg);
 				// }
 				// }
-			} else {
+			} else if(anaphor.antecedent != null) {
 				if (anaphor.antecedent == null) {
 					String key = part.docName + ":" + part.getPartID() + ":"
 							+ anaphor.start + "-NULL:BAD";

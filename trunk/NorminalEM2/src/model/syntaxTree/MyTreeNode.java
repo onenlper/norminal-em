@@ -384,14 +384,18 @@ public class MyTreeNode {
 	// }
 
 	public MyTreeNode getHeadLeaf() {
-		if ((this.children.size() == 1 && this.children.get(0).children.size() == 0)) {
-			return this.children.get(0);
-		} else if (this.children.size()==0) {
-			return this;
-		} else {
-			MyTreeNode headChild = this.findHeadChild();
-			return headChild.getHeadLeaf();
+		ArrayList<MyTreeNode> leaves = this.getLeaves();
+		int headPos = leaves.size() - 1;
+		while(leaves.get(headPos).parent.value.equals("PU")) {
+			if(headPos==0) {
+				break;
+			}
+			headPos--;
 		}
+		if(leaves.get(headPos).value.equals("自己") && leaves.size()!=1) {
+			headPos--;
+		}
+		return leaves.get(headPos);
 	}
 	
 	public static boolean arabic = false;
