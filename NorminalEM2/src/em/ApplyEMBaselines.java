@@ -132,6 +132,8 @@ public class ApplyEMBaselines {
 
 				ArrayList<Mention> goldBoundaryNPMentions = EMUtil
 						.extractMention(part);
+				
+//				goldBoundaryNPMentions = getGoldMentions(part.getChains(), part);
 				Collections.sort(goldBoundaryNPMentions);
 
 				ArrayList<Mention> candidates = new ArrayList<Mention>();
@@ -143,23 +145,25 @@ public class ApplyEMBaselines {
 
 				Collections.sort(candidates);
 
-				// ArrayList<Mention> anaphors =
-				// getGoldAnaphorNouns(part.getChains(), part);
+				
+				 ArrayList<Mention> anaphors = getGoldAnaphorNouns(
+				 part.getChains(), part);
 
-				ArrayList<Mention> anaphors = new ArrayList<Mention>();
-				for (Mention m : goldBoundaryNPMentions) {
-					if (part.getWord(m.end).posTag.equals("PN")) {
-						continue;
-					}
-					// if (neSet.contains(m.start + "," + m.end)) {
-					// continue;
-					// }
-					// if (!goldAnaphors.containsKey(m.toName())) {
-					// continue;
-					// }
-					anaphors.add(m);
-				}
-
+//				ArrayList<Mention> anaphors = new ArrayList<Mention>();
+//				for (Mention m : goldBoundaryNPMentions) {
+//					String pos = part.getWord(m.headID).posTag; 
+//					if (pos.equals("PN") || pos.equals("NR") || pos.equals("NT")) {
+//						continue;
+//					}
+//					// if (neSet.contains(m.start + "," + m.end)) {
+//					// continue;
+//					// }
+//					// if (!goldAnaphors.containsKey(m.toName())) {
+//					// continue;
+//					// }
+//					anaphors.add(m);
+//				}
+				all += anaphors.size();
 				findAntecedent(file, part, chainMap, corefResult, anaphors,
 						candidates);
 
@@ -173,7 +177,10 @@ public class ApplyEMBaselines {
 		System.out.println("Precission: " + good / (good + bad) * 100);
 
 		evaluate(corefResults, goldKeyses);
+		System.out.println("all: " + all);
 	}
+
+	static int all = 0;
 
 	private void findAntecedent(String file, CoNLLPart part,
 			HashMap<String, Integer> chainMap, ArrayList<Mention> corefResult,
@@ -182,7 +189,7 @@ public class ApplyEMBaselines {
 			anaphor.sentenceID = part.getWord(anaphor.start).sentence
 					.getSentenceIdx();
 			anaphor.s = part.getWord(anaphor.start).sentence;
-
+			anaphor.antecedent = null;
 			Mention antecedent = null;
 			double maxP = -1;
 			Collections.sort(allCandidates);
@@ -195,7 +202,7 @@ public class ApplyEMBaselines {
 						.getSentenceIdx();
 				cand.s = part.getWord(cand.start).sentence;
 				if (cand.start < anaphor.start
-						&& anaphor.sentenceID - cand.sentenceID <= EMLearn.maxDistance) {
+						&& anaphor.sentenceID - cand.sentenceID <= EMLearn.maxDistance && cand.end!=anaphor.end) {
 					cands.add(cand);
 				}
 			}
@@ -204,19 +211,18 @@ public class ApplyEMBaselines {
 				Mention cand = cands.get(i);
 
 				if (cand.head.equals(anaphor.head)) {
+//				if (cand.extent.equals(anaphor.extent)) {
 					antecedent = cand;
 					System.out.println(cand.extent + " # " + anaphor.extent);
+					System.out
+							.println(cand.toName() + " # " + anaphor.toName());
 					System.out.println("Match: " + cand.head);
 					break;
 				}
 			}
 
 			if (antecedent != null) {
-				if (antecedent.end != -1) {
-					anaphor.antecedent = antecedent;
-				} else {
-					anaphor.antecedent = antecedent.antecedent;
-				}
+				anaphor.antecedent = antecedent;
 			}
 			if (anaphor.antecedent != null
 					&& anaphor.antecedent.end != -1
@@ -244,7 +250,6 @@ public class ApplyEMBaselines {
 				// System.out.println("Right!!! " + good + "/" + bad);
 				// System.out.println(zero.antecedent.msg);
 				// if(!zero.antecedent.isFS) {
-				System.out.println("==========");
 				System.out.println("Correct!!! " + good + "/" + bad);
 				if (anaphor.antecedent != null) {
 					System.out.println(anaphor.antecedent.extent + ":"
@@ -259,7 +264,7 @@ public class ApplyEMBaselines {
 				// System.out.println("它: " + taMSg);
 				// }
 				// }
-			} else {
+			} else if(anaphor.antecedent != null) {
 				if (anaphor.antecedent == null) {
 					String key = part.docName + ":" + part.getPartID() + ":"
 							+ anaphor.start + "-NULL:BAD";
@@ -275,7 +280,6 @@ public class ApplyEMBaselines {
 				// System.out.println(antecedent.extent + "BAD !");
 				// }
 				bad++;
-				System.out.println("==========");
 				System.out.println("Error??? " + good + "/" + bad);
 				if (anaphor.antecedent != null) {
 					System.out.println(anaphor.antecedent.extent + ":"
@@ -293,6 +297,7 @@ public class ApplyEMBaselines {
 			String middle = conllPath.substring(aa + anno.length(), bb);
 			String path = prefix + middle + suffix;
 			System.out.println(path);
+			System.out.println("==========");
 			// System.out.println("=== " + file);
 
 			// if (antecedent != null) {
@@ -333,8 +338,8 @@ public class ApplyEMBaselines {
 			sb.append(s.words.get(i).word).append(" ");
 		}
 		System.out.println(sb.toString() + " # " + zero.start);
-//		System.out.println(systemAnte != null ? systemAnte.extent + "#"
-//				+ part.getWord(systemAnte.end + 1).word : "");
+		// System.out.println(systemAnte != null ? systemAnte.extent + "#"
+		// + part.getWord(systemAnte.end + 1).word : "");
 
 		// System.out.println("========");
 	}
@@ -361,6 +366,17 @@ public class ApplyEMBaselines {
 	static String anno = "annotations/";
 	static String suffix = ".coref";
 
+	private static ArrayList<Mention> getGoldMentions(ArrayList<Entity> entities, CoNLLPart goldPart) {
+		ArrayList<Mention> goldMentions = new ArrayList<Mention>();
+		for(Entity e : entities) {
+			goldMentions.addAll(e.mentions);
+		}
+		for (Mention m : goldMentions) {
+			EMUtil.setMentionAttri(m, goldPart);
+		}
+		return goldMentions;
+	}
+	
 	private static ArrayList<Mention> getGoldAnaphorNouns(
 			ArrayList<Entity> entities, CoNLLPart goldPart) {
 		ArrayList<Mention> goldAnaphors = new ArrayList<Mention>();

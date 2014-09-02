@@ -269,6 +269,7 @@ public class EMLearn {
 	}
 
 	public static void estep(ArrayList<ResolveGroup> groups) {
+		System.out.println("estep starts:");
 		for (ResolveGroup group : groups) {
 			double norm = 0;
 			for (Entry entry : group.entries) {
@@ -304,6 +305,7 @@ public class EMLearn {
 	}
 
 	public static void mstep(ArrayList<ResolveGroup> groups) {
+		System.out.println("mstep starts:");
 		genderP.resetCounts();
 		numberP.resetCounts();
 		animacyP.resetCounts();
@@ -370,10 +372,10 @@ public class EMLearn {
 		// Common.pause("count:  " + count);
 		Common.pause(groups.size());
 
-		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(
-				"resolveGroups"));
-		out.writeObject(groups);
-		out.close();
+//		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(
+//				"resolveGroups"));
+//		out.writeObject(groups);
+//		out.close();
 
 		int it = 0;
 		while (it < 20) {
