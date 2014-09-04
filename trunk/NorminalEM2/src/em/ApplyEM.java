@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import model.Element;
 import model.Entity;
 import model.Mention;
 import model.CoNLL.CoNLLDocument;
@@ -19,6 +18,7 @@ import model.CoNLL.CoNLLWord;
 import model.syntaxTree.MyTreeNode;
 import util.Common;
 import edu.stanford.nlp.classify.LinearClassifier;
+import em.ResolveGroup.Entry;
 
 public class ApplyEM {
 
@@ -110,16 +110,17 @@ public class ApplyEM {
 
 		for (String file : files) {
 			System.out.println(file);
-			CoNLLDocument document = new CoNLLDocument(file.replace(
-					"auto_conll", "gold_conll"));
+			CoNLLDocument document = new CoNLLDocument(file
+			// .replace("auto_conll", "gold_conll")
+			);
 
 			for (int k = 0; k < document.getParts().size(); k++) {
 				CoNLLPart part = document.getParts().get(k);
 
 				CoNLLPart goldPart = EMUtil.getGoldPart(part, "development");
 
-				HashMap<String, HashSet<String>> goldAnaphors = getGoldAnaphorKeys(
-						part.getChains(), goldPart);
+				HashMap<String, HashSet<String>> goldAnaphors = EMUtil
+						.getGoldAnaphorKeys(part.getChains(), goldPart);
 				goldKeyses.add(goldAnaphors);
 
 				ArrayList<Entity> goldChains = part.getChains();
@@ -135,30 +136,25 @@ public class ApplyEM {
 				Collections.sort(goldBoundaryNPMentions);
 
 				ArrayList<Mention> candidates = new ArrayList<Mention>();
-				for(Mention m : goldBoundaryNPMentions) {
-					if(!part.getWord(m.end).posTag.equals("PN")) {
+				for (Mention m : goldBoundaryNPMentions) {
+					if (!part.getWord(m.end).posTag.equals("PN")) {
 						candidates.add(m);
 					}
 				}
 
 				Collections.sort(candidates);
 
-				ArrayList<Mention> anaphors = getGoldAnaphorNouns(part.getChains(), part);
-				
-//				ArrayList<Mention> anaphors = new ArrayList<Mention>();
-//				for (Mention m : goldBoundaryNPMentions) {
-//					// if (m.start == m.end
-//					// && part.getWord(m.end).posTag.equals("PN")) {
-//					// continue;
-//					// }
-//					// if (neSet.contains(m.start + "," + m.end)) {
-//					// continue;
-//					// }
-//					if (!goldAnaphors.containsKey(m.toName())) {
-//						continue;
-//					}
-//					anaphors.add(m);
-//				}
+				// ArrayList<Mention> anaphors =
+				// getGoldAnaphorNouns(part.getChains(), part);
+
+				ArrayList<Mention> anaphors = new ArrayList<Mention>();
+				for (Mention m : goldBoundaryNPMentions) {
+					String pos = part.getWord(m.end).posTag;
+					if (!pos.equals("NT") && !pos.equals("NR")
+							&& !pos.equals("PN")) {
+						anaphors.add(m);
+					}
+				}
 
 				findAntecedent(file, part, chainMap, corefResult, anaphors,
 						candidates);
@@ -195,52 +191,51 @@ public class ApplyEM {
 						.getSentenceIdx();
 				cand.s = part.getWord(cand.start).sentence;
 				if (cand.start < anaphor.start
-						&& anaphor.sentenceID - cand.sentenceID <= EMLearn.maxDistance) {
+						&& anaphor.sentenceID - cand.sentenceID <= EMLearn.maxDistance
+						&& cand.end != anaphor.end) {
 					cands.add(cand);
 				}
 			}
+			Mention fake = new Mention();
+			fake.isFake = true;
+			cands.add(fake);
 
 			double probs[] = new double[cands.size()];
 
 			for (int i = 0; i < cands.size(); i++) {
 				Mention cand = cands.get(i);
 
-				cand.sentenceID = part.getWord(cand.start).sentence
-						.getSentenceIdx();
 				boolean coref = chainMap.containsKey(anaphor.toName())
 						&& chainMap.containsKey(cand.toName())
 						&& chainMap.get(anaphor.toName()).intValue() == chainMap
 								.get(cand.toName()).intValue();
 
 				// calculate P(overt-pronoun|ant-context)
-				String ant = cand.head;
-
 				// TODO
 				Context context = Context.buildContext(cand, anaphor, part);
 				cand.msg = Context.message;
 
-				cand.person = EMUtil.getAntPerson(ant);
-				double p_number = numberP.getVal(EMUtil.getAntNumber(cand)
-						.name(), EMUtil.getAntNumber(anaphor).name());
-				cand.number = EMUtil.getAntNumber(cand);
-				double p_animacy = animacyP.getVal(EMUtil.getAntAnimacy(cand)
-						.name(), EMUtil.getAntAnimacy(anaphor).name());
-				cand.animacy = EMUtil.getAntAnimacy(cand);
-				double p_gender = genderP.getVal(EMUtil.getAntGender(cand)
-						.name(), EMUtil.getAntGender(anaphor).name());
-				cand.gender = EMUtil.getAntGender(cand);
+				Entry entry = new Entry(cand, context);
+
+				double p_number = numberP.getVal(entry.number.name(), EMUtil
+						.getAntNumber(anaphor).name());
+				double p_animacy = animacyP.getVal(entry.animacy.name(), EMUtil
+						.getAntAnimacy(anaphor).name());
+				double p_gender = genderP.getVal(entry.gender.name(), EMUtil
+						.getAntGender(anaphor).name());
 
 				double p_context = 0.0000000000000000000000000000000000000000000001;
 				if (fracContextCount.containsKey(context.toString())) {
 					p_context = (1.0 * EMUtil.alpha + fracContextCount
 							.get(context.toString()))
-							/ (2.0 * EMUtil.alpha + contextPrior
-									.get(context.toString()));
+							/ (2.0 * EMUtil.alpha + contextPrior.get(context
+									.toString()));
 				} else {
-//					p_context = 1.0 / EMLearn.contextSize;
 					p_context = 1.0 / 2;
 				}
-				double p2nd = p_number * p_gender * p_animacy * p_context * 1;
+
+				double p2nd = 1 * p_number * p_gender * p_animacy * p_context
+						* 1;
 				double p = p2nd;
 				probs[i] = p;
 				if (p > maxP) {
@@ -249,12 +244,8 @@ public class ApplyEM {
 				}
 			}
 
-			if (antecedent != null) {
-				if (antecedent.end != -1) {
-					anaphor.antecedent = antecedent;
-				} else {
-					anaphor.antecedent = antecedent.antecedent;
-				}
+			if (antecedent != null && !antecedent.isFake) {
+				anaphor.antecedent = antecedent;
 			}
 			if (anaphor.antecedent != null
 					&& anaphor.antecedent.end != -1
@@ -298,7 +289,7 @@ public class ApplyEM {
 				// System.out.println("它: " + taMSg);
 				// }
 				// }
-			} else if(anaphor.antecedent != null) {
+			} else if (anaphor.antecedent != null) {
 				if (anaphor.antecedent == null) {
 					String key = part.docName + ":" + part.getPartID() + ":"
 							+ anaphor.start + "-NULL:BAD";
@@ -401,7 +392,8 @@ public class ApplyEM {
 	static String anno = "annotations/";
 	static String suffix = ".coref";
 
-	private static ArrayList<Mention> getGoldAnaphorNouns(ArrayList<Entity> entities, CoNLLPart goldPart) {
+	private static ArrayList<Mention> getGoldAnaphorNouns(
+			ArrayList<Entity> entities, CoNLLPart goldPart) {
 		ArrayList<Mention> goldAnaphors = new ArrayList<Mention>();
 		for (Entity e : entities) {
 			Collections.sort(e.mentions);
@@ -415,10 +407,9 @@ public class ApplyEM {
 				for (int j = i - 1; j >= 0; j--) {
 					Mention m2 = e.mentions.get(j);
 					String pos2 = goldPart.getWord(m2.end).posTag;
-					if (pos2.equals("PN")) {
-						continue;
+					if (!pos2.equals("PN") && m1.end != m2.end) {
+						ants.add(m2.toName());
 					}
-					ants.add(m2.toName());
 				}
 				if (ants.size() != 0) {
 					goldAnaphors.add(m1);
@@ -426,38 +417,10 @@ public class ApplyEM {
 			}
 		}
 		Collections.sort(goldAnaphors);
-		for(Mention m : goldAnaphors) {
+		for (Mention m : goldAnaphors) {
 			EMUtil.setMentionAttri(m, goldPart);
 		}
 		return goldAnaphors;
-	}
-	
-	private static HashMap<String, HashSet<String>> getGoldAnaphorKeys(
-			ArrayList<Entity> entities, CoNLLPart part) {
-		HashMap<String, HashSet<String>> anaphorKeys = new HashMap<String, HashSet<String>>();
-		for (Entity e : entities) {
-			Collections.sort(e.mentions);
-			for (int i = 1; i < e.mentions.size(); i++) {
-				Mention m1 = e.mentions.get(i);
-				String pos1 = part.getWord(m1.end).posTag;
-				if (pos1.equals("PN") || pos1.equals("NR") || pos1.equals("NT")) {
-					continue;
-				}
-				HashSet<String> ants = new HashSet<String>();
-				for (int j = i - 1; j >= 0; j--) {
-					Mention m2 = e.mentions.get(j);
-					String pos2 = part.getWord(m2.end).posTag;
-					if (pos2.equals("PN")) {
-						continue;
-					}
-					ants.add(m2.toName());
-				}
-				if (ants.size() != 0) {
-					anaphorKeys.put(m1.toName(), ants);
-				}
-			}
-		}
-		return anaphorKeys;
 	}
 
 	public static void evaluate(ArrayList<ArrayList<Mention>> anaphorses,

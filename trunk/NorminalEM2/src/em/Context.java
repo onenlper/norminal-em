@@ -76,16 +76,26 @@ public class Context implements Serializable {
 
 		// exact match
 		int id = 0;
-		short[] feas = new short[6];
+		short[] feas = new short[7];
 
-		feas[id++] = isExactMatch(ant, anaphor, part); // 2
-		feas[id++] = isAbb(ant, anaphor, part); // 2
-		feas[id++] = headMatch(ant, anaphor, part); // 2
-		feas[id++] = haveIncompatibleModify(ant, anaphor, part); // 3
-		feas[id++] = isIWithI(ant, anaphor, part); // 2
-		feas[id++] = getDistance(ant, anaphor, part); //
-
+		feas[id++] = getIsFake(ant, anaphor, part);
+		
+		if(!ant.isFake) {
+	//		feas[id++] = isExactMatch(ant, anaphor, part); // 2
+	//		feas[id++] = headMatch(ant, anaphor, part); // 2
+			feas[id++] = haveIncompatibleModify(ant, anaphor, part); // 3
+	//		feas[id++] = isIWithI(ant, anaphor, part); // 2
+	//		feas[id++] = getDistance(ant, anaphor, part); //
+		}
 		return getContext(feas);
+	}
+	
+	private static short getIsFake(Mention ant, Mention anaphor, CoNLLPart part) {
+		if(ant.isFake) {
+			return 0;
+		} else {
+			return 1;
+		}
 	}
 
 	private static short getDistance(Mention ant, Mention anaphor,
@@ -124,10 +134,10 @@ public class Context implements Serializable {
 	}
 
 	public static short isIWithI(Mention ant, Mention anaphor, CoNLLPart part) {
-		if ((ant.start <= anaphor.start && ant.end > anaphor.end)) {
-			return 1;
+		if (ant.end <= anaphor.start) {
+			return 0;
 		}
-		return 0;
+		return 1;
 	}
 
 	public static short haveIncompatibleModify(Mention ant, Mention anaphor,

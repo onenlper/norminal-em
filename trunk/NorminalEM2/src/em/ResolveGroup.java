@@ -43,19 +43,20 @@ public class ResolveGroup implements Serializable {
 		Context context;
 		String head;
 		
-		Animacy animacy;
-		Gender gender;
-		Number number;
+		Animacy animacy = Animacy.fake;
+		Gender gender = Gender.fake;
+		Number number = Number.fake;
 		
 		double p;
 
 		public Entry(Mention ant, Context context) {
 			this.head = ant.head;
 			this.context = context;
-			
-			this.animacy = EMUtil.getAntAnimacy(ant);
-			this.gender = EMUtil.getAntGender(ant);
-			this.number = EMUtil.getAntNumber(ant);
+			if(!ant.isFake) {
+				this.animacy = EMUtil.getAntAnimacy(ant);
+				this.gender = EMUtil.getAntGender(ant);
+				this.number = EMUtil.getAntNumber(ant);
+			}
 		}
 	}
 }
