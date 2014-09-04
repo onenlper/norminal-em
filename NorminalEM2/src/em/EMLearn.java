@@ -37,7 +37,9 @@ public class EMLearn {
 	static HashMap<String, Double> contextPrior;
 	static HashMap<String, Double> contextOverall;
 	static HashMap<String, Double> fracContextCount;
-
+	
+	static HashMap<String, Double> contextVals;
+	
 	static int maxDistance = 100000;
 
 	static int maxDisFeaValue = 10;
@@ -61,6 +63,7 @@ public class EMLearn {
 		contextPrior = new HashMap<String, Double>();
 		contextOverall = new HashMap<String, Double>();
 		fracContextCount = new HashMap<String, Double>();
+		contextVals = new HashMap<String, Double>();
 		qid = 0;
 		count = 0;
 		Context.contextCache.clear();
@@ -86,7 +89,6 @@ public class EMLearn {
 		// }
 		return goldPart.getNameEntities();
 	}
-
 	public static ArrayList<ResolveGroup> extractGroups(CoNLLPart part) {
 		// ArrayList<Element> goldNE = getChGoldNE(part);
 
@@ -94,7 +96,6 @@ public class EMLearn {
 		// .getChains());
 		// System.out.println(chainMap.size());
 		// System.out.println(part.getChains().size());
-
 		ArrayList<ResolveGroup> groups = new ArrayList<ResolveGroup>();
 		for (int i = 0; i < part.getCoNLLSentences().size(); i++) {
 			CoNLLSentence s = part.getCoNLLSentences().get(i);
@@ -127,16 +128,19 @@ public class EMLearn {
 
 				ArrayList<Mention> ants = new ArrayList<Mention>();
 				ants.addAll(precedMs);
-
+				
 				if (j > 0) {
 					for (Mention precedM : s.mentions.subList(0, j)) {
-						if (part.getWord(precedM.end).posTag.equals("PN")) {
+						if (part.getWord(precedM.end).posTag.equals("PN") || precedM.end==m.end) {
 							continue;
 						}
 						ants.add(precedM);
 					}
 				}
 
+				Mention fake = new Mention();
+				fake.isFake = true;
+				
 				ResolveGroup rg = new ResolveGroup(m);
 
 				Collections.sort(ants);
@@ -151,6 +155,7 @@ public class EMLearn {
 					Entry entry = new Entry(ant, context);
 					rg.entries.add(entry);
 					count++;
+					
 					Double d = contextPrior.get(context.toString());
 					if (d == null) {
 						contextPrior.put(context.toString(), 1.0);
@@ -289,19 +294,18 @@ public class EMLearn {
 				double p_animacy = animacyP.getVal(entry.animacy.name(),
 						group.animacy.name());
 
-				double p_context = 1;
-
-				if (fracContextCount.containsKey(context.toString())) {
-					p_context = (EMUtil.alpha + fracContextCount.get(context
-							.toString()))
-							/ (2.0 * EMUtil.alpha + contextPrior
-									.get(context.toString()));
-				} else {
-//					p_context = 1.0 / EMLearn.contextSize;
-					p_context = 1.0 / 2;
+				double p_context = .5;
+				Double d = contextVals.get(context.toString());
+				if(contextVals.containsKey(context.toString())) {
+					p_context = d.doubleValue();
 				}
-
-				entry.p = 1 * p_number * p_gender * p_animacy * p_context * 1;
+				
+				entry.p = 1 * 
+						p_number * 
+						p_gender * 
+						p_animacy * 
+						p_context * 
+						1;
 				norm += entry.p;
 			}
 
@@ -318,14 +322,15 @@ public class EMLearn {
 		genderP.resetCounts();
 		numberP.resetCounts();
 		animacyP.resetCounts();
+		contextVals.clear();
 		// personP.resetCounts();
 		// personQP.resetCounts();
 		fracContextCount.clear();
-
 		for (ResolveGroup group : groups) {
 			for (Entry entry : group.entries) {
 				double p = entry.p;
 				Context context = entry.context;
+				
 				numberP.addFracCount(entry.number.name(), group.number.name(),
 						p);
 				genderP.addFracCount(entry.gender.name(), group.gender.name(),
@@ -354,6 +359,12 @@ public class EMLearn {
 		animacyP.setVals();
 		// personP.setVals();
 		// personQP.setVals();
+		for(String key: fracContextCount.keySet()) {
+			double p_context = (EMUtil.alpha + fracContextCount.get(key))
+					/ (2.0 * EMUtil.alpha + contextPrior
+							.get(key));
+			contextVals.put(key, p_context);
+		}
 		System.out.println(System.currentTimeMillis() - t1);
 	}
 
@@ -363,7 +374,7 @@ public class EMLearn {
 		// run();
 		// percent++;
 		// }
-		percent = 10;
+		percent = 1;
 		run();
 		// System.out.println(match/XallX);
 		// Common.outputLines(svmRanks, "svmRank.train");
@@ -418,6 +429,9 @@ public class EMLearn {
 
 		modelOut.close();
 
+		Common.outputHashMap(contextVals, "contextVals");
+		Common.outputHashMap(fracContextCount, "fracContextCount");
+		Common.outputHashMap(contextPrior, "contextPrior");
 		// ObjectOutputStream svoStat = new ObjectOutputStream(new
 		// FileOutputStream(
 		// "/dev/shm/svoStat"));

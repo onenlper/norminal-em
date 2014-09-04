@@ -26,7 +26,7 @@ public class EMUtil {
 
 	public static boolean train;
 
-	public static double alpha = Math.pow(10, -5);
+	public static double alpha = 1;
 	// 0.0000001;
 	// -7
 
@@ -68,11 +68,11 @@ public class EMUtil {
 	};
 
 	public static enum Number {
-		single, plural
+		single, plural, fake
 	};
 
 	public static enum Gender {
-		male, female, neuter, unknown
+		male, female, neuter, unknown, fake
 	};
 
 	public static enum PersonEng {
@@ -80,7 +80,7 @@ public class EMUtil {
 	}
 
 	public static enum Animacy {
-		animate, unanimate, unknown
+		animate, unanimate, unknown, fake
 	}
 
 	public static enum Grammatic {
@@ -2104,6 +2104,33 @@ public class EMUtil {
 			return "他";
 		}
 		return EMUtil.pronounList.get(win);
+	}
+	
+	public static HashMap<String, HashSet<String>> getGoldAnaphorKeys(
+			ArrayList<Entity> entities, CoNLLPart part) {
+		HashMap<String, HashSet<String>> anaphorKeys = new HashMap<String, HashSet<String>>();
+		for (Entity e : entities) {
+			Collections.sort(e.mentions);
+			for (int i = 1; i < e.mentions.size(); i++) {
+				Mention m1 = e.mentions.get(i);
+				String pos1 = part.getWord(m1.end).posTag;
+				if (pos1.equals("PN") || pos1.equals("NR") || pos1.equals("NT")) {
+					continue;
+				}
+				HashSet<String> ants = new HashSet<String>();
+				for (int j = i - 1; j >= 0; j--) {
+					Mention m2 = e.mentions.get(j);
+					String pos2 = part.getWord(m2.end).posTag;
+					if (!pos2.equals("PN") && m2.end!=m1.end) {
+						ants.add(m2.toName());
+					}
+				}
+				if (ants.size() != 0) {
+					anaphorKeys.put(m1.toName(), ants);
+				}
+			}
+		}
+		return anaphorKeys;
 	}
 
 	public static void main(String args[]) {
