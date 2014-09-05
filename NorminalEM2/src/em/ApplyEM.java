@@ -27,7 +27,7 @@ public class ApplyEM {
 	Parameter numberP;
 	Parameter genderP;
 	Parameter animacyP;
-	// Parameter personP;
+	 Parameter semanticP;
 	// Parameter personQP;
 
 	double contextOverall;
@@ -54,7 +54,7 @@ public class ApplyEM {
 			numberP = (Parameter) modelInput.readObject();
 			genderP = (Parameter) modelInput.readObject();
 			animacyP = (Parameter) modelInput.readObject();
-			// personP = (Parameter) modelInput.readObject();
+			semanticP = (Parameter) modelInput.readObject();
 			// personQP = (Parameter) modelInput.readObject();
 			fracContextCount = (HashMap<String, Double>) modelInput
 					.readObject();
@@ -111,7 +111,7 @@ public class ApplyEM {
 		for (String file : files) {
 			System.out.println(file);
 			CoNLLDocument document = new CoNLLDocument(file
-			// .replace("auto_conll", "gold_conll")
+			 .replace("auto_conll", "gold_conll")
 			);
 
 			for (int k = 0; k < document.getParts().size(); k++) {
@@ -144,17 +144,17 @@ public class ApplyEM {
 
 				Collections.sort(candidates);
 
-				// ArrayList<Mention> anaphors =
-				// getGoldAnaphorNouns(part.getChains(), part);
+				 ArrayList<Mention> anaphors =
+				 getGoldAnaphorNouns(part.getChains(), part);
 
-				ArrayList<Mention> anaphors = new ArrayList<Mention>();
-				for (Mention m : goldBoundaryNPMentions) {
-					String pos = part.getWord(m.end).posTag;
-					if (!pos.equals("NT") && !pos.equals("NR")
-							&& !pos.equals("PN")) {
-						anaphors.add(m);
-					}
-				}
+//				ArrayList<Mention> anaphors = new ArrayList<Mention>();
+//				for (Mention m : goldBoundaryNPMentions) {
+//					String pos = part.getWord(m.end).posTag;
+//					if (!pos.equals("NT") && !pos.equals("NR")
+//							&& !pos.equals("PN")) {
+//						anaphors.add(m);
+//					}
+//				}
 
 				findAntecedent(file, part, chainMap, corefResult, anaphors,
 						candidates);
@@ -198,7 +198,7 @@ public class ApplyEM {
 			}
 			Mention fake = new Mention();
 			fake.isFake = true;
-			cands.add(fake);
+//			cands.add(fake);
 
 			double probs[] = new double[cands.size()];
 
@@ -212,7 +212,7 @@ public class ApplyEM {
 
 				// calculate P(overt-pronoun|ant-context)
 				// TODO
-				Context context = Context.buildContext(cand, anaphor, part);
+				Context context = Context.buildContext(cand, anaphor, part, cands);
 				cand.msg = Context.message;
 
 				Entry entry = new Entry(cand, context);
@@ -223,7 +223,8 @@ public class ApplyEM {
 						.getAntAnimacy(anaphor).name());
 				double p_gender = genderP.getVal(entry.gender.name(), EMUtil
 						.getAntGender(anaphor).name());
-
+				double p_sem = semanticP.getVal(entry.sem, EMUtil.getSemantic(anaphor));
+				
 				double p_context = 0.0000000000000000000000000000000000000000000001;
 				if (fracContextCount.containsKey(context.toString())) {
 					p_context = (1.0 * EMUtil.alpha + fracContextCount
@@ -234,8 +235,10 @@ public class ApplyEM {
 					p_context = 1.0 / 2;
 				}
 
-				double p2nd = 1 * p_number * p_gender * p_animacy * p_context
-						* 1;
+				double p2nd = p_context;
+				p2nd *= 1 *
+						p_number * p_gender * p_animacy *  
+						p_sem;
 				double p = p2nd;
 				probs[i] = p;
 				if (p > maxP) {

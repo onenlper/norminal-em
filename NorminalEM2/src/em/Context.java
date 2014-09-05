@@ -72,26 +72,48 @@ public class Context implements Serializable {
 	static short[] feas = new short[18];
 
 	public static Context buildContext(Mention ant, Mention anaphor,
-			CoNLLPart part) {
+			CoNLLPart part, ArrayList<Mention> allCands) {
 
 		// exact match
 		int id = 0;
-		short[] feas = new short[7];
+		short[] feas = new short[8];
 
 		feas[id++] = getIsFake(ant, anaphor, part);
-		
-		if(!ant.isFake) {
-	//		feas[id++] = isExactMatch(ant, anaphor, part); // 2
-	//		feas[id++] = headMatch(ant, anaphor, part); // 2
-			feas[id++] = haveIncompatibleModify(ant, anaphor, part); // 3
-	//		feas[id++] = isIWithI(ant, anaphor, part); // 2
-	//		feas[id++] = getDistance(ant, anaphor, part); //
-		}
+		feas[id++] = getHasSameHead(allCands, anaphor, part);
+		feas[id++] = getDistance(ant, anaphor, part); //
+		 feas[id++] = isExactMatch(ant, anaphor, part); // 2
+		 feas[id++] = headMatch(ant, anaphor, part); // 2
+		feas[id++] = haveIncompatibleModify(ant, anaphor, part); // 3
+		 feas[id++] = isIWithI(ant, anaphor, part); // 2
 		return getContext(feas);
 	}
-	
+
+	private static short getHasSameHead(ArrayList<Mention> cands,
+			Mention anaphor, CoNLLPart part) {
+		// StringBuilder sb = new StringBuilder();
+		// sb.append(anaphor.extent).append(":");
+		// for(Mention c : cands) {
+		// sb.append(c.extent).append("#");
+		// }
+		// System.out.println(sb.toString().trim());
+		// System.out.println("=================");
+		// System.out.println(part.getPartName());
+
+		boolean hasSameHead = false;
+		for (Mention m : cands) {
+			if (m.head.equals(anaphor.head) && m.extent.contains(anaphor.extent)) {
+				hasSameHead = true;
+			}
+		}
+		if (hasSameHead) {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
+
 	private static short getIsFake(Mention ant, Mention anaphor, CoNLLPart part) {
-		if(ant.isFake) {
+		if (ant.isFake) {
 			return 0;
 		} else {
 			return 1;
@@ -100,13 +122,22 @@ public class Context implements Serializable {
 
 	private static short getDistance(Mention ant, Mention anaphor,
 			CoNLLPart part) {
-		short diss = (short) (part.getWord(anaphor.end).sentence
-				.getSentenceIdx() - part.getWord(ant.end).sentence
-				.getSentenceIdx());
-		if (diss > EMLearn.maxDisFeaValue) {
-			diss = (short)EMLearn.maxDisFeaValue;
+		short diss = 0;
+		if (ant.isFake) {
+			diss = (short) (part.getWord(anaphor.end).sentence.getSentenceIdx() + 1);
+			return (short) Math.log(diss);
+//		} else if (ant.head.equals(anaphor.head)
+//				&& ant.extent.contains(anaphor.extent)) {
+//			diss = -1;
+		} else {
+			diss = (short) (part.getWord(anaphor.end).sentence.getSentenceIdx() - part
+					.getWord(ant.end).sentence.getSentenceIdx());
+			return (short) Math.log(diss);
 		}
-		return diss;
+		// if (diss > EMLearn.maxDisFeaValue) {
+		// diss = (short) EMLearn.maxDisFeaValue;
+		// }
+//		return diss;
 	}
 
 	private static short isExactMatch(Mention ant, Mention anaphor,
@@ -142,17 +173,23 @@ public class Context implements Serializable {
 
 	public static short haveIncompatibleModify(Mention ant, Mention anaphor,
 			CoNLLPart part) {
-		if (!ant.head.equalsIgnoreCase(anaphor.head)) {
+		if (anaphor.isFake || !ant.head.equalsIgnoreCase(anaphor.head)) {
 			return 0;
 		}
+		else if(ant.head.equals(anaphor.head)) {
+			if(ant.extent.contains(anaphor.extent)) {
+				return 1;
+			} else {
+				return 0;
+			}
+		}
+		
 		boolean thisHasExtra = false;
 		Set<String> thisWordSet = new HashSet<String>();
 		Set<String> antWordSet = new HashSet<String>();
 		Set<String> locationModifier = new HashSet<String>(Arrays.asList("东",
 				"南", "西", "北", "中", "东面", "南面", "西面", "北面", "中部", "东北", "西部",
 				"南部", "下", "上", "新", "旧", "前"));
-		String mPRP = "";
-		String antPRP = "";
 		for (int i = anaphor.start; i <= anaphor.end; i++) {
 			String w1 = part.getWord(i).orig.toLowerCase();
 			String pos1 = part.getWord(i).posTag;
