@@ -113,21 +113,21 @@ public class Parameter implements Serializable {
 		}
 		output.add(sb.toString());
 
-//		for (String key : this.values.keySet()) {
-//			sb = new StringBuilder();
-//			sb.append(key);
-//
-//			for (String subKey : this.subKeys) {
-//				if (this.values.get(key).containsKey(subKey)) {
-//					sb.append("\t").append(
-//							String.format("%.3f",
-//									this.values.get(key).get(subKey)));
-//				} else {
-//					sb.append("\t").append(0.000);
-//				}
-//			}
-//			output.add(sb.toString());
-//		}
+		for (String key : this.values.keySet()) {
+			sb = new StringBuilder();
+			sb.append(key);
+
+			for (String subKey : this.subKeys) {
+				if (this.values.get(key).containsKey(subKey)) {
+					sb.append("\t").append(
+							String.format("%.3f",
+									this.values.get(key).get(subKey)));
+				} else {
+					sb.append("\t").append(0.000);
+				}
+			}
+			output.add(sb.toString());
+		}
 		Common.outputLines(output, fn);
 	}
 

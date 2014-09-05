@@ -91,6 +91,17 @@ public class EMUtil {
 		pronoun, proper, common, tmporal
 	}
 	
+	public static String getSemantic(Mention m) {
+		if(!m.NE.equals("OTHER")) {
+			return m.NE;
+		}
+		String sems[] = Common.getSemantic(m.head);
+		String sem = "unknown";
+		if(sems!=null) {
+			sem = sems[0]; 
+		}
+		return sem.substring(0,2);
+	}
 	
 	public static CoNLLPart getGoldPart(CoNLLPart part, String stage) {
 		String documentID = "/users/yzcchen/chen3/CoNLL/conll-2012/v4/data/" + stage + "/data/chinese/annotations/"

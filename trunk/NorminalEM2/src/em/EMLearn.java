@@ -30,20 +30,20 @@ public class EMLearn {
 
 	static Parameter numberP;
 	static Parameter genderP;
-	// static Parameter personP;
+	static Parameter semanticP;
 	// static Parameter personQP;
 	static Parameter animacyP;
 
 	static HashMap<String, Double> contextPrior;
 	static HashMap<String, Double> contextOverall;
 	static HashMap<String, Double> fracContextCount;
-	
+
 	static HashMap<String, Double> contextVals;
-	
+
 	static int maxDistance = 100000;
 
 	static int maxDisFeaValue = 10;
-//	static int contextSize = 2 * 2 * 2 * 3 * 2 * (maxDisFeaValue + 1);
+	// static int contextSize = 2 * 2 * 2 * 3 * 2 * (maxDisFeaValue + 1);
 	public static int qid = 0;
 
 	static int count = 0;
@@ -53,8 +53,7 @@ public class EMLearn {
 		// Double>();
 		numberP = new Parameter(1.0 / ((double) EMUtil.Number.values().length));
 		genderP = new Parameter(1.0 / ((double) EMUtil.Gender.values().length));
-		// personP = new Parameter(1.0 / ((double)
-		// EMUtil.Person.values().length));
+		 semanticP = new Parameter(1.0 / 109.0);
 		// personQP = new Parameter(1.0 / ((double)
 		// EMUtil.Person.values().length));
 		animacyP = new Parameter(
@@ -89,6 +88,7 @@ public class EMLearn {
 		// }
 		return goldPart.getNameEntities();
 	}
+
 	public static ArrayList<ResolveGroup> extractGroups(CoNLLPart part) {
 		// ArrayList<Element> goldNE = getChGoldNE(part);
 
@@ -105,7 +105,7 @@ public class EMLearn {
 
 			ArrayList<Mention> precedMs = new ArrayList<Mention>();
 
-			for (int j = maxDistance; j >= 0; j--) {
+			for (int j = maxDistance; j >= 1; j--) {
 				if (i - j >= 0) {
 					for (Mention m : part.getCoNLLSentences().get(i - j).mentions) {
 						if (part.getWord(m.end).posTag.equals("PN")) {
@@ -115,7 +115,7 @@ public class EMLearn {
 					}
 				}
 			}
-
+			Collections.sort(s.mentions);
 			for (int j = 0; j < s.mentions.size(); j++) {
 				Mention m = s.mentions.get(j);
 				String headPOS = part.getWord(m.end).posTag;
@@ -128,10 +128,11 @@ public class EMLearn {
 
 				ArrayList<Mention> ants = new ArrayList<Mention>();
 				ants.addAll(precedMs);
-				
+
 				if (j > 0) {
 					for (Mention precedM : s.mentions.subList(0, j)) {
-						if (part.getWord(precedM.end).posTag.equals("PN") || precedM.end==m.end) {
+						if (part.getWord(precedM.end).posTag.equals("PN")
+								|| precedM.end == m.end) {
 							continue;
 						}
 						ants.add(precedM);
@@ -140,7 +141,8 @@ public class EMLearn {
 
 				Mention fake = new Mention();
 				fake.isFake = true;
-				
+//				ants.add(fake);
+
 				ResolveGroup rg = new ResolveGroup(m);
 
 				Collections.sort(ants);
@@ -150,12 +152,12 @@ public class EMLearn {
 					Mention ant = ants.get(k);
 					// add antecedents
 
-					Context context = Context.buildContext(ant, m, part);
+					Context context = Context.buildContext(ant, m, part, ants);
 
 					Entry entry = new Entry(ant, context);
 					rg.entries.add(entry);
 					count++;
-					
+
 					Double d = contextPrior.get(context.toString());
 					if (d == null) {
 						contextPrior.put(context.toString(), 1.0);
@@ -178,7 +180,8 @@ public class EMLearn {
 		// CoNLLDocument d = new CoNLLDocument("train_auto_conll");
 		long t1 = System.currentTimeMillis();
 		CoNLLDocument d = new CoNLLDocument("train_gold_conll");
-		System.out.println("Read in training documents: " + (System.currentTimeMillis() - t1));
+		System.out.println("Read in training documents: "
+				+ (System.currentTimeMillis() - t1));
 		ArrayList<CoNLLPart> parts = new ArrayList<CoNLLPart>();
 		parts.addAll(d.getParts());
 		int i = parts.size();
@@ -187,7 +190,7 @@ public class EMLearn {
 		String previousDoc = "";
 
 		long t2 = System.currentTimeMillis();
-		
+
 		for (CoNLLPart part : parts) {
 			// System.out.println(part.docName + " " + part.getPartID());
 			if (!part.docName.equals(previousDoc)) {
@@ -199,7 +202,8 @@ public class EMLearn {
 			}
 			// System.out.println(i--);
 		}
-		System.out.println("Parse all groups: " + (System.currentTimeMillis() - t2));
+		System.out.println("Parse all groups: "
+				+ (System.currentTimeMillis() - t2));
 	}
 
 	static int percent = 10;
@@ -294,18 +298,23 @@ public class EMLearn {
 				double p_animacy = animacyP.getVal(entry.animacy.name(),
 						group.animacy.name());
 
+				double p_semetic = semanticP.getVal(entry.sem, group.sem);
+				
 				double p_context = .5;
 				Double d = contextVals.get(context.toString());
-				if(contextVals.containsKey(context.toString())) {
+				if (contextVals.containsKey(context.toString())) {
 					p_context = d.doubleValue();
+				} else {
+					p_context = .5;
+//					if(context.toString().startsWith("0")) {
+//						p_context = .1;
+//					}
 				}
-				
-				entry.p = 1 * 
-						p_number * 
-						p_gender * 
-						p_animacy * 
-						p_context * 
-						1;
+
+				entry.p = p_context;
+				entry.p *= 1 * 
+						p_number * p_gender * p_animacy *  
+						p_semetic;
 				norm += entry.p;
 			}
 
@@ -323,14 +332,14 @@ public class EMLearn {
 		numberP.resetCounts();
 		animacyP.resetCounts();
 		contextVals.clear();
-		// personP.resetCounts();
+		 semanticP.resetCounts();
 		// personQP.resetCounts();
 		fracContextCount.clear();
 		for (ResolveGroup group : groups) {
 			for (Entry entry : group.entries) {
 				double p = entry.p;
 				Context context = entry.context;
-				
+
 				numberP.addFracCount(entry.number.name(), group.number.name(),
 						p);
 				genderP.addFracCount(entry.gender.name(), group.gender.name(),
@@ -338,13 +347,8 @@ public class EMLearn {
 				animacyP.addFracCount(entry.animacy.name(),
 						group.animacy.name(), p);
 
-				// numberP.addFracCount(entry.head,
-				// EMUtil.getNumber(pronoun).name(), p);
-				// genderP.addFracCount(entry.head,
-				// EMUtil.getGender(pronoun).name(), p);
-				// animacyP.addFracCount(entry.head,
-				// EMUtil.getAnimacy(pronoun).name(), p);
-
+				semanticP.addFracCount(entry.sem, group.sem, p);
+				
 				Double d = fracContextCount.get(context.toString());
 				if (d == null) {
 					fracContextCount.put(context.toString(), p);
@@ -357,12 +361,11 @@ public class EMLearn {
 		genderP.setVals();
 		numberP.setVals();
 		animacyP.setVals();
-		// personP.setVals();
+		 semanticP.setVals();
 		// personQP.setVals();
-		for(String key: fracContextCount.keySet()) {
+		for (String key : fracContextCount.keySet()) {
 			double p_context = (EMUtil.alpha + fracContextCount.get(key))
-					/ (2.0 * EMUtil.alpha + contextPrior
-							.get(key));
+					/ (2.0 * EMUtil.alpha + contextPrior.get(key));
 			contextVals.put(key, p_context);
 		}
 		System.out.println(System.currentTimeMillis() - t1);
@@ -393,11 +396,6 @@ public class EMLearn {
 		// Common.pause("count:  " + count);
 		Common.pause(groups.size());
 
-//		ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(
-//				"resolveGroups"));
-//		out.writeObject(groups);
-//		out.close();
-
 		int it = 0;
 		while (it < 20) {
 			System.out.println("Iteration: " + it);
@@ -409,16 +407,14 @@ public class EMLearn {
 		numberP.printParameter("numberP");
 		genderP.printParameter("genderP");
 		animacyP.printParameter("animacyP");
-		// personP.printParameter("personP");
-		// personQP.printParameter("personQP");
-
+		semanticP.printParameter("semanticP");
+		
 		ObjectOutputStream modelOut = new ObjectOutputStream(
 				new FileOutputStream("EMModel"));
 		modelOut.writeObject(numberP);
 		modelOut.writeObject(genderP);
 		modelOut.writeObject(animacyP);
-		// modelOut.writeObject(personP);
-		// modelOut.writeObject(personQP);
+		modelOut.writeObject(semanticP);
 
 		modelOut.writeObject(fracContextCount);
 		modelOut.writeObject(contextPrior);
