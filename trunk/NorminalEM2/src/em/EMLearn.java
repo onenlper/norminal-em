@@ -377,7 +377,7 @@ public class EMLearn {
 		// run();
 		// percent++;
 		// }
-		percent = 1;
+		percent = 10;
 		run();
 		// System.out.println(match/XallX);
 		// Common.outputLines(svmRanks, "svmRank.train");

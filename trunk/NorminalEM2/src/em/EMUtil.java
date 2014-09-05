@@ -100,7 +100,7 @@ public class EMUtil {
 		if(sems!=null) {
 			sem = sems[0]; 
 		}
-		return sem.substring(0,2);
+		return sem.substring(0,4);
 	}
 	
 	public static CoNLLPart getGoldPart(CoNLLPart part, String stage) {
