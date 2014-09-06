@@ -75,7 +75,7 @@ public class Context implements Serializable {
 
 		// exact match
 		int id = 0;
-		short[] feas = new short[8];
+		short[] feas = new short[9];
 
 		feas[id++] = getIsFake(ant, anaphor, part);
 		feas[id++] = getHasSameHead(allCands, anaphor, part);
@@ -84,11 +84,26 @@ public class Context implements Serializable {
 		feas[id++] = headMatch(ant, anaphor, part); // 2
 		feas[id++] = haveIncompatibleModify(ant, anaphor, part); // 3
 		feas[id++] = isIWithI(ant, anaphor, part); // 2
-		feas[id++] = isSamePredicate(ant, anaphor, part);
+		feas[id++] = isSameGrammatic(ant, anaphor, part);
+//		feas[id++] = isSamePredicate(ant, anaphor, part);
 		return getContext(feas);
 	}
 	
 	private static short isSamePredicate(Mention ant, Mention anaphor, CoNLLPart part) {
+		if(ant.gram==anaphor.gram && ant.V!=null) {
+			String v1 = EMUtil.getPredicateNode(ant.V);
+			String v2 = EMUtil.getPredicateNode(anaphor.V);
+			if(v1!=null && v2!=null && v1.equals(v2)) {
+				return 2;
+			} else {
+				return 1;
+			}
+		} else {
+			return 0;
+		}
+	}
+	
+	private static short isSameGrammatic(Mention ant, Mention anaphor, CoNLLPart part) {
 		if( ant.gram==anaphor.gram) {
 			return 1;
 		} else {

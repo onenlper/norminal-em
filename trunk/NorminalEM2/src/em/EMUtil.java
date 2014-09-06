@@ -1474,11 +1474,10 @@ public class EMUtil {
 
 	public static String getPredicateNode(MyTreeNode vp) {
 		ArrayList<MyTreeNode> leaves = vp.getLeaves();
+		HashSet<String> filter = new HashSet<String>(Arrays.asList("是", "有","要","会", "可以"));
 		for (MyTreeNode leaf : leaves) {
 			if (leaf.parent.value.startsWith("V")
-			// && !leaf.value.equals("会") && !leaf.value.equals("独立")
-			// && !leaf.value.equals("可以")
-			) {
+			 && !filter.contains(leaf.value)) {
 				return leaf.value;
 			}
 		}
