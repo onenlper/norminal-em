@@ -153,7 +153,7 @@ public class EMLearn {
 					Mention ant = ants.get(k);
 					// add antecedents
 
-					Context context = Context.buildContext(ant, m, part, ants);
+					Context context = Context.buildContext(ant, m, part, ants, k);
 
 					Entry entry = new Entry(ant, context);
 					rg.entries.add(entry);

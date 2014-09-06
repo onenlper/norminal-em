@@ -212,7 +212,7 @@ public class ApplyEM {
 
 				// calculate P(overt-pronoun|ant-context)
 				// TODO
-				Context context = Context.buildContext(cand, anaphor, part, cands);
+				Context context = Context.buildContext(cand, anaphor, part, cands, i);
 				cand.msg = Context.message;
 
 				Entry entry = new Entry(cand, context);
