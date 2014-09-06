@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import model.Mention;
 import em.EMUtil.Animacy;
 import em.EMUtil.Gender;
+import em.EMUtil.Grammatic;
 import em.EMUtil.Number;
-import em.EMUtil.Person;
 
 public class ResolveGroup implements Serializable {
 
@@ -25,6 +25,8 @@ public class ResolveGroup implements Serializable {
 	Gender gender;
 	Number number;
 	
+	Grammatic gram;
+	
 	String sem = "unknown";
 	
 	public ResolveGroup(Mention m) {
@@ -35,6 +37,7 @@ public class ResolveGroup implements Serializable {
 		this.gender = EMUtil.getAntGender(m);
 		this.number = EMUtil.getAntNumber(m);
 		this.sem = EMUtil.getSemantic(m);
+		this.gram = m.gram;
 	}
 
 	public static class Entry implements Serializable {
@@ -54,6 +57,8 @@ public class ResolveGroup implements Serializable {
 		boolean isFake;
 		double p;
 
+		Grammatic gram;
+		
 		public Entry(Mention ant, Context context) {
 			this.head = ant.head;
 			this.context = context;
@@ -64,6 +69,7 @@ public class ResolveGroup implements Serializable {
 				this.number = EMUtil.getAntNumber(ant);
 				this.sem = EMUtil.getSemantic(ant);
 			}
+			this.gram = ant.gram;
 		}
 	}
 }

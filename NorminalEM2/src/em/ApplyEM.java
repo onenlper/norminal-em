@@ -28,7 +28,7 @@ public class ApplyEM {
 	Parameter genderP;
 	Parameter animacyP;
 	 Parameter semanticP;
-	// Parameter personQP;
+	 Parameter gramP;
 
 	double contextOverall;
 
@@ -55,7 +55,7 @@ public class ApplyEM {
 			genderP = (Parameter) modelInput.readObject();
 			animacyP = (Parameter) modelInput.readObject();
 			semanticP = (Parameter) modelInput.readObject();
-			// personQP = (Parameter) modelInput.readObject();
+			gramP = (Parameter) modelInput.readObject();
 			fracContextCount = (HashMap<String, Double>) modelInput
 					.readObject();
 			contextPrior = (HashMap<String, Double>) modelInput.readObject();
@@ -99,7 +99,7 @@ public class ApplyEM {
 
 	public void test() {
 		ArrayList<String> files = Common.getLines("chinese_list_" + folder
-				+ "_development");
+				+ "_test");
 
 		ArrayList<ArrayList<Mention>> corefResults = new ArrayList<ArrayList<Mention>>();
 
@@ -117,7 +117,7 @@ public class ApplyEM {
 			for (int k = 0; k < document.getParts().size(); k++) {
 				CoNLLPart part = document.getParts().get(k);
 
-				CoNLLPart goldPart = EMUtil.getGoldPart(part, "development");
+				CoNLLPart goldPart = EMUtil.getGoldPart(part, "test");
 
 				HashMap<String, HashSet<String>> goldAnaphors = EMUtil
 						.getGoldAnaphorKeys(part.getChains(), goldPart);
@@ -225,6 +225,8 @@ public class ApplyEM {
 						.getAntGender(anaphor).name());
 				double p_sem = semanticP.getVal(entry.sem, EMUtil.getSemantic(anaphor));
 				
+				double p_gram = semanticP.getVal(entry.gram.name(), anaphor.gram.name());
+				
 				double p_context = 0.0000000000000000000000000000000000000000000001;
 				if (fracContextCount.containsKey(context.toString())) {
 					p_context = (1.0 * EMUtil.alpha + fracContextCount
@@ -237,8 +239,10 @@ public class ApplyEM {
 
 				double p2nd = p_context;
 				p2nd *= 1 *
-						p_number * p_gender * p_animacy *  
-						p_sem;
+						p_number * p_gender * p_animacy *
+						p_sem
+//						* p_gram
+						;
 				double p = p2nd;
 				probs[i] = p;
 				if (p > maxP) {

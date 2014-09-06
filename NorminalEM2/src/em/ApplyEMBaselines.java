@@ -28,7 +28,7 @@ public class ApplyEMBaselines {
 	Parameter genderP;
 	Parameter animacyP;
 	 Parameter personP;
-	// Parameter personQP;
+	 Parameter personQP;
 
 	double contextOverall;
 
@@ -55,7 +55,7 @@ public class ApplyEMBaselines {
 			genderP = (Parameter) modelInput.readObject();
 			animacyP = (Parameter) modelInput.readObject();
 			personP = (Parameter) modelInput.readObject();
-			// personQP = (Parameter) modelInput.readObject();
+			 personQP = (Parameter) modelInput.readObject();
 			fracContextCount = (HashMap<String, Double>) modelInput
 					.readObject();
 			contextPrior = (HashMap<String, Double>) modelInput.readObject();
@@ -99,7 +99,7 @@ public class ApplyEMBaselines {
 
 	public void test() {
 		ArrayList<String> files = Common.getLines("chinese_list_" + folder
-				+ "_development");
+				+ "_test");
 
 		ArrayList<ArrayList<Mention>> corefResults = new ArrayList<ArrayList<Mention>>();
 
@@ -117,7 +117,7 @@ public class ApplyEMBaselines {
 			for (int k = 0; k < document.getParts().size(); k++) {
 				CoNLLPart part = document.getParts().get(k);
 
-				CoNLLPart goldPart = EMUtil.getGoldPart(part, "development");
+				CoNLLPart goldPart = EMUtil.getGoldPart(part, "test");
 
 				HashMap<String, HashSet<String>> goldAnaphors = EMUtil
 						.getGoldAnaphorKeys(part.getChains(), goldPart);
