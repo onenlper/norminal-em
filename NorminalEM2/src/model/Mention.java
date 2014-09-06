@@ -11,6 +11,7 @@ import model.CoNLL.CoNLLPart;
 import model.CoNLL.CoNLLSentence;
 import model.syntaxTree.MyTreeNode;
 import em.EMUtil;
+import em.EMUtil.Grammatic;
 import em.EMUtil.MentionType;
 
 public class Mention implements Comparable<Mention>, Serializable {
@@ -74,7 +75,7 @@ public class Mention implements Comparable<Mention>, Serializable {
 
 	public int headID;
 
-	public EMUtil.Grammatic gram;
+	public EMUtil.Grammatic gram = Grammatic.other;
 	public EMUtil.MentionType mType;
 
 	public EMUtil.Number number;
