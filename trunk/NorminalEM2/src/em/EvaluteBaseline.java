@@ -14,7 +14,7 @@ import util.Common;
 public class EvaluteBaseline {
 
 	public static void main(String args[]) {
-		String path = "/users/yzcchen/chen3/conll12/chinese/key.chinese.development.open";
+		String path = "key.chinese.test.open.goldMentions";
 //		String path = "key.chinese.development.open.systemParse";
 		CoNLLDocument sysDoc = new CoNLLDocument(path);
 		HashMap<String, ArrayList<String[]>> allSys = new HashMap<String, ArrayList<String[]>>();
@@ -48,7 +48,7 @@ public class EvaluteBaseline {
 		}
 		
 		ArrayList<String> fnLines = Common
-				.getLines("chinese_list_all_development");
+				.getLines("chinese_list_all_test");
 		
 		HashMap<String, HashMap<String, HashSet<String>>> allKeys = new HashMap<String, HashMap<String, HashSet<String>>>();
 		for (String line : fnLines) {

@@ -30,7 +30,7 @@ public class Inspect {
 
 						for (int j=i-1;j>=0;j--) {
 							Mention m1 = chain.mentions.get(j);
-							if (!part.getWord(m2.end).posTag.equals("PN") && m1.end!=m2.end) {
+							if (!part.getWord(m1.end).posTag.equals("PN") && m1.end!=m2.end) {
 								int s1 = part.getWord(m1.end).sentence.getSentenceIdx();
 								int s2 = part.getWord(m2.end).sentence.getSentenceIdx();
 								

@@ -157,8 +157,12 @@ public class Context implements Serializable {
 	private static short getDistance(Mention ant, Mention anaphor,
 			CoNLLPart part) {
 		short diss = 0;
-		diss = (short) (part.getWord(anaphor.end).sentence.getSentenceIdx() - part
+		if(ant.isFake) {
+			diss = (short) ((part.getWord(anaphor.end).sentence.getSentenceIdx() + 1)); 
+		} else {
+			diss = (short) (part.getWord(anaphor.end).sentence.getSentenceIdx() - part
 				.getWord(ant.end).sentence.getSentenceIdx());
+		}
 //		if(diss>10) {
 //			return 10;
 //		} else {

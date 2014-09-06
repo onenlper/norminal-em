@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import model.Element;
@@ -19,6 +18,7 @@ import model.CoNLL.CoNLLWord;
 import model.syntaxTree.MyTree;
 import model.syntaxTree.MyTreeNode;
 import util.Common;
+import dict.ChDictionary;
 //import edu.stanford.nlp.ling.BasicDatum;
 //import edu.stanford.nlp.ling.Datum;
 
@@ -795,9 +795,71 @@ public class EMUtil {
 				}
 			}
 		}
+		
 		nounPhrases.removeAll(removes);
 		removeDuplicateMentions(nounPhrases);
 		Collections.sort(nounPhrases);
+		if(true) {
+			return nounPhrases;
+		}
+		
+		CoNLLPart part = sentence.part;
+		//TODO
+		for (int i = 0; i < nounPhrases.size(); i++) {
+			Mention mention = nounPhrases.get(i);
+			if (mention.NE.equalsIgnoreCase("QUANTITY") || mention.NE.equalsIgnoreCase("CARDINAL")
+					|| mention.NE.equalsIgnoreCase("PERCENT") || mention.NE.equalsIgnoreCase("MONEY")) {
+				removes.add(mention);
+				continue;
+			}
+
+			if (mention.extent.equalsIgnoreCase("我") && (mention.end + 2) < part.getWordCount()
+					&& part.getWord(mention.end + 1).word.equals("啊") && part.getWord(mention.end + 2).word.equals("，")) {
+				removes.add(mention);
+				continue;
+			}
+
+			if (ChDictionary.getInstance().removeChars.contains(mention.head)) {
+				removes.add(mention);
+				continue;
+			}
+
+			// 没 问题
+			if (mention.extent.equalsIgnoreCase("问题") && mention.start > 0
+					&& part.getWord(mention.start - 1).word.equals("没")) {
+				removes.add(mention);
+				continue;
+			}
+
+			// 你 知道
+			if (mention.extent.equalsIgnoreCase("你") && mention.start > 0
+					&& part.getWord(mention.start + 1).word.equals("知道")) {
+				removes.add(mention);
+				continue;
+			}
+
+			// 
+			if (mention.extent.contains("什么") || mention.extent.contains("多少")) {
+				removes.add(mention);
+				continue;
+			}
+			String lastWord = part.getWord(mention.end).word;
+			if (mention.extent.endsWith("的")
+					|| (mention.extent.endsWith("人") && mention.start == mention.end && ChDictionary.getInstance().countries
+							.contains(lastWord.substring(0, lastWord.length() - 1)))) {
+				removes.add(mention);
+				continue;
+			}
+			// ｑｕｏｔ
+			if (ChDictionary.getInstance().removeWords.contains(mention.extent)) {
+				removes.add(mention);
+				continue;
+			}
+		}
+		nounPhrases.removeAll(removes);
+		removeDuplicateMentions(nounPhrases);
+		Collections.sort(nounPhrases);
+		
 		return nounPhrases;
 	}
 
