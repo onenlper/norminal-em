@@ -11,7 +11,16 @@ import util.Common;
 
 public class ChDictionary {
 
-	public ChDictionary() {
+	private static ChDictionary chDic;
+	
+	public static ChDictionary getInstance() {
+		if(chDic==null) {
+			chDic = new ChDictionary();
+		}
+		return chDic;
+	}
+	
+	private ChDictionary() {
 		personPronouns.addAll(this.animatePronouns);
 		allPronouns.addAll(firstPersonPronouns);
 		allPronouns.addAll(secondPersonPronouns);
@@ -25,12 +34,12 @@ public class ChDictionary {
 		adjectiveNation.addAll(demonymSet);
 		adjectiveNation.removeAll(demonyms.keySet());
 
-		animateHead = Common.readFile2Map("chinese_animate");
-		inanimateHead = Common.readFile2Map("chinese_inanimate");
-		maleHead = Common.readFile2Map("chinese_male");
-		femaleHead = Common.readFile2Map("chinese_female");
-		singleHead = Common.readFile2Map("chinese_single");
-		pluraHead = Common.readFile2Map("chinese_plura");
+//		animateHead = Common.readFile2Map("dict/chinese_animate");
+//		inanimateHead = Common.readFile2Map("dict/chinese_inanimate");
+//		maleHead = Common.readFile2Map("dict/chinese_male");
+//		femaleHead = Common.readFile2Map("dict/chinese_female");
+//		singleHead = Common.readFile2Map("dict/chinese_single");
+//		pluraHead = Common.readFile2Map("dict/chinese_plura");
 		countries = Common.readFile2Set("dict/country2");
 	}
 

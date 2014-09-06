@@ -148,6 +148,11 @@ public class EMLearn {
 
 				Collections.sort(ants);
 				Collections.reverse(ants);
+				
+				if(!RuleAnaphorNounDetector.anahporic(m, ants, part)) {
+					continue;
+				}
+				
 				// TODO
 				for (int k = 0; k < ants.size(); k++) {
 					Mention ant = ants.get(k);
