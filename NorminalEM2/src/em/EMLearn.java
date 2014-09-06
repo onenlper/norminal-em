@@ -177,6 +177,8 @@ public class EMLearn {
 		return groups;
 	}
 
+	static int percent = 10;
+
 	private static void extractCoNLL(ArrayList<ResolveGroup> groups) {
 		// CoNLLDocument d = new CoNLLDocument("train_auto_conll");
 
@@ -186,12 +188,12 @@ public class EMLearn {
 
 		int docNo = 0;
 		for (String line : lines) {
-
-			CoNLLDocument d = new CoNLLDocument(line.replace("auto_conll",
-					"gold_conll"));
-			for (CoNLLPart part : d.getParts()) {
-				// System.out.println(part.docName + " " + part.getPartID());
-				if (docNo % 10 < percent) {
+			if (docNo % 10 < percent) {
+				CoNLLDocument d = new CoNLLDocument(line.replace("auto_conll",
+						"gold_conll"));
+				for (CoNLLPart part : d.getParts()) {
+					// System.out.println(part.docName + " " +
+					// part.getPartID());
 					groups.addAll(extractGroups(part));
 				}
 				// System.out.println(i--);
@@ -199,8 +201,6 @@ public class EMLearn {
 			docNo++;
 		}
 	}
-
-	static int percent = 10;
 
 	private static void extractGigaword(ArrayList<ResolveGroup> groups)
 			throws Exception {
@@ -309,8 +309,8 @@ public class EMLearn {
 
 				entry.p = p_context;
 				entry.p *= 1 * p_number * p_gender * p_animacy * p_semetic
-//						* p_grammatic
-						;
+				// * p_grammatic
+				;
 				norm += entry.p;
 			}
 
@@ -344,7 +344,7 @@ public class EMLearn {
 						group.animacy.name(), p);
 
 				semanticP.addFracCount(entry.sem, group.sem, p);
-				
+
 				grammaticP
 						.addFracCount(entry.gram.name(), group.gram.name(), p);
 
