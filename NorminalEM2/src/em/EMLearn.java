@@ -200,7 +200,7 @@ public class EMLearn {
 		}
 	}
 
-	static int percent = 1;
+	static int percent = 10;
 
 	private static void extractGigaword(ArrayList<ResolveGroup> groups)
 			throws Exception {

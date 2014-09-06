@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import model.Mention;
@@ -85,7 +84,16 @@ public class Context implements Serializable {
 		feas[id++] = headMatch(ant, anaphor, part); // 2
 		feas[id++] = haveIncompatibleModify(ant, anaphor, part); // 3
 		feas[id++] = isIWithI(ant, anaphor, part); // 2
+		feas[id++] = isSamePredicate(ant, anaphor, part);
 		return getContext(feas);
+	}
+	
+	private static short isSamePredicate(Mention ant, Mention anaphor, CoNLLPart part) {
+		if( ant.gram==anaphor.gram) {
+			return 1;
+		} else {
+			return 0;
+		}
 	}
 
 	private static short getHasSameHead(ArrayList<Mention> cands,
@@ -102,7 +110,8 @@ public class Context implements Serializable {
 		boolean hasSameHead = false;
 		for (Mention m : cands) {
 			if (m.head.equals(anaphor.head)
-					&& m.extent.contains(anaphor.extent)) {
+					&& m.extent.contains(anaphor.extent)
+					) {
 				hasSameHead = true;
 			}
 		}
@@ -126,7 +135,7 @@ public class Context implements Serializable {
 		short diss = 0;
 		diss = (short) (part.getWord(anaphor.end).sentence.getSentenceIdx() - part
 				.getWord(ant.end).sentence.getSentenceIdx());
-		return (short) Math.log(diss);
+		return (short) (Math.log(diss)/Math.log(2));
 	}
 
 	private static short isExactMatch(Mention ant, Mention anaphor,
