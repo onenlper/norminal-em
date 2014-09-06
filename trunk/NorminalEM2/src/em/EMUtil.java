@@ -84,54 +84,55 @@ public class EMUtil {
 	}
 
 	public static enum Grammatic {
-		subject, object, other
+		subject, object, modifier, other
 	};
 
 	public static enum MentionType {
 		pronoun, proper, common, tmporal
 	}
-	
+
 	public static String getSemantic(Mention m) {
-		if(!m.NE.equals("OTHER")) {
+		if (!m.NE.equals("OTHER")) {
 			return m.NE;
 		}
 		String sems[] = Common.getSemantic(m.head);
 		String sem = "unknown";
-		if(sems!=null) {
-			sem = sems[0]; 
+		if (sems != null) {
+			sem = sems[0];
 		}
-		return sem.substring(0,4);
+		return sem.substring(0, 4);
 	}
-	
+
 	public static CoNLLPart getGoldPart(CoNLLPart part, String stage) {
-		String documentID = "/users/yzcchen/chen3/CoNLL/conll-2012/v4/data/" + stage + "/data/chinese/annotations/"
-				+ part.docName + ".v4_gold_skel";
+		String documentID = "/users/yzcchen/chen3/CoNLL/conll-2012/v4/data/"
+				+ stage + "/data/chinese/annotations/" + part.docName
+				+ ".v4_gold_skel";
 		// System.out.println(documentID);
 		CoNLLDocument document = new CoNLLDocument(documentID);
 		CoNLLPart goldPart = document.getParts().get(part.getPartID());
 		return goldPart;
 	}
-	
+
 	public static HashSet<Integer> getPRHeads(CoNLLPart part) {
 		HashSet<Integer> prSet = new HashSet<Integer>();
-		for(CoNLLSentence s : part.getCoNLLSentences()) {
-			for(CoNLLWord w : s.getWords()) {
-				if(w.posTag.equals("PN")) {
+		for (CoNLLSentence s : part.getCoNLLSentences()) {
+			for (CoNLLWord w : s.getWords()) {
+				if (w.posTag.equals("PN")) {
 					prSet.add(w.index);
 				}
 			}
 		}
 		return prSet;
 	}
-	
+
 	public static HashSet<Integer> getNEHeads(CoNLLPart part) {
 		HashSet<Integer> set = new HashSet<Integer>();
-		for(Element ele : part.getNameEntities()) {
+		for (Element ele : part.getNameEntities()) {
 			set.add(ele.end);
 		}
 		return set;
 	}
-	
+
 	public static HashSet<String> firsts = new HashSet<String>(Arrays.asList(
 			"我", "我们"));
 
@@ -571,7 +572,7 @@ public class EMUtil {
 		}
 		return numerator / denominator;
 	}
-	
+
 	public static void setMentionAttri(Mention em, CoNLLPart part) {
 		int startIdx = part.getWord(em.start).indexInSentence;
 		int endIdx = part.getWord(em.end).indexInSentence;
@@ -580,55 +581,52 @@ public class EMUtil {
 		em.endInS = endIdx;
 		em.sentenceID = sentence.getSentenceIdx();
 		em.s = sentence;
-		
-//		System.out.println(sentence.getSyntaxTree().leaves.size() + "#" + sentence.getWords().size());
-		
+
+		// System.out.println(sentence.getSyntaxTree().leaves.size() + "#" +
+		// sentence.getWords().size());
+
 		MyTreeNode leftLeaf = sentence.getSyntaxTree().leaves.get(startIdx);
 		MyTreeNode rightLeaf = sentence.getSyntaxTree().leaves.get(endIdx);
-		
+
 		ArrayList<MyTreeNode> leftAns = leftLeaf.getAncestors();
 		ArrayList<MyTreeNode> rightAns = rightLeaf.getAncestors();
-		
-//		MyTreeNode treeNode = treeNode2;
+
+		// MyTreeNode treeNode = treeNode2;
 		MyTreeNode treeNode = null;
-		for(int i=0;i<leftAns.size()&&i<rightAns.size();i++) {
-//			System.out.println(leftAns.get(i).value + "#" + rightAns.get(i) + " : " + (leftAns.get(i)==rightAns.get(i)));
-			if(leftAns.get(i)==rightAns.get(i) && leftAns.get(i).value.equals("NP")) {
+		for (int i = 0; i < leftAns.size() && i < rightAns.size(); i++) {
+			// System.out.println(leftAns.get(i).value + "#" + rightAns.get(i) +
+			// " : " + (leftAns.get(i)==rightAns.get(i)));
+			if (leftAns.get(i) == rightAns.get(i)
+					&& leftAns.get(i).value.equals("NP")) {
 				ArrayList<MyTreeNode> leaves = leftAns.get(i).getLeaves();
-				if(leaves.get(leaves.size()-1)==rightLeaf) {
+				if (leaves.get(leaves.size() - 1) == rightLeaf) {
 					treeNode = leftAns.get(i);
-					if(leaves.get(0)==leftLeaf) {
+					if (leaves.get(0) == leftLeaf) {
 						break;
 					}
 				}
-			} else if(leftAns.get(i)!=rightAns.get(i)){
+			} else if (leftAns.get(i) != rightAns.get(i)) {
 				break;
 			}
 		}
-		
-		if(treeNode==null) {
-			for(int i=0;i<leftAns.size()&&i<rightAns.size();i++) {
-//				System.out.println(leftAns.get(i).value + "#" + rightAns.get(i) + " : " + (leftAns.get(i)==rightAns.get(i)));
-				if(leftAns.get(i)==rightAns.get(i) && leftAns.get(i).value.equals("NP")) {
+
+		if (treeNode == null) {
+			for (int i = 0; i < leftAns.size() && i < rightAns.size(); i++) {
+				// System.out.println(leftAns.get(i).value + "#" +
+				// rightAns.get(i) + " : " + (leftAns.get(i)==rightAns.get(i)));
+				if (leftAns.get(i) == rightAns.get(i)
+						&& leftAns.get(i).value.equals("NP")) {
 					treeNode = leftAns.get(i);
-				} else if(leftAns.get(i)!=rightAns.get(i)) {
+				} else if (leftAns.get(i) != rightAns.get(i)) {
 					break;
 				}
 			}
 		}
-		
-//		if(treeNode!=treeNode2) {
-//			System.out.println(em.extent);
-//			System.out.println(part.getPartName());
-//			System.out.println(treeNode);
-//			System.out.println(treeNode.value + " # " + treeNode2.value);
-//			System.out.println(treeNode.getPlainText(true) + " @ " + treeNode2.getPlainText(true));
-//			Common.pause("!!!");
-//		}
-		if(treeNode==null) {
+
+		if (treeNode == null) {
 			treeNode = rightLeaf.parent;
 		}
-//		System.out.println(em.extent + " # " + part.getPartName());
+		// System.out.println(em.extent + " # " + part.getPartName());
 		MyTreeNode head = treeNode.getHeadLeaf();
 		// head = treeNode.getLeaves().get(treeNode.getLeaves().size());
 		em.headID = sentence.getWord(head.leafIdx).index;
@@ -660,7 +658,21 @@ public class EMUtil {
 		// check subject or object
 		boolean subject = false;
 
-		if (treeNode.parent == null) {
+		boolean haveNPAncestor = false;
+		if (treeNode != null) {
+			for (MyTreeNode tmp : treeNode.getAncestors()) {
+				if (tmp.value.equals("NP")
+						&& tmp.getLeaf(tmp.getLeaves().size() - 1) != treeNode
+								.getLeaf(treeNode.getLeaves().size() - 1)) {
+					haveNPAncestor = true;
+					break;
+				}
+			}
+		}
+
+		if (haveNPAncestor) {
+			em.gram = Grammatic.modifier;
+		} else if (treeNode.parent == null) {
 			em.gram = EMUtil.Grammatic.other;
 		} else {
 			for (int i = treeNode.childIndex + 1; i < treeNode.parent.children
@@ -681,14 +693,13 @@ public class EMUtil {
 						MyTreeNode sibling = treeNode.parent.children.get(i);
 						if (sibling.value.startsWith("V")) {
 							object = true;
+							em.V = sibling;
 							break;
 						}
 					}
 				}
 				if (object) {
 					em.gram = EMUtil.Grammatic.object;
-				} else {
-					em.gram = EMUtil.Grammatic.other;
 				}
 			}
 		}
@@ -703,7 +714,7 @@ public class EMUtil {
 		Mention em = new Mention();
 		em.start = start;
 		em.end = end;
-		
+
 		StringBuilder sb = new StringBuilder();
 		for (int i = startIdx; i <= endIdx; i++) {
 			sb.append(sentence.getWord(i).word).append(" ");
@@ -713,7 +724,7 @@ public class EMUtil {
 		// changeStr(em);
 		return em;
 	}
-	
+
 	public static void changeStr(Mention em) {
 		if (em.extent.equals("这些")) {
 			em.extent = "它们";
@@ -778,8 +789,8 @@ public class EMUtil {
 		for (Mention s : nounPhrases) {
 			for (Mention l : nounPhrases) {
 				if (s.end == l.end && l.end - l.start > s.end - s.start) {
-					if(!sentence.part.folder.equals("nw")) {
-						removes.add(s);		
+					if (!sentence.part.folder.equals("nw")) {
+						removes.add(s);
 					}
 				}
 			}
@@ -789,7 +800,7 @@ public class EMUtil {
 		Collections.sort(nounPhrases);
 		return nounPhrases;
 	}
-	
+
 	private static void removeDuplicateMentions(ArrayList<Mention> mentions) {
 		HashSet<Mention> mentionsHash = new HashSet<Mention>();
 		mentionsHash.addAll(mentions);
@@ -1515,26 +1526,27 @@ public class EMUtil {
 		return "";
 	}
 
-//	public static Datum<String, String> svmlightToStanford(
-//			ArrayList<String> feas, String label) {
-//		return new BasicDatum<String, String>(feas, label);
-//	}
-//
-//	protected static Datum<String, String> svmlightToStanford(String svmlight) {
-//		String tks[] = svmlight.split("\\s+");
-//		String label = tks[0];
-//		List<String> features = new ArrayList<String>();
-//		for (int i = 1; i < tks.length; i++) {
-//			int k = tks[i].indexOf(":");
-//			String idx = tks[i].substring(0, k);
-//			int val = Integer.parseInt(tks[i].substring(k + 1));
-//			if (val != 1) {
-//				Common.bangErrorPOS("Binary expected!");
-//			}
-//			features.add(idx);
-//		}
-//		return new BasicDatum<String, String>(features, label);
-//	}
+	// public static Datum<String, String> svmlightToStanford(
+	// ArrayList<String> feas, String label) {
+	// return new BasicDatum<String, String>(feas, label);
+	// }
+	//
+	// protected static Datum<String, String> svmlightToStanford(String
+	// svmlight) {
+	// String tks[] = svmlight.split("\\s+");
+	// String label = tks[0];
+	// List<String> features = new ArrayList<String>();
+	// for (int i = 1; i < tks.length; i++) {
+	// int k = tks[i].indexOf(":");
+	// String idx = tks[i].substring(0, k);
+	// int val = Integer.parseInt(tks[i].substring(k + 1));
+	// if (val != 1) {
+	// Common.bangErrorPOS("Binary expected!");
+	// }
+	// features.add(idx);
+	// }
+	// return new BasicDatum<String, String>(features, label);
+	// }
 
 	public static HashMap<String, Integer> formChainMap(
 			ArrayList<Entity> entities) {
@@ -2093,30 +2105,31 @@ public class EMUtil {
 		}
 		return null;
 	}
-	
-	public static String decideOP(double[] pers, double[] nums, double[] gens, double[] anis) {
-//		"你", "我", "他", "她", "它", "你们", "我们", "他们", "她们", "它们"
+
+	public static String decideOP(double[] pers, double[] nums, double[] gens,
+			double[] anis) {
+		// "你", "我", "他", "她", "它", "你们", "我们", "他们", "她们", "它们"
 		double max = 0;
 		int win = -1;
-		for(int i=0;i<EMUtil.pronounList.size();i++) {
+		for (int i = 0; i < EMUtil.pronounList.size(); i++) {
 			String pro = EMUtil.pronounList.get(i);
 			double per = pers[EMUtil.getPerson(pro).ordinal()];
 			double num = nums[EMUtil.getNumber(pro).ordinal()];
 			double gen = gens[EMUtil.getGender(pro).ordinal()];
 			double ani = anis[EMUtil.getAnimacy(pro).ordinal()];
-			
+
 			double p = per + num + gen + ani;
-			if(p>max) {
+			if (p > max) {
 				max = p;
 				win = i;
 			}
 		}
-		if(win==-1) {
+		if (win == -1) {
 			return "他";
 		}
 		return EMUtil.pronounList.get(win);
 	}
-	
+
 	public static HashMap<String, HashSet<String>> getGoldAnaphorKeys(
 			ArrayList<Entity> entities, CoNLLPart part) {
 		HashMap<String, HashSet<String>> anaphorKeys = new HashMap<String, HashSet<String>>();
@@ -2132,7 +2145,7 @@ public class EMUtil {
 				for (int j = i - 1; j >= 0; j--) {
 					Mention m2 = e.mentions.get(j);
 					String pos2 = part.getWord(m2.end).posTag;
-					if (!pos2.equals("PN") && m2.end!=m1.end) {
+					if (!pos2.equals("PN") && m2.end != m1.end) {
 						ants.add(m2.toName());
 					}
 				}

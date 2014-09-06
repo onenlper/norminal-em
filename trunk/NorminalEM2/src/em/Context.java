@@ -81,10 +81,10 @@ public class Context implements Serializable {
 		feas[id++] = getIsFake(ant, anaphor, part);
 		feas[id++] = getHasSameHead(allCands, anaphor, part);
 		feas[id++] = getDistance(ant, anaphor, part); //
-		 feas[id++] = isExactMatch(ant, anaphor, part); // 2
-		 feas[id++] = headMatch(ant, anaphor, part); // 2
+		feas[id++] = isExactMatch(ant, anaphor, part); // 2
+		feas[id++] = headMatch(ant, anaphor, part); // 2
 		feas[id++] = haveIncompatibleModify(ant, anaphor, part); // 3
-		 feas[id++] = isIWithI(ant, anaphor, part); // 2
+		feas[id++] = isIWithI(ant, anaphor, part); // 2
 		return getContext(feas);
 	}
 
@@ -101,7 +101,8 @@ public class Context implements Serializable {
 
 		boolean hasSameHead = false;
 		for (Mention m : cands) {
-			if (m.head.equals(anaphor.head) && m.extent.contains(anaphor.extent)) {
+			if (m.head.equals(anaphor.head)
+					&& m.extent.contains(anaphor.extent)) {
 				hasSameHead = true;
 			}
 		}
@@ -123,21 +124,9 @@ public class Context implements Serializable {
 	private static short getDistance(Mention ant, Mention anaphor,
 			CoNLLPart part) {
 		short diss = 0;
-		if (ant.isFake) {
-			diss = (short) (part.getWord(anaphor.end).sentence.getSentenceIdx() + 1);
-			return (short) Math.log(diss);
-//		} else if (ant.head.equals(anaphor.head)
-//				&& ant.extent.contains(anaphor.extent)) {
-//			diss = -1;
-		} else {
-			diss = (short) (part.getWord(anaphor.end).sentence.getSentenceIdx() - part
-					.getWord(ant.end).sentence.getSentenceIdx());
-			return (short) Math.log(diss);
-		}
-		// if (diss > EMLearn.maxDisFeaValue) {
-		// diss = (short) EMLearn.maxDisFeaValue;
-		// }
-//		return diss;
+		diss = (short) (part.getWord(anaphor.end).sentence.getSentenceIdx() - part
+				.getWord(ant.end).sentence.getSentenceIdx());
+		return (short) Math.log(diss);
 	}
 
 	private static short isExactMatch(Mention ant, Mention anaphor,
@@ -175,15 +164,15 @@ public class Context implements Serializable {
 			CoNLLPart part) {
 		if (anaphor.isFake || !ant.head.equalsIgnoreCase(anaphor.head)) {
 			return 0;
-		}
-		else if(ant.head.equals(anaphor.head)) {
-			if(ant.extent.contains(anaphor.extent)) {
+		} 
+		else if (ant.head.equals(anaphor.head)) {
+			if (ant.extent.contains(anaphor.extent)) {
 				return 1;
 			} else {
-				return 0;
+				return 2;
 			}
 		}
-		
+
 		boolean thisHasExtra = false;
 		Set<String> thisWordSet = new HashSet<String>();
 		Set<String> antWordSet = new HashSet<String>();
