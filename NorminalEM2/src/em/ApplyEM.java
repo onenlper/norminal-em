@@ -102,18 +102,16 @@ public class ApplyEM {
 		ArrayList<String> files = Common.getLines("chinese_list_" + folder
 				+ "_" + dataset);
 
-		ArrayList<ArrayList<Mention>> corefResults = new ArrayList<ArrayList<Mention>>();
+		HashMap<String, ArrayList<Mention>> corefResults = new HashMap<String, ArrayList<Mention>>();
 
 		// ArrayList<HashSet<String>> goldAnaphorses = new
 		// ArrayList<HashSet<String>>();
-
-		HashMap<String, HashSet<String>> maps = extractSysKeys();
+		HashMap<String, HashMap<String, String>> maps = EMUtil.extractSysKeys("key.chinese.test.open.systemParse");
 		int all2 = 0;
 		for(String key : maps.keySet()) {
 			all2 += maps.get(key).size();
 		}
-		
-		ArrayList<HashMap<String, HashSet<String>>> goldKeyses = new ArrayList<HashMap<String, HashSet<String>>>();
+		HashMap<String, HashMap<String, HashSet<String>>> goldKeyses = EMUtil.extractGoldKeys();
 
 		for (String file : files) {
 			System.out.println(file);
@@ -127,17 +125,13 @@ public class ApplyEM {
 				HashSet<String> goldPNs = EMUtil.getGoldPNs(goldPart);
 				HashSet<String> goldNEs = EMUtil.getGoldNEs(goldPart);
 				
-				HashMap<String, HashSet<String>> goldAnaphors = EMUtil
-						.getGoldAnaphorKeys(goldPart.getChains(), goldPart);
-				goldKeyses.add(goldAnaphors);
-
 				ArrayList<Entity> goldChains = goldPart.getChains();
 
 				HashMap<String, Integer> chainMap = EMUtil
 						.formChainMap(goldChains);
 
 				ArrayList<Mention> corefResult = new ArrayList<Mention>();
-				corefResults.add(corefResult);
+				corefResults.put(part.getPartName(), corefResult);
 
 				ArrayList<Mention> goldBoundaryNPMentions = EMUtil
 						.extractMention(part);
@@ -154,18 +148,17 @@ public class ApplyEM {
 
 				// ArrayList<Mention> anaphors = getGoldNouns(
 				// part.getChains(), part);
-
 				// ArrayList<Mention> anaphors = getGoldAnaphorNouns(
 				// part.getChains(), part);
 
-				HashSet<String> anas = maps.get(part.getPartName());
+				HashMap<String, String> anas = maps.get(part.getPartName());
 				
 				ArrayList<Mention> anaphors = new ArrayList<Mention>();
 				for (Mention m : goldBoundaryNPMentions) {
 					if (!goldNEs.contains(m.toName()) && !goldPNs.contains(m.toName())) {
 						anaphors.add(m);
 					}
-//					if(anas.contains(m.toName())) {
+//					if(anas.containsKey(m.toName())) {
 //						anaphors.add(m);
 //						anas.remove(m.toName());
 //					}
@@ -192,40 +185,6 @@ public class ApplyEM {
 		System.out.println(all2 + "@@@");
 	}
 	
-	private static HashMap<String, HashSet<String>> extractSysKeys() {
-		String path = "/users/yzcchen/chen3/conll12/chinese/key.chinese.test.open";
-		CoNLLDocument sysDoc = new CoNLLDocument(path);
-		HashMap<String, HashSet<String>> allSys = new HashMap<String, HashSet<String>>();
-		for(CoNLLPart part : sysDoc.getParts()) {
-			HashSet<String> sys = new HashSet<String>();
-			allSys.put(part.getPartName(), sys);
-			ArrayList<Entity> chains = part.getChains();
-			for(Entity e : chains) {
-				Collections.sort(e.mentions);
-				for(int i=0;i<e.mentions.size();i++) {
-					Mention m1 = e.mentions.get(i);
-					String pos = part.getWord(m1.end).posTag;
-					if(pos.equals("PN") || pos.equals("NR") || pos.equals("NT")) {
-						continue;
-					}
-					
-					for(int j=i-1;j>=0;j--) {
-						Mention m2 = e.mentions.get(j);
-						String pos2 = part.getWord(m2.end).posTag;
-						if(!pos2.equals("PN") && m2.end!=m1.end) {
-							String[] s = new String[2];
-							s[0] = m1.toName();
-							sys.add(s[0]);
-							break;
-						}
-						
-					}
-				}
-			}
-		}
-		return allSys;
-	}
-
 	private void findAntecedent(String file, CoNLLPart part,
 			HashMap<String, Integer> chainMap, ArrayList<Mention> corefResult,
 			ArrayList<Mention> anaphors, ArrayList<Mention> allCandidates) {
@@ -508,15 +467,15 @@ public class ApplyEM {
 		return goldAnaphors;
 	}
 
-	public static void evaluate(ArrayList<ArrayList<Mention>> anaphorses,
-			ArrayList<HashMap<String, HashSet<String>>> goldKeyses) {
+	public static void evaluate(HashMap<String, ArrayList<Mention>> anaphorses,
+			HashMap<String, HashMap<String, HashSet<String>>> goldKeyses) {
 		double gold = 0;
 		double system = 0;
 		double hit = 0;
 
-		for (int i = 0; i < anaphorses.size(); i++) {
-			ArrayList<Mention> anaphors = anaphorses.get(i);
-			HashMap<String, HashSet<String>> keys = goldKeyses.get(i);
+		for (String key : anaphorses.keySet()) {
+			ArrayList<Mention> anaphors = anaphorses.get(key);
+			HashMap<String, HashSet<String>> keys = goldKeyses.get(key);
 			gold += keys.size();
 			system += anaphors.size();
 			for (Mention anaphor : anaphors) {

@@ -189,6 +189,59 @@ public class EMUtil {
 		zero.NP = newNP;
 	}
 
+	public static HashMap<String, HashMap<String, HashSet<String>>> extractGoldKeys() {
+		HashMap<String, HashMap<String, HashSet<String>>> allKeys = new HashMap<String, HashMap<String, HashSet<String>>>();
+		ArrayList<String> fnLines = Common
+				.getLines("chinese_list_all_test");
+		for (String line : fnLines) {
+			CoNLLDocument goldDoc = new CoNLLDocument(line.replace(
+					"auto_conll", "gold_conll"));
+			for(CoNLLPart part : goldDoc.getParts()) {
+				HashMap<String, HashSet<String>> keys = EMUtil.getGoldAnaphorKeys(
+						part.getChains(), part);
+				allKeys.put(part.getPartName(), keys);
+			}
+		}
+		return allKeys;
+	}
+	
+	public static HashMap<String, HashMap<String, String>> extractSysKeys(
+			String path) {
+		CoNLLDocument sysDoc = new CoNLLDocument(path);
+		HashMap<String, HashMap<String, String>> allSys = new HashMap<String, HashMap<String, String>>();
+		for(CoNLLPart part : sysDoc.getParts()) {
+			CoNLLPart goldPart = EMUtil.getGoldPart(part, "test");
+			HashSet<String> goldNEs = EMUtil.getGoldNEs(goldPart);
+			HashSet<String> goldPNs = EMUtil.getGoldPNs(goldPart);
+			
+			HashMap<String, String> sys = new HashMap<String, String>();
+			allSys.put(part.getPartName(), sys);
+			ArrayList<Entity> chains = part.getChains();
+			for(Entity e : chains) {
+				Collections.sort(e.mentions);
+				for(int i=0;i<e.mentions.size();i++) {
+					Mention m1 = e.mentions.get(i);
+					if(goldNEs.contains(m1.toName()) || goldPNs.contains(m1.toName())) {
+						continue;
+					}
+					
+					for(int j=i-1;j>=0;j--) {
+						Mention m2 = e.mentions.get(j);
+						if(!goldPNs.contains(m2.toName()) && m2.end!=m1.end) {
+							String[] s = new String[2];
+							s[0] = m1.toName();
+							s[1] = m2.toName();
+							sys.put(m1.toName(), m2.toName());
+							break;
+						}
+					}
+				}
+			}
+		}
+		return allSys;
+	}
+	
+	
 	public static HashMap<String, CoNLLSentence> loadTranslateEngCoNLL(
 			CoNLLDocument doc, String setting) {
 		ArrayList<String> chiLines = Common.getLines(setting + "/docs/train.f");
