@@ -204,15 +204,15 @@ public class Context implements Serializable {
 
 	public static short haveIncompatibleModify(Mention ant, Mention anaphor,
 			CoNLLPart part) {
-		if (anaphor.isFake || !ant.head.equalsIgnoreCase(anaphor.head)) {
-			return 0;
-		} else if (ant.head.equals(anaphor.head)) {
-			if (ant.extent.contains(anaphor.extent)) {
-				return 1;
-			} else {
-				return 2;
-			}
-		}
+//		if (anaphor.isFake || !ant.head.equalsIgnoreCase(anaphor.head)) {
+//			return 0;
+//		} else if (ant.head.equals(anaphor.head)) {
+//			if (ant.extent.contains(anaphor.extent)) {
+//				return 1;
+//			} else {
+//				return 2;
+//			}
+//		}
 
 		boolean thisHasExtra = false;
 		Set<String> thisWordSet = new HashSet<String>();
