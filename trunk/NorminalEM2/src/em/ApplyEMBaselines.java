@@ -111,7 +111,7 @@ public class ApplyEMBaselines {
 		for (String file : files) {
 			System.out.println(file);
 			CoNLLDocument document = new CoNLLDocument(file
-			 .replace("auto_conll", "gold_conll")
+//			 .replace("auto_conll", "gold_conll")
 			);
 
 			for (int k = 0; k < document.getParts().size(); k++) {
@@ -120,7 +120,7 @@ public class ApplyEMBaselines {
 				CoNLLPart goldPart = EMUtil.getGoldPart(part, "test");
 
 				HashMap<String, HashSet<String>> goldAnaphors = EMUtil
-						.getGoldAnaphorKeys(part.getChains(), goldPart);
+						.getGoldAnaphorKeys(goldPart.getChains(), goldPart);
 				goldKeyses.add(goldAnaphors);
 
 				ArrayList<Entity> goldChains = part.getChains();
@@ -147,24 +147,24 @@ public class ApplyEMBaselines {
 
 				Collections.sort(candidates);
 
-				 ArrayList<Mention> anaphors = getGoldAnaphorNouns(
-				 part.getChains(), part);
+//				 ArrayList<Mention> anaphors = getGoldAnaphorNouns(
+//				 part.getChains(), part);
 
-//				ArrayList<Mention> anaphors = new ArrayList<Mention>();
-//				for (Mention m : goldBoundaryNPMentions) {
-//					String pos = part.getWord(m.headID).posTag;
-//					if (pos.equals("PN") || pos.equals("NR")
-//							|| pos.equals("NT")) {
-//						continue;
-//					}
-//					// if (neSet.contains(m.start + "," + m.end)) {
-//					// continue;
-//					// }
-//					// if (!goldAnaphors.containsKey(m.toName())) {
-//					// continue;
-//					// }
-//					anaphors.add(m);
-//				}
+				ArrayList<Mention> anaphors = new ArrayList<Mention>();
+				for (Mention m : goldBoundaryNPMentions) {
+					String pos = part.getWord(m.headID).posTag;
+					if (pos.equals("PN") || pos.equals("NR")
+							|| pos.equals("NT")) {
+						continue;
+					}
+					// if (neSet.contains(m.start + "," + m.end)) {
+					// continue;
+					// }
+					// if (!goldAnaphors.containsKey(m.toName())) {
+					// continue;
+					// }
+					anaphors.add(m);
+				}
 				all += anaphors.size();
 				findAntecedent(file, part, chainMap, corefResult, anaphors,
 						candidates, goldAnaphors);
@@ -215,7 +215,8 @@ public class ApplyEMBaselines {
 				Mention cand = cands.get(i);
 
 				if (cand.head.equals(anaphor.head) && cand.end != anaphor.end
-//						&& cand.extent.contains(anaphor.extent)
+						&& cand.extent.contains(anaphor.extent)
+//						&& cand.extent.equals(anaphor.extent)
 						) {
 					// if (cand.extent.equals(anaphor.extent)) {
 					antecedent = cand;

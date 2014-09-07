@@ -149,7 +149,7 @@ public class EMLearn {
 				Collections.sort(ants);
 				Collections.reverse(ants);
 				
-				if(!RuleAnaphorNounDetector.anahporic(m, ants, part)) {
+				if(!RuleAnaphorNounDetector.isAnahporic(m, ants, part)) {
 					continue;
 				}
 				
@@ -182,7 +182,7 @@ public class EMLearn {
 		return groups;
 	}
 
-	static int percent = 10;
+	static int percent = 1;
 
 	private static void extractCoNLL(ArrayList<ResolveGroup> groups) {
 		// CoNLLDocument d = new CoNLLDocument("train_auto_conll");
@@ -194,8 +194,10 @@ public class EMLearn {
 		int docNo = 0;
 		for (String line : lines) {
 			if (docNo % 10 < percent) {
-				CoNLLDocument d = new CoNLLDocument(line.replace("auto_conll",
-						"gold_conll"));
+				CoNLLDocument d = new CoNLLDocument(line
+//						.replace("gold_conll", "auto_conll")
+						.replace("auto_conll", "gold_conll")
+						);
 				for (CoNLLPart part : d.getParts()) {
 					// System.out.println(part.docName + " " +
 					// part.getPartID());

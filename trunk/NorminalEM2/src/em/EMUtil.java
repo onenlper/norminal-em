@@ -100,13 +100,13 @@ public class EMUtil {
 		if (sems != null) {
 			sem = sems[0];
 		}
-		return sem.substring(0, 4);
+		return sem.substring(0, 5);
 	}
 
 	public static CoNLLPart getGoldPart(CoNLLPart part, String stage) {
 		String documentID = "/users/yzcchen/chen3/CoNLL/conll-2012/v4/data/"
 				+ stage + "/data/chinese/annotations/" + part.docName
-				+ ".v4_gold_skel";
+				+ ".v4_gold_conll";
 		// System.out.println(documentID);
 		CoNLLDocument document = new CoNLLDocument(documentID);
 		CoNLLPart goldPart = document.getParts().get(part.getPartID());
@@ -799,9 +799,9 @@ public class EMUtil {
 		nounPhrases.removeAll(removes);
 		removeDuplicateMentions(nounPhrases);
 		Collections.sort(nounPhrases);
-		if(true) {
-			return nounPhrases;
-		}
+//		if(true) {
+//			return nounPhrases;
+//		}
 		
 		CoNLLPart part = sentence.part;
 		//TODO
@@ -2192,20 +2192,29 @@ public class EMUtil {
 	}
 
 	public static HashMap<String, HashSet<String>> getGoldAnaphorKeys(
-			ArrayList<Entity> entities, CoNLLPart part) {
+			ArrayList<Entity> entities, CoNLLPart goldPart) {
+		
+		HashSet<String> neSet = new HashSet<String>();
+		for(Element ne : goldPart.getNameEntities()) {
+			neSet.add(ne.start + "," + ne.end);
+		}
+		
 		HashMap<String, HashSet<String>> anaphorKeys = new HashMap<String, HashSet<String>>();
 		for (Entity e : entities) {
 			Collections.sort(e.mentions);
 			for (int i = 1; i < e.mentions.size(); i++) {
 				Mention m1 = e.mentions.get(i);
-				String pos1 = part.getWord(m1.end).posTag;
+				String pos1 = goldPart.getWord(m1.end).posTag;
 				if (pos1.equals("PN") || pos1.equals("NR") || pos1.equals("NT")) {
+					continue;
+				}
+				if(neSet.contains(m1.toName())) {
 					continue;
 				}
 				HashSet<String> ants = new HashSet<String>();
 				for (int j = i - 1; j >= 0; j--) {
 					Mention m2 = e.mentions.get(j);
-					String pos2 = part.getWord(m2.end).posTag;
+					String pos2 = goldPart.getWord(m2.end).posTag;
 					if (!pos2.equals("PN") && m2.end != m1.end) {
 						ants.add(m2.toName());
 					}

@@ -98,26 +98,32 @@ public class ApplyEM {
 	double bad = 0;
 
 	public void test() {
+		String dataset = "test";
 		ArrayList<String> files = Common.getLines("chinese_list_" + folder
-				+ "_test");
+				+ "_" + dataset);
 
 		ArrayList<ArrayList<Mention>> corefResults = new ArrayList<ArrayList<Mention>>();
 
 		// ArrayList<HashSet<String>> goldAnaphorses = new
 		// ArrayList<HashSet<String>>();
 
+		HashMap<String, HashSet<String>> maps = extractSysKeys();
+		int all2 = 0;
+		for(String key : maps.keySet()) {
+			all2 += maps.get(key).size();
+		}
+		
 		ArrayList<HashMap<String, HashSet<String>>> goldKeyses = new ArrayList<HashMap<String, HashSet<String>>>();
 
 		for (String file : files) {
 			System.out.println(file);
 			CoNLLDocument document = new CoNLLDocument(file
-//					.replace("auto_conll", "gold_conll")
-					);
-
+			// .replace("auto_conll", "gold_conll")
+			);
 			for (int k = 0; k < document.getParts().size(); k++) {
 				CoNLLPart part = document.getParts().get(k);
 
-				CoNLLPart goldPart = EMUtil.getGoldPart(part, "test");
+				CoNLLPart goldPart = EMUtil.getGoldPart(part, dataset);
 
 				HashMap<String, HashSet<String>> goldAnaphors = EMUtil
 						.getGoldAnaphorKeys(goldPart.getChains(), goldPart);
@@ -144,20 +150,26 @@ public class ApplyEM {
 
 				Collections.sort(candidates);
 
-//				ArrayList<Mention> anaphors = getGoldNouns(
-//						part.getChains(), part);
+				// ArrayList<Mention> anaphors = getGoldNouns(
+				// part.getChains(), part);
 
-//				ArrayList<Mention> anaphors = getGoldAnaphorNouns(
-//						part.getChains(), part);
+				// ArrayList<Mention> anaphors = getGoldAnaphorNouns(
+				// part.getChains(), part);
+
+				HashSet<String> anas = maps.get(part.getPartName());
 				
-				 ArrayList<Mention> anaphors = new ArrayList<Mention>();
-				 for (Mention m : goldBoundaryNPMentions) {
-				 String pos = part.getWord(m.end).posTag;
-				 if (!pos.equals("NT") && !pos.equals("NR")
-				 && !pos.equals("PN")) {
-				 anaphors.add(m);
-				 }
-				 }
+				ArrayList<Mention> anaphors = new ArrayList<Mention>();
+				for (Mention m : goldBoundaryNPMentions) {
+					String pos = part.getWord(m.end).posTag;
+					if (!pos.equals("NT") && !pos.equals("NR")
+							&& !pos.equals("PN")) {
+						anaphors.add(m);
+					}
+//					if(anas.contains(m.toName())) {
+//						anaphors.add(m);
+//						anas.remove(m.toName());
+//					}
+				}
 
 				findAntecedent(file, part, chainMap, corefResult, anaphors,
 						candidates);
@@ -172,10 +184,48 @@ public class ApplyEM {
 		System.out.println("Precission: " + good / (good + bad) * 100);
 
 		evaluate(corefResults, goldKeyses);
+		int all = 0;
+		for(String key : maps.keySet()) {
+			all += maps.get(key).size();
+		}
+		System.out.println(all + "@@@");
+		System.out.println(all2 + "@@@");
+	}
+	
+	private static HashMap<String, HashSet<String>> extractSysKeys() {
+		String path = "/users/yzcchen/chen3/conll12/chinese/key.chinese.test.open";
+		CoNLLDocument sysDoc = new CoNLLDocument(path);
+		HashMap<String, HashSet<String>> allSys = new HashMap<String, HashSet<String>>();
+		for(CoNLLPart part : sysDoc.getParts()) {
+			HashSet<String> sys = new HashSet<String>();
+			allSys.put(part.getPartName(), sys);
+			ArrayList<Entity> chains = part.getChains();
+			for(Entity e : chains) {
+				Collections.sort(e.mentions);
+				for(int i=0;i<e.mentions.size();i++) {
+					Mention m1 = e.mentions.get(i);
+					String pos = part.getWord(m1.end).posTag;
+					if(pos.equals("PN") || pos.equals("NR") || pos.equals("NT")) {
+						continue;
+					}
+					
+					for(int j=i-1;j>=0;j--) {
+						Mention m2 = e.mentions.get(j);
+						String pos2 = part.getWord(m2.end).posTag;
+						if(!pos2.equals("PN") && m2.end!=m1.end) {
+							String[] s = new String[2];
+							s[0] = m1.toName();
+							sys.add(s[0]);
+							break;
+						}
+						
+					}
+				}
+			}
+		}
+		return allSys;
 	}
 
-	
-	
 	private void findAntecedent(String file, CoNLLPart part,
 			HashMap<String, Integer> chainMap, ArrayList<Mention> corefResult,
 			ArrayList<Mention> anaphors, ArrayList<Mention> allCandidates) {
@@ -207,12 +257,10 @@ public class ApplyEM {
 
 			double probs[] = new double[cands.size()];
 
-			
-			if(!RuleAnaphorNounDetector.anahporic(anaphor, cands, part)) {
+			if (!RuleAnaphorNounDetector.isAnahporic(anaphor, cands, part)) {
 				continue;
 			}
-			
-			
+
 			for (int i = 0; i < cands.size(); i++) {
 				Mention cand = cands.get(i);
 
@@ -263,7 +311,7 @@ public class ApplyEM {
 				}
 			}
 
-			if (antecedent != null && !antecedent.isFake) {
+			if (antecedent != null) {
 				anaphor.antecedent = antecedent;
 			}
 			if (anaphor.antecedent != null
