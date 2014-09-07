@@ -78,7 +78,7 @@ public class Context implements Serializable {
 		short[] feas = new short[10];
 
 		feas[id++] = getIsFake(ant, anaphor, part);
-		feas[id++] = getHasSameHead(allCands, anaphor, part);
+//		feas[id++] = getHasSameHead(allCands, anaphor, part);
 		feas[id++] = getDistance(ant, anaphor, part); //
 		feas[id++] = isExactMatch(ant, anaphor, part); // 2
 		feas[id++] = headMatch(ant, anaphor, part); // 2
