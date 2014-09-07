@@ -155,13 +155,13 @@ public class ApplyEM {
 				
 				ArrayList<Mention> anaphors = new ArrayList<Mention>();
 				for (Mention m : goldBoundaryNPMentions) {
-//					if (!goldNEs.contains(m.toName()) && !goldPNs.contains(m.toName())) {
-//						anaphors.add(m);
-//					}
-					if(anas.containsKey(m.toName())) {
+					if (!goldNEs.contains(m.toName()) && !goldPNs.contains(m.toName())) {
 						anaphors.add(m);
-						anas.remove(m.toName());
 					}
+//					if(anas.containsKey(m.toName())) {
+//						anaphors.add(m);
+//						anas.remove(m.toName());
+//					}
 				}
 
 				findAntecedent(file, part, chainMap, corefResult, anaphors,
@@ -216,9 +216,9 @@ public class ApplyEM {
 
 			double probs[] = new double[cands.size()];
 
-//			if (!RuleAnaphorNounDetector.isAnahporic(anaphor, cands, part)) {
-//				continue;
-//			}
+			if (!RuleAnaphorNounDetector.isAnahporic(anaphor, cands, part)) {
+				continue;
+			}
 
 			for (int i = 0; i < cands.size(); i++) {
 				Mention cand = cands.get(i);
