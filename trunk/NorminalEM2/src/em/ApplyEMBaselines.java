@@ -119,6 +119,10 @@ public class ApplyEMBaselines {
 
 				CoNLLPart goldPart = EMUtil.getGoldPart(part, "test");
 
+				HashSet<String> goldNEs = EMUtil.getGoldNEs(goldPart);
+				HashSet<String> goldPNs = EMUtil.getGoldPNs(goldPart);
+				
+				
 				HashMap<String, HashSet<String>> goldAnaphors = EMUtil
 						.getGoldAnaphorKeys(goldPart.getChains(), goldPart);
 				goldKeyses.add(goldAnaphors);
@@ -140,7 +144,7 @@ public class ApplyEMBaselines {
 
 				ArrayList<Mention> candidates = new ArrayList<Mention>();
 				for (Mention m : goldBoundaryNPMentions) {
-					if (!part.getWord(m.end).posTag.equals("PN")) {
+					if (!goldPNs.contains(m.toName())) {
 						candidates.add(m);
 					}
 				}
@@ -152,9 +156,7 @@ public class ApplyEMBaselines {
 
 				ArrayList<Mention> anaphors = new ArrayList<Mention>();
 				for (Mention m : goldBoundaryNPMentions) {
-					String pos = part.getWord(m.headID).posTag;
-					if (pos.equals("PN") || pos.equals("NR")
-							|| pos.equals("NT")) {
+					if (goldNEs.contains(m.toName()) || goldPNs.contains(m.toName())) {
 						continue;
 					}
 					// if (neSet.contains(m.start + "," + m.end)) {

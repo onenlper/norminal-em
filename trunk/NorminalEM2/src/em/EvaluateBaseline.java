@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import model.Element;
 import model.Entity;
 import model.Mention;
 import model.CoNLL.CoNLLDocument;
@@ -17,10 +18,17 @@ public class EvaluateBaseline {
 //		String path = "key.chinese.test.open.goldMentions";
 //		String path = "key.chinese.development.open.systemParse";
 //		String path = "/users/yzcchen/chen3/conll12/chinese/key.chinese.test.open";
-		String path = "/users/yzcchen/chen3/conll12/chinese/key.chinese.test.open";
+//		String path = "key.chinese.test.open.systemParse";
+		String path = "key.chinese.test.open.systemParse";
 		CoNLLDocument sysDoc = new CoNLLDocument(path);
 		HashMap<String, ArrayList<String[]>> allSys = new HashMap<String, ArrayList<String[]>>();
 		for(CoNLLPart part : sysDoc.getParts()) {
+			
+			CoNLLPart goldPart = EMUtil.getGoldPart(part, "test");
+			HashSet<String> goldNEs = EMUtil.getGoldNEs(goldPart);
+			HashSet<String> goldPNs = EMUtil.getGoldPNs(goldPart);
+			
+			
 			ArrayList<String[]> sys = new ArrayList<String[]>();
 			allSys.put(part.getPartName(), sys);
 			ArrayList<Entity> chains = part.getChains();
@@ -28,22 +36,19 @@ public class EvaluateBaseline {
 				Collections.sort(e.mentions);
 				for(int i=0;i<e.mentions.size();i++) {
 					Mention m1 = e.mentions.get(i);
-					String pos = part.getWord(m1.end).posTag;
-					if(pos.equals("PN") || pos.equals("NR") || pos.equals("NT")) {
+					if(goldNEs.contains(m1.toName()) || goldPNs.contains(m1.toName())) {
 						continue;
 					}
 					
 					for(int j=i-1;j>=0;j--) {
 						Mention m2 = e.mentions.get(j);
-						String pos2 = part.getWord(m2.end).posTag;
-						if(!pos2.equals("PN") && m2.end!=m1.end) {
+						if(!goldPNs.contains(m2.toName()) && m2.end!=m1.end) {
 							String[] s = new String[2];
 							s[0] = m1.toName();
 							s[1] = m2.toName();
 							sys.add(s);
 							break;
 						}
-						
 					}
 				}
 			}

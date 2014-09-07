@@ -10,6 +10,7 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import model.Element;
 import model.Mention;
@@ -91,12 +92,12 @@ public class EMLearn {
 	}
 
 	public static ArrayList<ResolveGroup> extractGroups(CoNLLPart part) {
-		// ArrayList<Element> goldNE = getChGoldNE(part);
-
-		// HashMap<String, Integer> chainMap = EMUtil.formChainMap(part
-		// .getChains());
-		// System.out.println(chainMap.size());
-		// System.out.println(part.getChains().size());
+		
+//		CoNLLPart goldPart = EMUtil.getGoldPart(part, "train");
+		CoNLLPart goldPart = part;
+		HashSet<String> goldNEs = EMUtil.getGoldNEs(goldPart);
+		HashSet<String> goldPNs = EMUtil.getGoldPNs(goldPart);
+		
 		ArrayList<ResolveGroup> groups = new ArrayList<ResolveGroup>();
 		for (int i = 0; i < part.getCoNLLSentences().size(); i++) {
 			CoNLLSentence s = part.getCoNLLSentences().get(i);
@@ -109,7 +110,7 @@ public class EMLearn {
 			for (int j = maxDistance; j >= 1; j--) {
 				if (i - j >= 0) {
 					for (Mention m : part.getCoNLLSentences().get(i - j).mentions) {
-						if (part.getWord(m.end).posTag.equals("PN")) {
+						if (goldPNs.contains(m.toName())) {
 							continue;
 						}
 						precedMs.add(m);
@@ -119,10 +120,8 @@ public class EMLearn {
 			Collections.sort(s.mentions);
 			for (int j = 0; j < s.mentions.size(); j++) {
 				Mention m = s.mentions.get(j);
-				String headPOS = part.getWord(m.end).posTag;
-
-				if (headPOS.equals("NT") || headPOS.equals("PN")
-						|| headPOS.equals("NR")) {
+				if (goldPNs.contains(m.toName())
+						|| goldNEs.contains(m.toName())) {
 					continue;
 				}
 				qid++;
@@ -132,7 +131,7 @@ public class EMLearn {
 
 				if (j > 0) {
 					for (Mention precedM : s.mentions.subList(0, j)) {
-						if (part.getWord(precedM.end).posTag.equals("PN")
+						if (goldPNs.contains(precedM.toName())
 								|| precedM.end == m.end) {
 							continue;
 						}
@@ -182,7 +181,7 @@ public class EMLearn {
 		return groups;
 	}
 
-	static int percent = 1;
+	static int percent = 10;
 
 	private static void extractCoNLL(ArrayList<ResolveGroup> groups) {
 		// CoNLLDocument d = new CoNLLDocument("train_auto_conll");

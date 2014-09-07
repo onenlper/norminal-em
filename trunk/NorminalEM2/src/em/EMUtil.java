@@ -2191,12 +2191,36 @@ public class EMUtil {
 		return EMUtil.pronounList.get(win);
 	}
 
+	public static HashSet<String> getGoldNEs(CoNLLPart goldPart) {
+		HashSet<String> goldNEs = new HashSet<String>();
+		for(Element ne : goldPart.getNameEntities()) {
+			goldNEs.add(ne.start + "," + ne.end);
+		}
+		return goldNEs;
+	}
+	
+	public static HashSet<String> getGoldPNs(CoNLLPart goldPart) {
+		HashSet<String> goldPNs = new HashSet<String>();
+		for(int i=0;i<goldPart.getWordCount();i++) {
+			if(goldPart.getWord(i).posTag.equals("PN")) {
+				goldPNs.add(i + "," + i);
+			}
+		}
+		return goldPNs;
+	}
+	
 	public static HashMap<String, HashSet<String>> getGoldAnaphorKeys(
 			ArrayList<Entity> entities, CoNLLPart goldPart) {
-		
-		HashSet<String> neSet = new HashSet<String>();
+		HashSet<String> filterSet = new HashSet<String>();
 		for(Element ne : goldPart.getNameEntities()) {
-			neSet.add(ne.start + "," + ne.end);
+			filterSet.add(ne.start + "," + ne.end);
+		}
+		
+		for(int i=0;i<goldPart.getWordCount();i++) {
+			CoNLLWord w = goldPart.getWord(i);
+			if(w.posTag.equals("PN")) {
+				filterSet.add(w.index + "," + w.index);
+			}
 		}
 		
 		HashMap<String, HashSet<String>> anaphorKeys = new HashMap<String, HashSet<String>>();
@@ -2204,11 +2228,7 @@ public class EMUtil {
 			Collections.sort(e.mentions);
 			for (int i = 1; i < e.mentions.size(); i++) {
 				Mention m1 = e.mentions.get(i);
-				String pos1 = goldPart.getWord(m1.end).posTag;
-				if (pos1.equals("PN") || pos1.equals("NR") || pos1.equals("NT")) {
-					continue;
-				}
-				if(neSet.contains(m1.toName())) {
+				if(filterSet.contains(m1.toName())) {
 					continue;
 				}
 				HashSet<String> ants = new HashSet<String>();
