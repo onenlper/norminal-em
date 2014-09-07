@@ -101,6 +101,14 @@ public class Mention implements Comparable<Mention>, Serializable {
 	public int getSentenceID() {
 		return sentenceID;
 	}
+	
+	public String getModifier(CoNLLPart part) {
+		StringBuilder sb = new StringBuilder();
+		for(int i=this.start;i<this.end;i++) {
+			sb.append(part.getWord(i).word).append(" ");
+		}
+		return sb.toString().trim();
+	}
 
 	public void setSentenceID(int sentenceID) {
 		this.sentenceID = sentenceID;
