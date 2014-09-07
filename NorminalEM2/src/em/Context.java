@@ -163,12 +163,12 @@ public class Context implements Serializable {
 			diss = (short) (part.getWord(anaphor.end).sentence.getSentenceIdx() - part
 				.getWord(ant.end).sentence.getSentenceIdx());
 		}
-//		if(diss>10) {
-//			return 10;
-//		} else {
-//			return (short) diss;
-//		}
-		return (short) (Math.log(diss) / Math.log(2));
+		if(diss>10) {
+			return 10;
+		} else {
+			return (short) diss;
+		}
+//		return (short) (Math.log(diss) / Math.log(2));
 	}
 
 	private static short isExactMatch(Mention ant, Mention anaphor,
