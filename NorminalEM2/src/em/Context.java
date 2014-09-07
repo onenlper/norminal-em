@@ -83,9 +83,9 @@ public class Context implements Serializable {
 		feas[id++] = isExactMatch(ant, anaphor, part); // 2
 		feas[id++] = headMatch(ant, anaphor, part); // 2
 		feas[id++] = haveIncompatibleModify(ant, anaphor, part); // 3
-		feas[id++] = isIWithI(ant, anaphor, part); // 2
-//		 feas[id++] = isSameGrammatic(ant, anaphor, part);
-		feas[id++] = isSamePredicate(ant, anaphor, part);
+//		feas[id++] = isIWithI(ant, anaphor, part); // 2
+		 feas[id++] = isSameGrammatic(ant, anaphor, part);
+//		feas[id++] = isSamePredicate(ant, anaphor, part);
 //		 feas[id++] = getMentionDiss(mentionDis);
 		return getContext(feas);
 	}
@@ -163,12 +163,12 @@ public class Context implements Serializable {
 			diss = (short) (part.getWord(anaphor.end).sentence.getSentenceIdx() - part
 				.getWord(ant.end).sentence.getSentenceIdx());
 		}
-		if(diss>10) {
-			return 10;
-		} else {
-			return (short) diss;
-		}
-//		return (short) (Math.log(diss) / Math.log(2));
+//		if(diss>10) {
+//			return 10;
+//		} else {
+//			return (short) diss;
+//		}
+		return (short) (Math.log(diss) / Math.log(2));
 	}
 
 	private static short isExactMatch(Mention ant, Mention anaphor,
