@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import model.Mention;
@@ -77,23 +78,84 @@ public class Context implements Serializable {
 		int id = 0;
 		short[] feas = new short[10];
 
-		feas[id++] = getIsFake(ant, anaphor, part);
-//		feas[id++] = getHasSameHead(allCands, anaphor, part);
+		// feas[id++] = getIsFake(ant, anaphor, part);
+		// feas[id++] = getHasSameHead(allCands, anaphor, part);
 		feas[id++] = getDistance(ant, anaphor, part); //
 		feas[id++] = isExactMatch(ant, anaphor, part); // 2
 		feas[id++] = headMatch(ant, anaphor, part); // 2
 		feas[id++] = haveIncompatibleModify(ant, anaphor, part); // 3
-//		feas[id++] = isIWithI(ant, anaphor, part); // 2
-		 feas[id++] = isSameGrammatic(ant, anaphor, part);
-//		feas[id++] = isSamePredicate(ant, anaphor, part);
-//		 feas[id++] = getMentionDiss(mentionDis);
+		feas[id++] = wordInclusion(ant, anaphor, part);
+		
+		// feas[id++] = isSameGrammatic(ant, anaphor, part);
+		// feas[id++] = isIWithI(ant, anaphor, part); // 2
+		// feas[id++] = isSamePredicate(ant, anaphor, part);
+		// feas[id++] = getMentionDiss(mentionDis);
+		// feas[id++] = modifierMatch(ant, anaphor, part);
+		// feas[id++] = isSemanticSame(ant, anaphor, part);
 		return getContext(feas);
 	}
 
-	private static short getMentionDiss(int diss) {
-		return (short) (Math.log(diss)/Math.log(4));
+	public static short wordInclusion(Mention ant, Mention anaphor,
+			CoNLLPart part) {
+		List<String> removeW = Arrays.asList(new String[] { "这个", "这", "那个",
+				"那", "自己", "的", "该", "公司", "这些", "那些", "'s" });
+		ArrayList<String> removeWords = new ArrayList<String>();
+		removeWords.addAll(removeW);
+		HashSet<String> mentionClusterStrs = new HashSet<String>();
+		for (int i = anaphor.start; i <= anaphor.end; i++) {
+			mentionClusterStrs.add(part.getWord(i).orig.toLowerCase());
+			if (part.getWord(i).posTag.equalsIgnoreCase("DT")
+					&& i < anaphor.end
+					&& part.getWord(i + 1).posTag.equalsIgnoreCase("M")) {
+				removeWords.add(part.getWord(i).word);
+				removeWords.add(part.getWord(i + 1).word);
+			}
+		}
+		mentionClusterStrs.removeAll(removeWords);
+
+		mentionClusterStrs.remove(anaphor.head.toLowerCase());
+		HashSet<String> candidateClusterStrs = new HashSet<String>();
+		for (int i = ant.start; i <= ant.end; i++) {
+			candidateClusterStrs.add(part.getWord(i).orig.toLowerCase());
+		}
+		candidateClusterStrs.remove(ant.head.toLowerCase());
+		if (candidateClusterStrs.containsAll(mentionClusterStrs))
+			return 1;
+		else
+			return 0;
 	}
-	
+
+	private static short isSemanticSame(Mention ana, Mention anaphor,
+			CoNLLPart part) {
+		String s1 = EMUtil.getSemantic(ana);
+		String s2 = EMUtil.getSemantic(anaphor);
+		if (s1.equals(s2) && !"unknown".startsWith(s1)) {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
+
+	private static short modifierMatch(Mention ana, Mention anaphor,
+			CoNLLPart part) {
+		HashSet<String> m1s = new HashSet<String>(ana.modifyList);
+		HashSet<String> m2s = new HashSet<String>(anaphor.modifyList);
+
+		m1s.removeAll(anaphor.modifyList);
+		m2s.remove(ana.modifyList);
+
+		if (m1s.size() != 0) {
+			return 1;
+		} else if (m2s.size() != 0) {
+			return 2;
+		}
+		return 0;
+	}
+
+	private static short getMentionDiss(int diss) {
+		return (short) (Math.log(diss) / Math.log(4));
+	}
+
 	private static short isSamePredicate(Mention ant, Mention anaphor,
 			CoNLLPart part) {
 		if (ant.gram == anaphor.gram) {
@@ -101,8 +163,8 @@ public class Context implements Serializable {
 				String v1 = EMUtil.getPredicateNode(ant.V);
 				String v2 = EMUtil.getPredicateNode(anaphor.V);
 				if (v1 != null && v2 != null && v1.equals(v2)) {
-//					System.out.println(v1);
-//					Common.bangErrorPOS(v1);
+					// System.out.println(v1);
+					// Common.bangErrorPOS(v1);
 					return 2;
 				}
 			}
@@ -157,17 +219,18 @@ public class Context implements Serializable {
 	private static short getDistance(Mention ant, Mention anaphor,
 			CoNLLPart part) {
 		short diss = 0;
-		if(ant.isFake) {
-			diss = (short) ((part.getWord(anaphor.end).sentence.getSentenceIdx() + 1)); 
+		if (ant.isFake) {
+			diss = (short) ((part.getWord(anaphor.end).sentence
+					.getSentenceIdx() + 1));
 		} else {
 			diss = (short) (part.getWord(anaphor.end).sentence.getSentenceIdx() - part
-				.getWord(ant.end).sentence.getSentenceIdx());
+					.getWord(ant.end).sentence.getSentenceIdx());
 		}
-//		if(diss>10) {
-//			return 10;
-//		} else {
-//			return (short) diss;
-//		}
+		// if(diss>10) {
+		// return 10;
+		// } else {
+		// return (short) diss;
+		// }
 		return (short) (Math.log(diss) / Math.log(2));
 	}
 
@@ -204,15 +267,15 @@ public class Context implements Serializable {
 
 	public static short haveIncompatibleModify(Mention ant, Mention anaphor,
 			CoNLLPart part) {
-//		if (anaphor.isFake || !ant.head.equalsIgnoreCase(anaphor.head)) {
-//			return 0;
-//		} else if (ant.head.equals(anaphor.head)) {
-//			if (ant.extent.contains(anaphor.extent)) {
-//				return 1;
-//			} else {
-//				return 2;
-//			}
-//		}
+		// if (anaphor.isFake || !ant.head.equalsIgnoreCase(anaphor.head)) {
+		// return 0;
+		// } else if (ant.head.equals(anaphor.head)) {
+		// if (ant.extent.contains(anaphor.extent)) {
+		// return 1;
+		// } else {
+		// return 2;
+		// }
+		// }
 
 		boolean thisHasExtra = false;
 		Set<String> thisWordSet = new HashSet<String>();
@@ -226,27 +289,10 @@ public class Context implements Serializable {
 			if ((pos1.startsWith("PU") || w1.equalsIgnoreCase(anaphor.head))) {
 				continue;
 			}
-			// if ((pos1.startsWith("DEG") && i>em.start)) {
-			// mPRP = part.getWord(i-1).word;
-			// continue;
-			// }
-			// if(em.start!=em.end && i==em.start && pos1.equals("PN")) {
-			// mPRP = part.getWord(i-1).word;
-			// continue;
-			// }
 			thisWordSet.add(w1);
 		}
 		for (int j = ant.start; j <= ant.end; j++) {
 			String w2 = part.getWord(j).orig.toLowerCase();
-			String pos2 = part.getWord(j).posTag;
-			// if (pos2.startsWith("DEG") && j>ant.start) {
-			// mPRP = part.getWord(j-1).word;
-			// continue;
-			// }
-			// if(ant.start!=ant.end && j==ant.start && pos2.equals("PN")) {
-			// antPRP = part.getWord(j).word;
-			// continue;
-			// }
 			antWordSet.add(w2);
 		}
 		for (String w : thisWordSet) {
