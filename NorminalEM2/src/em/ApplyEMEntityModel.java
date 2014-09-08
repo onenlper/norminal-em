@@ -185,9 +185,18 @@ public class ApplyEMEntityModel {
 		System.out.println(all2 + "@@@");
 	}
 	
+	
 	private void findAntecedent(String file, CoNLLPart part,
 			HashMap<String, Integer> chainMap, ArrayList<Mention> corefResult,
 			ArrayList<Mention> anaphors, ArrayList<Mention> allCandidates) {
+		
+		HashMap<String, Integer> clusterMap = new HashMap<String, Integer>();
+		for(int i=0;i<allCandidates.size();i++) {
+			Mention cand = allCandidates.get(i);
+			clusterMap.put(cand.toName(), i);
+		}
+		
+		
 		for (Mention anaphor : anaphors) {
 			anaphor.sentenceID = part.getWord(anaphor.start).sentence
 					.getSentenceIdx();
@@ -220,8 +229,43 @@ public class ApplyEMEntityModel {
 //				continue;
 //			}
 
-			for (int i = 0; i < cands.size(); i++) {
+			ArrayList<EntryEntityModel> entries = new ArrayList<EntryEntityModel>();
+			
+			HashMap<Integer, ArrayList<Mention>> previousClusters = new HashMap<Integer, ArrayList<Mention>>();
+			
+			for(int i=0;i<cands.size();i++) {
 				Mention cand = cands.get(i);
+				Integer clusterID = clusterMap.get(cand.toName());
+				ArrayList<Mention> cluster = previousClusters.get(clusterID);
+				if(cluster==null) {
+					cluster = new ArrayList<Mention>();
+					previousClusters.put(clusterID, cluster);
+				}
+				cluster.add(cand);
+			}
+
+			for(Integer key : previousClusters.keySet()) {
+//				 find cluster
+				ArrayList<Mention> cluster = previousClusters.get(key);
+				Collections.sort(cluster);
+//			for(int i=0;i<cands.size();i++) {
+//				Mention cand = cands.get(i);
+//				ArrayList<Mention> cluster = new ArrayList<Mention>();
+//				cluster.add(cand);
+				Context context = Context.buildContext(cluster.get(cluster.size()-1), anaphor, part, cands, 0);
+				EntryEntityModel entry = new EntryEntityModel(context, cluster);
+				entries.add(entry);
+			}
+			
+			if(entries.size()!=cands.size()){
+//				Common.pause(entries.size() + ":" + cands.size());
+			}
+			
+			Collections.sort(entries);
+			Collections.reverse(entries);
+			for (int i = 0; i < entries.size(); i++) {
+				EntryEntityModel entry = entries.get(i);
+				Mention cand = entries.get(i).cluster.get(0);
 
 				boolean coref = chainMap.containsKey(anaphor.toName())
 						&& chainMap.containsKey(cand.toName())
@@ -230,8 +274,7 @@ public class ApplyEMEntityModel {
 
 				// calculate P(overt-pronoun|ant-context)
 				// TODO
-				Context context = Context.buildContext(cand, anaphor, part,
-						cands, i);
+				Context context = entry.context;
 				cand.msg = Context.message;
 				
 //				EntryEntityModel entry = new EntryEntityModel(context, part.getPartName() + ":" + cand.toName());
@@ -272,6 +315,8 @@ public class ApplyEMEntityModel {
 
 			if (antecedent != null) {
 				anaphor.antecedent = antecedent;
+//				int newClusterID = clusterMap.get(antecedent.toName());
+//				clusterMap.put(anaphor.toName(), newClusterID);
 			}
 			if (anaphor.antecedent != null
 					&& anaphor.antecedent.end != -1
@@ -284,21 +329,6 @@ public class ApplyEMEntityModel {
 						+ anaphor.start + "-" + anaphor.antecedent.start + ","
 						+ anaphor.antecedent.end + ":GOOD";
 				corrects.add(key);
-				// if(antecedent.mType==MentionType.tmporal) {
-				// System.out.println(antecedent.extent + "GOOD!");
-				// }
-				// System.out.println(overtPro + "  " + zero.antecedent.extent);
-				// System.out.println("+++");
-				// printResult(zero, zero.antecedent, part);
-				// System.out.println("Predicate: " +
-				// this.getPredicate(zero.V));
-				// System.out.println("Object NP: " +
-				// this.getObjectNP(zero));
-				// System.out.println("===");
-				// if (zero.antecedent.MI < 0) {
-				// System.out.println("Right!!! " + good + "/" + bad);
-				// System.out.println(zero.antecedent.msg);
-				// if(!zero.antecedent.isFS) {
 				System.out.println("==========");
 				System.out.println("Correct!!! " + good + "/" + bad);
 				if (anaphor.antecedent != null) {
@@ -350,30 +380,6 @@ public class ApplyEMEntityModel {
 			String middle = conllPath.substring(aa + anno.length(), bb);
 			String path = prefix + middle + suffix;
 			System.out.println(path);
-			// System.out.println("=== " + file);
-
-			// if (antecedent != null) {
-			// CoNLLWord candWord = part.getWord(antecedent.start);
-			// CoNLLWord zeroWord = part.getWord(zero.start);
-			//
-			// String zeroSpeaker = part.getWord(zero.start).speaker;
-			// String candSpeaker = part.getWord(antecedent.start).speaker;
-			// // if (!zeroSpeaker.equals(candSpeaker)) {
-			// // if (antecedent.source.equals("我") &&
-			// // zeroWord.toSpeaker.contains(candSpeaker)) {
-			// // zero.head = "你";
-			// // zero.source = "你";
-			// // } else if (antecedent.source.equals("你") &&
-			// // candWord.toSpeaker.contains(zeroSpeaker)) {
-			// // zero.head = "我";
-			// // zero.source = "我";
-			// // }
-			// // } else {
-			// zero.extent = antecedent.extent;
-			// zero.head = antecedent.head;
-			// // }
-			//
-			// }
 		}
 		for (Mention anaphor : anaphors) {
 			if (anaphor.antecedent != null) {
