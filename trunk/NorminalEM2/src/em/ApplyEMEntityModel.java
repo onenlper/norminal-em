@@ -106,12 +106,14 @@ public class ApplyEMEntityModel {
 
 		// ArrayList<HashSet<String>> goldAnaphorses = new
 		// ArrayList<HashSet<String>>();
-		HashMap<String, HashMap<String, String>> maps = EMUtil.extractSysKeys("key.chinese.test.open.systemParse");
+		HashMap<String, HashMap<String, String>> maps = EMUtil
+				.extractSysKeys("key.chinese.test.open.systemParse");
 		int all2 = 0;
-		for(String key : maps.keySet()) {
+		for (String key : maps.keySet()) {
 			all2 += maps.get(key).size();
 		}
-		HashMap<String, HashMap<String, HashSet<String>>> goldKeyses = EMUtil.extractGoldKeys();
+		HashMap<String, HashMap<String, HashSet<String>>> goldKeyses = EMUtil
+				.extractGoldKeys();
 
 		for (String file : files) {
 			System.out.println(file);
@@ -124,7 +126,7 @@ public class ApplyEMEntityModel {
 				CoNLLPart goldPart = EMUtil.getGoldPart(part, dataset);
 				HashSet<String> goldPNs = EMUtil.getGoldPNs(goldPart);
 				HashSet<String> goldNEs = EMUtil.getGoldNEs(goldPart);
-				
+
 				ArrayList<Entity> goldChains = goldPart.getChains();
 
 				HashMap<String, Integer> chainMap = EMUtil
@@ -152,13 +154,14 @@ public class ApplyEMEntityModel {
 				// part.getChains(), part);
 
 				HashMap<String, String> anas = maps.get(part.getPartName());
-				
+
 				ArrayList<Mention> anaphors = new ArrayList<Mention>();
 				for (Mention m : goldBoundaryNPMentions) {
-//					if (!goldNEs.contains(m.toName()) && !goldPNs.contains(m.toName())) {
-//						anaphors.add(m);
-//					}
-					if(anas.containsKey(m.toName())) {
+					// if (!goldNEs.contains(m.toName()) &&
+					// !goldPNs.contains(m.toName())) {
+					// anaphors.add(m);
+					// }
+					if (anas.containsKey(m.toName())) {
 						anaphors.add(m);
 						anas.remove(m.toName());
 					}
@@ -178,25 +181,23 @@ public class ApplyEMEntityModel {
 
 		evaluate(corefResults, goldKeyses);
 		int all = 0;
-		for(String key : maps.keySet()) {
+		for (String key : maps.keySet()) {
 			all += maps.get(key).size();
 		}
 		System.out.println(all + "@@@");
 		System.out.println(all2 + "@@@");
 	}
-	
-	
+
 	private void findAntecedent(String file, CoNLLPart part,
 			HashMap<String, Integer> chainMap, ArrayList<Mention> corefResult,
 			ArrayList<Mention> anaphors, ArrayList<Mention> allCandidates) {
-		
+
 		HashMap<String, Integer> clusterMap = new HashMap<String, Integer>();
-		for(int i=0;i<allCandidates.size();i++) {
+		for (int i = 0; i < allCandidates.size(); i++) {
 			Mention cand = allCandidates.get(i);
 			clusterMap.put(cand.toName(), i);
 		}
-		
-		
+
 		for (Mention anaphor : anaphors) {
 			anaphor.sentenceID = part.getWord(anaphor.start).sentence
 					.getSentenceIdx();
@@ -225,47 +226,49 @@ public class ApplyEMEntityModel {
 
 			double probs[] = new double[cands.size()];
 
-//			if (!RuleAnaphorNounDetector.isAnahporic(anaphor, cands, part)) {
-//				continue;
-//			}
+			// if (!RuleAnaphorNounDetector.isAnahporic(anaphor, cands, part)) {
+			// continue;
+			// }
 
 			ArrayList<EntryEntityModel> entries = new ArrayList<EntryEntityModel>();
-			
+
 			HashMap<Integer, ArrayList<Mention>> previousClusters = new HashMap<Integer, ArrayList<Mention>>();
-			
-			for(int i=0;i<cands.size();i++) {
+
+			for (int i = 0; i < cands.size(); i++) {
 				Mention cand = cands.get(i);
 				Integer clusterID = clusterMap.get(cand.toName());
 				ArrayList<Mention> cluster = previousClusters.get(clusterID);
-				if(cluster==null) {
+				if (cluster == null) {
 					cluster = new ArrayList<Mention>();
 					previousClusters.put(clusterID, cluster);
 				}
 				cluster.add(cand);
 			}
 
-			for(Integer key : previousClusters.keySet()) {
-//				 find cluster
+			for (Integer key : previousClusters.keySet()) {
+				// find cluster
 				ArrayList<Mention> cluster = previousClusters.get(key);
 				Collections.sort(cluster);
-//			for(int i=0;i<cands.size();i++) {
-//				Mention cand = cands.get(i);
-//				ArrayList<Mention> cluster = new ArrayList<Mention>();
-//				cluster.add(cand);
-				Context context = Context.buildContext(cluster.get(cluster.size()-1), anaphor, part, cands, 0);
+				// for(int i=0;i<cands.size();i++) {
+				// Mention cand = cands.get(i);
+				// ArrayList<Mention> cluster = new ArrayList<Mention>();
+				// cluster.add(cand);
+				Context context = Context.buildContext(
+						cluster.get(cluster.size()-1), anaphor, part, cands,
+						0);
 				EntryEntityModel entry = new EntryEntityModel(context, cluster);
 				entries.add(entry);
 			}
-			
-			if(entries.size()!=cands.size()){
-//				Common.pause(entries.size() + ":" + cands.size());
+
+			if (entries.size() != cands.size()) {
+				// Common.pause(entries.size() + ":" + cands.size());
 			}
-			
+
 			Collections.sort(entries);
 			Collections.reverse(entries);
 			for (int i = 0; i < entries.size(); i++) {
 				EntryEntityModel entry = entries.get(i);
-				Mention cand = entries.get(i).cluster.get(0);
+				Mention cand = entries.get(i).cluster.get(entries.get(i).cluster.size()-1);
 
 				boolean coref = chainMap.containsKey(anaphor.toName())
 						&& chainMap.containsKey(cand.toName())
@@ -276,15 +279,16 @@ public class ApplyEMEntityModel {
 				// TODO
 				Context context = entry.context;
 				cand.msg = Context.message;
-				
-//				EntryEntityModel entry = new EntryEntityModel(context, part.getPartName() + ":" + cand.toName());
-				double p_number = numberP.getVal(cand.number.name(), EMUtil
-						.getAntNumber(anaphor).name());
-				double p_animacy = animacyP.getVal(cand.animacy.name(), EMUtil
-						.getAntAnimacy(anaphor).name());
-				double p_gender = genderP.getVal(cand.gender.name(), EMUtil
-						.getAntGender(anaphor).name());
-				double p_sem = semanticP.getVal(cand.semantic,
+
+				// EntryEntityModel entry = new EntryEntityModel(context,
+				// part.getPartName() + ":" + cand.toName());
+				double p_number = numberP.getVal(EMUtil.getAntNumber(cand)
+						.name(), EMUtil.getAntNumber(anaphor).name());
+				double p_animacy = animacyP.getVal(EMUtil.getAntAnimacy(cand)
+						.name(), EMUtil.getAntAnimacy(anaphor).name());
+				double p_gender = genderP.getVal(EMUtil.getAntGender(cand)
+						.name(), EMUtil.getAntGender(anaphor).name());
+				double p_sem = semanticP.getVal(EMUtil.getSemantic(cand),
 						EMUtil.getSemantic(anaphor));
 
 				double p_gram = semanticP.getVal(cand.gram.name(),
@@ -314,8 +318,8 @@ public class ApplyEMEntityModel {
 
 			if (antecedent != null) {
 				anaphor.antecedent = antecedent;
-//				int newClusterID = clusterMap.get(antecedent.toName());
-//				clusterMap.put(anaphor.toName(), newClusterID);
+				 int newClusterID = clusterMap.get(antecedent.toName());
+				 clusterMap.put(anaphor.toName(), newClusterID);
 			}
 			if (anaphor.antecedent != null
 					&& anaphor.antecedent.end != -1
