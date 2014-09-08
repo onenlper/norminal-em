@@ -625,7 +625,39 @@ public class EMUtil {
 		}
 		return numerator / denominator;
 	}
-
+	
+	public static MyTreeNode getMaxNPTreeNode(MyTreeNode node) {
+		ArrayList<MyTreeNode> ancestors = node.getAncestors();
+		MyTreeNode np = null;
+		for(int i=ancestors.size()-1;i>=0;i--) {
+			MyTreeNode tmp = ancestors.get(i);
+			MyTreeNode lastLeaf = tmp.getLeaf(tmp.getLeaves().size()-1);
+			if(tmp.value.equals("NP") && lastLeaf==node) {
+				np = tmp;
+			}
+		}
+		if(np==null) {
+			np = node.parent;
+		}
+		return np;
+	}
+	
+	public static MyTreeNode getMinNPTreeNode(MyTreeNode node) {
+		ArrayList<MyTreeNode> ancestors = node.getAncestors();
+		MyTreeNode np = null;
+		for(int i=0;i<ancestors.size();i++) {
+			MyTreeNode tmp = ancestors.get(i);
+			MyTreeNode lastLeaf = tmp.getLeaf(tmp.getLeaves().size()-1);
+			if(tmp.value.equals("NP") && lastLeaf==node) {
+				np = tmp;
+			}
+		}
+		if(np==null) {
+			np = node.parent;
+		}
+		return np;
+	}
+	
 	public static void setMentionAttri(Mention em, CoNLLPart part) {
 		int startIdx = part.getWord(em.start).indexInSentence;
 		int endIdx = part.getWord(em.end).indexInSentence;
@@ -641,6 +673,16 @@ public class EMUtil {
 		MyTreeNode leftLeaf = sentence.getSyntaxTree().leaves.get(startIdx);
 		MyTreeNode rightLeaf = sentence.getSyntaxTree().leaves.get(endIdx);
 
+		
+		MyTreeNode maxTree = getMaxNPTreeNode(rightLeaf);
+		MyTreeNode minTree = getMinNPTreeNode(rightLeaf);
+		int begin = maxTree.getLeaves().get(0).leafIdx;
+		int end = minTree.getLeaves().get(0).leafIdx;
+
+		for (int i = begin; i < end; i++) {
+			em.modifyList.add(sentence.getWord(i).word);
+		}
+		
 		ArrayList<MyTreeNode> leftAns = leftLeaf.getAncestors();
 		ArrayList<MyTreeNode> rightAns = rightLeaf.getAncestors();
 
@@ -687,6 +729,7 @@ public class EMUtil {
 		em.head = head.value;
 		em.NP = treeNode;
 
+		
 		// em.headInS = em.endInS;
 		// em.head = sentence.getWord(em.headInS).word;
 
@@ -756,6 +799,10 @@ public class EMUtil {
 				}
 			}
 		}
+		em.animacy = EMUtil.getAntAnimacy(em);
+		em.gender = EMUtil.getAntGender(em);
+		em.number = EMUtil.getAntNumber(em);
+		em.semantic = EMUtil.getSemantic(em);
 	}
 
 	public static Mention formPhrase(MyTreeNode treeNode, CoNLLSentence sentence) {
