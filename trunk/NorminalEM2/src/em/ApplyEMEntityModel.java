@@ -18,7 +18,7 @@ import model.CoNLL.CoNLLWord;
 import model.syntaxTree.MyTreeNode;
 import util.Common;
 import edu.stanford.nlp.classify.LinearClassifier;
-import em.ResolveGroupEntityModel.Entry;
+import em.ResolveGroupEntityModel.EntryEntityModel;
 
 public class ApplyEMEntityModel {
 
@@ -233,8 +233,6 @@ public class ApplyEMEntityModel {
 				Context context = Context.buildContext(cand, anaphor, part,
 						cands, i);
 				cand.msg = Context.message;
-
-				Entry entry = new Entry(cand, context, part);
 
 				double p_number = numberP.getVal(cand.number.name(), EMUtil
 						.getAntNumber(anaphor).name());

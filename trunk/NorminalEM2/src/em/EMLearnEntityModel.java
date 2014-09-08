@@ -21,7 +21,7 @@ import model.CoNLL.CoNLLWord;
 import model.syntaxTree.MyTree;
 import model.syntaxTree.MyTreeNode;
 import util.Common;
-import em.ResolveGroupEntityModel.Entry;
+import em.ResolveGroupEntityModel.EntryEntityModel;
 
 public class EMLearnEntityModel {
 
@@ -168,7 +168,7 @@ public class EMLearnEntityModel {
 					Context context = Context.buildContext(ant, m, part, ants,
 							k);
 
-					Entry entry = new Entry(ant, context, part);
+					EntryEntityModel entry = new EntryEntityModel(ant, context, part);
 					rg.entries.add(entry);
 					count++;
 
@@ -297,7 +297,7 @@ public class EMLearnEntityModel {
 		for (ResolveGroupEntityModel group : groups) {
 			double norm = 0;
 			Mention anaphor = mentionMap.get(group.anaphorName);
-			for (Entry entry : group.entries) {
+			for (EntryEntityModel entry : group.entries) {
 				Mention ant = mentionMap.get(entry.antName);
 				Context context = entry.context;
 
@@ -331,7 +331,7 @@ public class EMLearnEntityModel {
 				norm += entry.p;
 			}
 
-			for (Entry entry : group.entries) {
+			for (EntryEntityModel entry : group.entries) {
 				entry.p = entry.p / norm;
 			}
 		}
@@ -350,7 +350,7 @@ public class EMLearnEntityModel {
 		fracContextCount.clear();
 		for (ResolveGroupEntityModel group : groups) {
 			Mention anaphor = mentionMap.get(group.anaphorName);
-			for (Entry entry : group.entries) {
+			for (EntryEntityModel entry : group.entries) {
 				Mention ant = mentionMap.get(entry.antName);
 				double p = entry.p;
 				Context context = entry.context;
