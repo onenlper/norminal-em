@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import model.Element;
 import model.Entity;
 import model.Mention;
 import model.CoNLL.CoNLLDocument;
@@ -118,14 +119,12 @@ public class ApplyEMEntityModel {
 		for (String file : files) {
 			System.out.println(file);
 			CoNLLDocument document = new CoNLLDocument(file
-			// .replace("auto_conll", "gold_conll")
+			 .replace("auto_conll", "gold_conll")
 			);
 			for (int k = 0; k < document.getParts().size(); k++) {
 				CoNLLPart part = document.getParts().get(k);
 
 				CoNLLPart goldPart = EMUtil.getGoldPart(part, dataset);
-				HashSet<String> goldPNs = EMUtil.getGoldPNs(goldPart);
-				HashSet<String> goldNEs = EMUtil.getGoldNEs(goldPart);
 
 				ArrayList<Entity> goldChains = goldPart.getChains();
 
@@ -141,38 +140,39 @@ public class ApplyEMEntityModel {
 
 				ArrayList<Mention> candidates = new ArrayList<Mention>();
 				for (Mention m : goldBoundaryNPMentions) {
-					if (!goldPNs.contains(m.toName())) {
-						candidates.add(m);
+					if (m.start==m.end && part.getWord(m.end).posTag.equals("PN")) {
+						continue;
 					}
+					candidates.add(m);
 				}
 
 				Collections.sort(candidates);
 
 				// ArrayList<Mention> anaphors = getGoldNouns(
 				// part.getChains(), part);
-				// ArrayList<Mention> anaphors = getGoldAnaphorNouns(
-				// part.getChains(), part);
-
-				HashMap<String, String> anas = maps.get(part.getPartName());
+//				 ArrayList<Mention> anaphors = getGoldAnaphorNouns(
+//				 goldPart.getChains(), goldPart);
 
 				ArrayList<Mention> anaphors = new ArrayList<Mention>();
 				for (Mention m : goldBoundaryNPMentions) {
-					// if (!goldNEs.contains(m.toName()) &&
-					// !goldPNs.contains(m.toName())) {
-					// anaphors.add(m);
-					// }
-					if (anas.containsKey(m.toName())) {
-						anaphors.add(m);
-						anas.remove(m.toName());
+					if (m.start==m.end && part.getWord(m.end).posTag.equals("PN")) {
+						continue;
 					}
+					anaphors.add(m);
 				}
 
-				findAntecedent(file, part, chainMap, corefResult, anaphors,
+				findAntecedent(file, part, chainMap, anaphors,
 						candidates);
 
-				// findAntecedentMaxEnt(file, part, chainMap, corefResult,
-				// anaphorZeros,
-				// candidates);
+
+				HashSet<String> goldPNs = EMUtil.getGoldPNs(goldPart);
+				HashSet<String> goldNEs = EMUtil.getGoldNEs(goldPart);
+				for(Mention m : anaphors) {
+					if (goldPNs.contains(m.toName()) || goldNEs.contains(m.toName()) || m.antecedent==null) {
+						continue;
+					}
+					corefResult.add(m);
+				}
 			}
 		}
 		System.out.println("Good: " + good);
@@ -189,8 +189,7 @@ public class ApplyEMEntityModel {
 	}
 
 	private void findAntecedent(String file, CoNLLPart part,
-			HashMap<String, Integer> chainMap, ArrayList<Mention> corefResult,
-			ArrayList<Mention> anaphors, ArrayList<Mention> allCandidates) {
+			HashMap<String, Integer> chainMap, ArrayList<Mention> anaphors, ArrayList<Mention> allCandidates) {
 
 		HashMap<String, Integer> clusterMap = new HashMap<String, Integer>();
 		for (int i = 0; i < allCandidates.size(); i++) {
@@ -226,9 +225,9 @@ public class ApplyEMEntityModel {
 
 			double probs[] = new double[cands.size()];
 
-			// if (!RuleAnaphorNounDetector.isAnahporic(anaphor, cands, part)) {
-			// continue;
-			// }
+			 if (!RuleAnaphorNounDetector.isAnahporic(anaphor, cands, part)) {
+			 continue;
+			 }
 
 			ArrayList<EntryEntityModel> entries = new ArrayList<EntryEntityModel>();
 
@@ -384,11 +383,6 @@ public class ApplyEMEntityModel {
 			String path = prefix + middle + suffix;
 			System.out.println(path);
 		}
-		for (Mention anaphor : anaphors) {
-			if (anaphor.antecedent != null) {
-				corefResult.add(anaphor);
-			}
-		}
 	}
 
 	protected void printResult(Mention zero, Mention systemAnte, CoNLLPart part) {
@@ -448,19 +442,29 @@ public class ApplyEMEntityModel {
 	private static ArrayList<Mention> getGoldAnaphorNouns(
 			ArrayList<Entity> entities, CoNLLPart goldPart) {
 		ArrayList<Mention> goldAnaphors = new ArrayList<Mention>();
+		HashSet<String> neSet = new HashSet<String>();
+		for(Element ne : goldPart.getNameEntities()) {
+			neSet.add(ne.start + "," + ne.end);
+		}
+		
+		HashSet<String> pnSet = new HashSet<String>();
+		for(int i=0;i<goldPart.getWordCount();i++) {
+			CoNLLWord w = goldPart.getWord(i);
+			if(w.posTag.equals("PN")) {
+				pnSet.add(w.index + "," + w.index);
+			}
+		}
 		for (Entity e : entities) {
 			Collections.sort(e.mentions);
 			for (int i = 1; i < e.mentions.size(); i++) {
 				Mention m1 = e.mentions.get(i);
-				String pos1 = goldPart.getWord(m1.end).posTag;
-				if (pos1.equals("PN") || pos1.equals("NR") || pos1.equals("NT")) {
+				if(neSet.contains(m1.toName()) || pnSet.contains(m1.toName())) {
 					continue;
 				}
 				HashSet<String> ants = new HashSet<String>();
 				for (int j = i - 1; j >= 0; j--) {
 					Mention m2 = e.mentions.get(j);
-					String pos2 = goldPart.getWord(m2.end).posTag;
-					if (!pos2.equals("PN") && m1.end != m2.end) {
+					if (!pnSet.contains(m2.toName()) && m2.end != m1.end) {
 						ants.add(m2.toName());
 					}
 				}

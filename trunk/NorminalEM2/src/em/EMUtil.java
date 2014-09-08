@@ -2311,15 +2311,16 @@ public class EMUtil {
 	
 	public static HashMap<String, HashSet<String>> getGoldAnaphorKeys(
 			ArrayList<Entity> entities, CoNLLPart goldPart) {
-		HashSet<String> filterSet = new HashSet<String>();
+		HashSet<String> neSet = new HashSet<String>();
 		for(Element ne : goldPart.getNameEntities()) {
-			filterSet.add(ne.start + "," + ne.end);
+			neSet.add(ne.start + "," + ne.end);
 		}
 		
+		HashSet<String> pnSet = new HashSet<String>();
 		for(int i=0;i<goldPart.getWordCount();i++) {
 			CoNLLWord w = goldPart.getWord(i);
 			if(w.posTag.equals("PN")) {
-				filterSet.add(w.index + "," + w.index);
+				pnSet.add(w.index + "," + w.index);
 			}
 		}
 		
@@ -2328,14 +2329,13 @@ public class EMUtil {
 			Collections.sort(e.mentions);
 			for (int i = 1; i < e.mentions.size(); i++) {
 				Mention m1 = e.mentions.get(i);
-				if(filterSet.contains(m1.toName())) {
+				if(neSet.contains(m1.toName()) || pnSet.contains(m1.toName())) {
 					continue;
 				}
 				HashSet<String> ants = new HashSet<String>();
 				for (int j = i - 1; j >= 0; j--) {
 					Mention m2 = e.mentions.get(j);
-					String pos2 = goldPart.getWord(m2.end).posTag;
-					if (!pos2.equals("PN") && m2.end != m1.end) {
+					if (!pnSet.contains(m2.toName()) && m2.end != m1.end) {
 						ants.add(m2.toName());
 					}
 				}
