@@ -52,7 +52,7 @@ public class ResolveGroupEntityModel implements Serializable {
 		 * 
 		 */
 		private static final long serialVersionUID = 1L;
-		Context context;
+		ContextEntityModel context;
 		
 		ArrayList<Mention> cluster;
 		
@@ -64,7 +64,7 @@ public class ResolveGroupEntityModel implements Serializable {
 //		String sem = "unknown";
 //		Grammatic gram;
 		
-		public EntryEntityModel(Context context, ArrayList<Mention> cluster) {
+		public EntryEntityModel(ContextEntityModel context, ArrayList<Mention> cluster) {
 			this.cluster = cluster;
 			this.context = context;
 			

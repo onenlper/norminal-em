@@ -25,9 +25,6 @@ import em.ResolveGroupEntityModel.EntryEntityModel;
 
 public class EMLearnEntityModel {
 
-	// static HashMap<Context, Double> p_context_ = new HashMap<Context,
-	// Double>();
-
 	static Parameter numberP;
 	static Parameter genderP;
 	static Parameter semanticP;
@@ -67,7 +64,7 @@ public class EMLearnEntityModel {
 		contextVals = new HashMap<String, Double>();
 		qid = 0;
 		count = 0;
-		Context.contextCache.clear();
+		ContextEntityModel.contextCache.clear();
 	}
 
 	private static ArrayList<Element> getChGoldNE(CoNLLPart part) {
@@ -90,7 +87,9 @@ public class EMLearnEntityModel {
 		// }
 		return goldPart.getNameEntities();
 	}
-
+	
+	public static HashMap<String, Integer> origClusterMap = new HashMap<String, Integer>();
+	public static HashMap<String, Integer> activeClusterMap = new HashMap<String, Integer>();
 
 	public static ArrayList<ResolveGroupEntityModel> extractGroups(
 			CoNLLPart part) {
@@ -104,16 +103,17 @@ public class EMLearnEntityModel {
 		for (int i = 0; i < part.getCoNLLSentences().size(); i++) {
 			CoNLLSentence s = part.getCoNLLSentences().get(i);
 			s.mentions = EMUtil.extractMention(s);
-			
+
 			EMUtil.assignNE(s.mentions, part.getNameEntities());
 
-			for(Mention em : s.mentions) {
+			for (Mention em : s.mentions) {
 				em.animacy = EMUtil.getAntAnimacy(em);
 				em.gender = EMUtil.getAntGender(em);
 				em.number = EMUtil.getAntNumber(em);
 				em.semantic = EMUtil.getSemantic(em);
+				origClusterMap.put(part.getPartName() + ":" + em.toName(), origClusterMap.size());
 			}
-			
+
 			ArrayList<Mention> precedMs = new ArrayList<Mention>();
 
 			for (int j = maxDistance; j >= 1; j--) {
@@ -168,27 +168,8 @@ public class EMLearnEntityModel {
 					// add antecedents
 
 					rg.cands.add(ant);
-//					Context context = Context.buildContext(ant, m, part, ants,
-//							k);
-//					ArrayList<Mention> cluster = new ArrayList<Mention>();
-//					cluster.add(ant);
-//					EntryEntityModel entry = new EntryEntityModel(context, cluster);
-//					rg.entries.add(entry);
-					//TODO
+					// TODO
 					count++;
-					
-//					Double d = contextPrior.get(context.toString());
-//					if (d == null) {
-//						contextPrior.put(context.toString(), 1.0);
-//					} else {
-//						contextPrior.put(context.toString(),
-//								1.0 + d.doubleValue());
-//					}
-					
-					// boolean coref = chainMap.containsKey(m.toName())
-					// && chainMap.containsKey(ant.toName())
-					// && chainMap.get(m.toName()).intValue() == chainMap
-					// .get(ant.toName()).intValue();
 				}
 				groups.add(rg);
 			}
@@ -196,7 +177,7 @@ public class EMLearnEntityModel {
 		return groups;
 	}
 
-	static int percent = 10	;
+	static int percent = 10;
 
 	private static void extractCoNLL(ArrayList<ResolveGroupEntityModel> groups) {
 		// CoNLLDocument d = new CoNLLDocument("train_auto_conll");
@@ -296,41 +277,57 @@ public class EMLearnEntityModel {
 			br.close();
 		}
 	}
-
+	
 	public static void estep(ArrayList<ResolveGroupEntityModel> groups) {
 		System.out.println("estep starts:");
 		contextPrior.clear();
+		
+		activeClusterMap.clear();
+		for(String key : origClusterMap.keySet()) {
+			activeClusterMap.put(key, origClusterMap.get(key));
+		}
+		
 		long t1 = System.currentTimeMillis();
 		for (ResolveGroupEntityModel group : groups) {
 			double norm = 0;
 			Mention anaphor = group.anaphor;
-			
+
 			group.entries.clear();
-			
+
+			HashMap<Integer, ArrayList<Mention>> previousClusters = new HashMap<Integer, ArrayList<Mention>>();
 			for(int k=0;k<group.cands.size();k++) {
 				Mention cand = group.cands.get(k);
-
-				ArrayList<Mention> cluster = new ArrayList<Mention>();
+				Integer clusterID = activeClusterMap.get(group.part.getPartName() + ":" + cand.toName());
+				ArrayList<Mention> cluster = previousClusters.get(clusterID);
+				if(cluster==null) {
+					cluster = new ArrayList<Mention>();
+					previousClusters.put(clusterID, cluster);
+				}
 				cluster.add(cand);
-				
-				Context context = Context.buildContext(cluster.get(0), anaphor, group.part, group.cands,
-						k);
+			}
+			
+			for(Integer key : previousClusters.keySet()) {
+				ArrayList<Mention> cluster = previousClusters.get(key);
+				Collections.sort(cluster);
+				ContextEntityModel context = ContextEntityModel.buildContext(
+						cluster.get(cluster.size()-1), anaphor, group.part, group.cands, 0);
 
 				EntryEntityModel e = new EntryEntityModel(context, cluster);
 				group.entries.add(e);
-				
+
 				Double d = contextPrior.get(context.toString());
 				if (d == null) {
 					contextPrior.put(context.toString(), 1.0);
 				} else {
-					contextPrior.put(context.toString(),
-							1.0 + d.doubleValue());
+					contextPrior.put(context.toString(), 1.0 + d.doubleValue());
 				}
 			}
+			Collections.sort(group.entries);
+			Collections.reverse(group.entries);
 			
 			for (EntryEntityModel entry : group.entries) {
 				Mention ant = entry.cluster.get(0);
-				Context context = entry.context;
+				ContextEntityModel context = entry.context;
 
 				double p_number = numberP.getVal(ant.number.name(),
 						anaphor.number.name());
@@ -350,9 +347,6 @@ public class EMLearnEntityModel {
 					p_context = d.doubleValue();
 				} else {
 					p_context = .5;
-					// if(context.toString().startsWith("0")) {
-					// p_context = .1;
-					// }
 				}
 
 				entry.p = p_context;
@@ -362,9 +356,21 @@ public class EMLearnEntityModel {
 				norm += entry.p;
 			}
 
-			for (EntryEntityModel entry : group.entries) {
+			double maxP = -1;
+			int maxIdx = -1;
+			for (int i=0;i<group.entries.size();i++) {
+				EntryEntityModel entry = group.entries.get(i);
 				entry.p = entry.p / norm;
+				if(entry.p>maxP) {
+					maxIdx = i;
+					maxP = entry.p;
+				}
 			}
+			
+			// reorder activeClusterMap
+			Mention antecedent = group.entries.get(maxIdx).cluster.get(0);
+			int newClusterId = activeClusterMap.get(group.part.getPartName() + ":" + antecedent.toName());
+			activeClusterMap.put(group.part.getPartName() + ":" + anaphor.toName(), newClusterId);
 		}
 		System.out.println(System.currentTimeMillis() - t1);
 	}
@@ -380,13 +386,13 @@ public class EMLearnEntityModel {
 		grammaticP.resetCounts();
 		fracContextCount.clear();
 		for (ResolveGroupEntityModel group : groups) {
-			
+
 			Mention anaphor = group.anaphor;
-			
+
 			for (EntryEntityModel entry : group.entries) {
 				Mention ant = entry.cluster.get(0);
 				double p = entry.p;
-				Context context = entry.context;
+				ContextEntityModel context = entry.context;
 
 				numberP.addFracCount(ant.number.name(), anaphor.number.name(),
 						p);
@@ -421,99 +427,6 @@ public class EMLearnEntityModel {
 		}
 		System.out.println(System.currentTimeMillis() - t1);
 	}
-	
-//	public static void estep(ArrayList<ResolveGroupEntityModel> groups) {
-//		System.out.println("estep starts:");
-//		long t1 = System.currentTimeMillis();
-//		for (ResolveGroupEntityModel group : groups) {
-//			double norm = 0;
-//			for (EntryEntityModel entry : group.entries) {
-//				Context context = entry.context;
-//
-//				double p_number = numberP.getVal(entry.number.name(),
-//						group.anaphor.number.name());
-//				double p_gender = genderP.getVal(entry.gender.name(),
-//						group.anaphor.number.name());
-//				double p_animacy = animacyP.getVal(entry.animacy.name(),
-//						group.anaphor.number.name());
-//				double p_grammatic = grammaticP.getVal(entry.gram.name(),
-//						group.anaphor.number.name());
-//
-//				double p_semetic = semanticP.getVal(entry.sem, group.anaphor.semantic);
-//
-//				double p_context = .5;
-//				Double d = contextVals.get(context.toString());
-//				if (contextVals.containsKey(context.toString())) {
-//					p_context = d.doubleValue();
-//				} else {
-//					p_context = .5;
-//					// if(context.toString().startsWith("0")) {
-//					// p_context = .1;
-//					// }
-//				}
-//
-//				entry.p = p_context;
-//				entry.p *= 1 * p_number * p_gender * p_animacy * p_semetic
-//				// * p_grammatic
-//				;
-//				norm += entry.p;
-//			}
-//
-//			for (EntryEntityModel entry : group.entries) {
-//				entry.p = entry.p / norm;
-//			}
-//		}
-//		System.out.println(System.currentTimeMillis() - t1);
-//	}
-//
-//	public static void mstep(ArrayList<ResolveGroupEntityModel> groups) {
-//		System.out.println("mstep starts:");
-//		long t1 = System.currentTimeMillis();
-//		genderP.resetCounts();
-//		numberP.resetCounts();
-//		animacyP.resetCounts();
-//		contextVals.clear();
-//		semanticP.resetCounts();
-//		grammaticP.resetCounts();
-//		fracContextCount.clear();
-//		for (ResolveGroupEntityModel group : groups) {
-//			for (EntryEntityModel entry : group.entries) {
-//				double p = entry.p;
-//				Context context = entry.context;
-//
-//				numberP.addFracCount(entry.number.name(), group.number.name(),
-//						p);
-//				genderP.addFracCount(entry.gender.name(), group.gender.name(),
-//						p);
-//				animacyP.addFracCount(entry.animacy.name(),
-//						group.animacy.name(), p);
-//
-//				semanticP.addFracCount(entry.sem, group.sem, p);
-//
-//				grammaticP
-//						.addFracCount(entry.gram.name(), group.gram.name(), p);
-//
-//				Double d = fracContextCount.get(context.toString());
-//				if (d == null) {
-//					fracContextCount.put(context.toString(), p);
-//				} else {
-//					fracContextCount.put(context.toString(), d.doubleValue()
-//							+ p);
-//				}
-//			}
-//		}
-//		genderP.setVals();
-//		numberP.setVals();
-//		animacyP.setVals();
-//		semanticP.setVals();
-//		grammaticP.setVals();
-//		for (String key : fracContextCount.keySet()) {
-//			double p_context = (EMUtil.alpha + fracContextCount.get(key))
-//					/ (2.0 * EMUtil.alpha + contextPrior.get(key));
-//			contextVals.put(key, p_context);
-//		}
-//		System.out.println(System.currentTimeMillis() - t1);
-//	}
 
 	public static void main(String args[]) throws Exception {
 		run();
@@ -559,8 +472,8 @@ public class EMLearnEntityModel {
 		modelOut.writeObject(fracContextCount);
 		modelOut.writeObject(contextPrior);
 
-		modelOut.writeObject(Context.ss);
-		modelOut.writeObject(Context.vs);
+		modelOut.writeObject(ContextEntityModel.ss);
+		modelOut.writeObject(ContextEntityModel.vs);
 		// modelOut.writeObject(Context.svoStat);
 
 		modelOut.close();

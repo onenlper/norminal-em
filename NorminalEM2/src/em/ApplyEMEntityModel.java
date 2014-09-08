@@ -60,8 +60,8 @@ public class ApplyEMEntityModel {
 					.readObject();
 			contextPrior = (HashMap<String, Double>) modelInput.readObject();
 
-			Context.ss = (HashSet<String>) modelInput.readObject();
-			Context.vs = (HashSet<String>) modelInput.readObject();
+			ContextEntityModel.ss = (HashSet<String>) modelInput.readObject();
+			ContextEntityModel.vs = (HashSet<String>) modelInput.readObject();
 			// Context.svoStat = (SVOStat)modelInput.readObject();
 			modelInput.close();
 
@@ -253,7 +253,7 @@ public class ApplyEMEntityModel {
 				// Mention cand = cands.get(i);
 				// ArrayList<Mention> cluster = new ArrayList<Mention>();
 				// cluster.add(cand);
-				Context context = Context.buildContext(
+				ContextEntityModel context = ContextEntityModel.buildContext(
 						cluster.get(cluster.size()-1), anaphor, part, cands,
 						0);
 				EntryEntityModel entry = new EntryEntityModel(context, cluster);
@@ -277,8 +277,8 @@ public class ApplyEMEntityModel {
 
 				// calculate P(overt-pronoun|ant-context)
 				// TODO
-				Context context = entry.context;
-				cand.msg = Context.message;
+				ContextEntityModel context = entry.context;
+				cand.msg = ContextEntityModel.message;
 
 				// EntryEntityModel entry = new EntryEntityModel(context,
 				// part.getPartName() + ":" + cand.toName());
@@ -536,15 +536,6 @@ public class ApplyEMEntityModel {
 		Common.outputLines(goods, "goods");
 		Common.outputLines(bads, "bas");
 
-		// Common.outputHashMap(EMUtil.NEMap, "NEMAP");
-
-		// Common.outputHashSet(Context.ss, "miniS");
-		// Common.outputHashSet(Context.vs, "miniV");
-
-		// System.out.println(Context.svoStat.unigramAll);
-		// System.out.println(Context.svoStat.svoAll);
-
-		// Common.outputLines(corrects, "EM.correct.all");
 		Common.pause("!!#");
 	}
 }
