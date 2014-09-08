@@ -82,10 +82,10 @@ public class ContextEntityModel implements Serializable {
 		// feas[id++] = getIsFake(ant, anaphor, part);
 		// feas[id++] = getHasSameHead(allCands, anaphor, part);
 		feas[id++] = getDistance(ant, anaphor, part); //
-		feas[id++] = isExactMatch(ant, anaphor, part); // 2
-		feas[id++] = headMatch(ant, anaphor, part); // 2
-		feas[id++] = haveIncompatibleModify(ant, anaphor, part); // 3
-		feas[id++] = wordInclusion(ant, anaphor, part);
+		feas[id++] = isExactMatch(ants, anaphor, part); // 2
+		feas[id++] = headMatch(ants, anaphor, part); // 2
+		feas[id++] = haveIncompatibleModify(ants, anaphor, part); // 3
+		feas[id++] = wordInclusion(ants, anaphor, part);
 
 		// feas[id++] = isSameGrammatic(ant, anaphor, part);
 		// feas[id++] = isIWithI(ant, anaphor, part); // 2
@@ -96,7 +96,7 @@ public class ContextEntityModel implements Serializable {
 		return getContext(feas);
 	}
 
-	public static short wordInclusion(Mention ant, Mention anaphor,
+	public static short wordInclusion(ArrayList<Mention> ants, Mention anaphor,
 			CoNLLPart part) {
 		List<String> removeW = Arrays.asList(new String[] { "这个", "这", "那个",
 				"那", "自己", "的", "该", "公司", "这些", "那些", "'s" });
@@ -116,10 +116,12 @@ public class ContextEntityModel implements Serializable {
 
 		mentionClusterStrs.remove(anaphor.head.toLowerCase());
 		HashSet<String> candidateClusterStrs = new HashSet<String>();
-		for (int i = ant.start; i <= ant.end; i++) {
-			candidateClusterStrs.add(part.getWord(i).orig.toLowerCase());
+		for(Mention ant : ants) {
+			for (int i = ant.start; i <= ant.end; i++) {
+				candidateClusterStrs.add(part.getWord(i).orig.toLowerCase());
+			}
+			candidateClusterStrs.remove(ant.head.toLowerCase());
 		}
-		candidateClusterStrs.remove(ant.head.toLowerCase());
 		if (candidateClusterStrs.containsAll(mentionClusterStrs))
 			return 1;
 		else
@@ -235,31 +237,34 @@ public class ContextEntityModel implements Serializable {
 		return (short) (Math.log(diss) / Math.log(2));
 	}
 
-	private static short isExactMatch(Mention ant, Mention anaphor,
+	private static short isExactMatch(ArrayList<Mention> ants, Mention anaphor,
 			CoNLLPart part) {
-//		for (Mention ant : ants) {
+		for (Mention ant : ants) {
 			if (ant.extent.equalsIgnoreCase(anaphor.extent)) {
-//				boolean modifierCompatible = true;
-//				ArrayList<String> curModifiers = anaphor.modifyList;
-//				ArrayList<String> canModifiers = ant.modifyList;
-//				HashSet<String> curModifiersHash = new HashSet<String>();
-//				curModifiersHash.addAll(curModifiers);
-//				HashSet<String> canModifiersHash = new HashSet<String>();
-//				canModifiersHash.addAll(canModifiers);
-//				for (String canModifier : canModifiers) {
-//					if (!curModifiersHash.contains(canModifier)) {
-//						modifierCompatible = false;
-//						break;
-//					}
-//				}
-//				for (String curModifier : curModifiers) {
-//					if (!canModifiersHash.contains(curModifier)) {
-//						modifierCompatible = false;
-//						break;
-//					}
-//				}
+				boolean modifierCompatible = true;
+				ArrayList<String> curModifiers = anaphor.modifyList;
+				ArrayList<String> canModifiers = ant.modifyList;
+				HashSet<String> curModifiersHash = new HashSet<String>();
+				curModifiersHash.addAll(curModifiers);
+				HashSet<String> canModifiersHash = new HashSet<String>();
+				canModifiersHash.addAll(canModifiers);
+				for (String canModifier : canModifiers) {
+					if (!curModifiersHash.contains(canModifier)) {
+						modifierCompatible = false;
+						break;
+					}
+				}
+				for (String curModifier : curModifiers) {
+					if (!canModifiersHash.contains(curModifier)) {
+						modifierCompatible = false;
+						break;
+					}
+				}
+				if (!modifierCompatible) {
+					continue;
+				}
 				return 1;
-//			}
+			}
 		}
 		return 0;
 	}
@@ -271,12 +276,14 @@ public class ContextEntityModel implements Serializable {
 		return 0;
 	}
 
-	public static short headMatch(Mention ant, Mention anaphor, CoNLLPart part) {
-		if (ant.head.equalsIgnoreCase(anaphor.head)) {
-			return 1;
-		} else {
-			return 0;
+	public static short headMatch(ArrayList<Mention> ants, Mention anaphor,
+			CoNLLPart part) {
+		for (Mention ant : ants) {
+			if (ant.head.equalsIgnoreCase(anaphor.head)) {
+				return 1;
+			}
 		}
+		return 0;
 	}
 
 	public static short isIWithI(Mention ant, Mention anaphor, CoNLLPart part) {
@@ -286,17 +293,8 @@ public class ContextEntityModel implements Serializable {
 		return 1;
 	}
 
-	public static short haveIncompatibleModify(Mention ant, Mention anaphor,
+	public static short haveIncompatibleModify(ArrayList<Mention> ants, Mention anaphor,
 			CoNLLPart part) {
-		// if (anaphor.isFake || !ant.head.equalsIgnoreCase(anaphor.head)) {
-		// return 0;
-		// } else if (ant.head.equals(anaphor.head)) {
-		// if (ant.extent.contains(anaphor.extent)) {
-		// return 1;
-		// } else {
-		// return 2;
-		// }
-		// }
 
 		boolean thisHasExtra = false;
 		Set<String> thisWordSet = new HashSet<String>();
@@ -312,9 +310,11 @@ public class ContextEntityModel implements Serializable {
 			}
 			thisWordSet.add(w1);
 		}
-		for (int j = ant.start; j <= ant.end; j++) {
-			String w2 = part.getWord(j).orig.toLowerCase();
-			antWordSet.add(w2);
+		for(Mention ant : ants) {
+			for (int j = ant.start; j <= ant.end; j++) {
+				String w2 = part.getWord(j).orig.toLowerCase();
+				antWordSet.add(w2);
+			}
 		}
 		for (String w : thisWordSet) {
 			if (!antWordSet.contains(w)) {
