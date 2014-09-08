@@ -13,13 +13,19 @@ public class ResolveGroupEntityModel implements Serializable {
 	 */
 	private static final long serialVersionUID = 1L;
 
-	String anaphorName;
+	Mention anaphor;
+
+	CoNLLPart part;
 	
-	ArrayList<EntryEntityModel> entries;
+	ArrayList<Mention> cands;
+	
+	public ArrayList<EntryEntityModel> entries;
 	
 	public ResolveGroupEntityModel(Mention m, CoNLLPart part) {
-		this.anaphorName = part.getPartName() + ":" + m.toName();
+		this.part = part;
+		this.anaphor = m;
 		this.entries = new ArrayList<EntryEntityModel>();
+		this.cands = new ArrayList<Mention>();
 	}
 
 	public static class EntryEntityModel implements Serializable {
@@ -29,15 +35,13 @@ public class ResolveGroupEntityModel implements Serializable {
 		private static final long serialVersionUID = 1L;
 		Context context;
 		
-		String antName;
+		ArrayList<Mention> cluster;
 		
-		boolean isFake;
 		double p;
 		
-		public EntryEntityModel(Mention ant, Context context, CoNLLPart part) {
-			this.antName = part.getPartName() + ":" + ant.toName();
+		public EntryEntityModel(Context context, ArrayList<Mention> cluster) {
+			this.cluster = cluster;
 			this.context = context;
-			this.isFake = ant.isFake;
 		}
 	}
 }

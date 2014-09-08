@@ -233,6 +233,8 @@ public class ApplyEMEntityModel {
 				Context context = Context.buildContext(cand, anaphor, part,
 						cands, i);
 				cand.msg = Context.message;
+				
+//				EntryEntityModel entry = new EntryEntityModel(context, part.getPartName() + ":" + cand.toName());
 
 				double p_number = numberP.getVal(cand.number.name(), EMUtil
 						.getAntNumber(anaphor).name());
