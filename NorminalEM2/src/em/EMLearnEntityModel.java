@@ -91,7 +91,6 @@ public class EMLearnEntityModel {
 		return goldPart.getNameEntities();
 	}
 
-	public static HashMap<String, Mention> mentionMap = new HashMap<String, Mention>();
 
 	public static ArrayList<ResolveGroupEntityModel> extractGroups(
 			CoNLLPart part) {
@@ -106,10 +105,6 @@ public class EMLearnEntityModel {
 			CoNLLSentence s = part.getCoNLLSentences().get(i);
 			s.mentions = EMUtil.extractMention(s);
 
-			for(Mention m : s.mentions) {
-				mentionMap.put(part.getPartName() + ":" + m.toName(), m);
-			}
-			
 			EMUtil.assignNE(s.mentions, part.getNameEntities());
 
 			ArrayList<Mention> precedMs = new ArrayList<Mention>();
@@ -165,13 +160,10 @@ public class EMLearnEntityModel {
 					Mention ant = ants.get(k);
 					// add antecedents
 
+					rg.cands.add(ant);
 					Context context = Context.buildContext(ant, m, part, ants,
 							k);
-
-					EntryEntityModel entry = new EntryEntityModel(ant, context, part);
-					rg.entries.add(entry);
 					count++;
-
 					Double d = contextPrior.get(context.toString());
 					if (d == null) {
 						contextPrior.put(context.toString(), 1.0);
@@ -296,9 +288,23 @@ public class EMLearnEntityModel {
 		long t1 = System.currentTimeMillis();
 		for (ResolveGroupEntityModel group : groups) {
 			double norm = 0;
-			Mention anaphor = mentionMap.get(group.anaphorName);
+			Mention anaphor = group.anaphor;
+			
+			group.entries.clear();
+			
+			for(int k=0;k<group.cands.size();k++) {
+				Mention cand = group.cands.get(k);
+				Context context = Context.buildContext(cand, anaphor, group.part, group.cands,
+						k);
+				ArrayList<Mention> cluster = new ArrayList<Mention>();
+				cluster.add(cand);
+				EntryEntityModel e = new EntryEntityModel(context, cluster);
+				group.entries.add(e);
+			}
+			
+			
 			for (EntryEntityModel entry : group.entries) {
-				Mention ant = mentionMap.get(entry.antName);
+				Mention ant = entry.cluster.get(0);
 				Context context = entry.context;
 
 				double p_number = numberP.getVal(ant.number.name(),
@@ -349,9 +355,11 @@ public class EMLearnEntityModel {
 		grammaticP.resetCounts();
 		fracContextCount.clear();
 		for (ResolveGroupEntityModel group : groups) {
-			Mention anaphor = mentionMap.get(group.anaphorName);
+			
+			Mention anaphor = group.anaphor;
+			
 			for (EntryEntityModel entry : group.entries) {
-				Mention ant = mentionMap.get(entry.antName);
+				Mention ant = entry.cluster.get(0);
 				double p = entry.p;
 				Context context = entry.context;
 
