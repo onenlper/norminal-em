@@ -24,9 +24,7 @@ public class ResolveGroup implements Serializable {
 	Animacy animacy;
 	Gender gender;
 	Number number;
-	
 	Grammatic gram;
-	
 	String sem = "unknown";
 	
 	public ResolveGroup(Mention m) {
@@ -51,13 +49,13 @@ public class ResolveGroup implements Serializable {
 		Animacy animacy = Animacy.fake;
 		Gender gender = Gender.fake;
 		Number number = Number.fake;
-		
 		String sem = "unknown";
+		Grammatic gram;
 		
 		boolean isFake;
 		double p;
 
-		Grammatic gram;
+		
 		
 		public Entry(Mention ant, Context context) {
 			this.head = ant.head;
