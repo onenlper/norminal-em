@@ -71,9 +71,10 @@ public class ContextEntityModel implements Serializable {
 
 	static short[] feas = new short[18];
 
-	public static ContextEntityModel buildContext(Mention ant, Mention anaphor,
-			CoNLLPart part, ArrayList<Mention> allCands, int mentionDis) {
-
+	public static ContextEntityModel buildContext(ArrayList<Mention> ants,
+			Mention anaphor, CoNLLPart part, ArrayList<Mention> allCands,
+			int mentionDis) {
+		Mention ant = ants.get(ants.size() - 1);
 		// exact match
 		int id = 0;
 		short[] feas = new short[10];
@@ -85,7 +86,7 @@ public class ContextEntityModel implements Serializable {
 		feas[id++] = headMatch(ant, anaphor, part); // 2
 		feas[id++] = haveIncompatibleModify(ant, anaphor, part); // 3
 		feas[id++] = wordInclusion(ant, anaphor, part);
-		
+
 		// feas[id++] = isSameGrammatic(ant, anaphor, part);
 		// feas[id++] = isIWithI(ant, anaphor, part); // 2
 		// feas[id++] = isSamePredicate(ant, anaphor, part);
@@ -236,11 +237,31 @@ public class ContextEntityModel implements Serializable {
 
 	private static short isExactMatch(Mention ant, Mention anaphor,
 			CoNLLPart part) {
-		if (ant.extent.equalsIgnoreCase(anaphor.extent)) {
-			return 1;
-		} else {
-			return 0;
+//		for (Mention ant : ants) {
+			if (ant.extent.equalsIgnoreCase(anaphor.extent)) {
+//				boolean modifierCompatible = true;
+//				ArrayList<String> curModifiers = anaphor.modifyList;
+//				ArrayList<String> canModifiers = ant.modifyList;
+//				HashSet<String> curModifiersHash = new HashSet<String>();
+//				curModifiersHash.addAll(curModifiers);
+//				HashSet<String> canModifiersHash = new HashSet<String>();
+//				canModifiersHash.addAll(canModifiers);
+//				for (String canModifier : canModifiers) {
+//					if (!curModifiersHash.contains(canModifier)) {
+//						modifierCompatible = false;
+//						break;
+//					}
+//				}
+//				for (String curModifier : curModifiers) {
+//					if (!canModifiersHash.contains(curModifier)) {
+//						modifierCompatible = false;
+//						break;
+//					}
+//				}
+				return 1;
+//			}
 		}
+		return 0;
 	}
 
 	public static short isAbb(Mention ant, Mention anaphor, CoNLLPart part) {
