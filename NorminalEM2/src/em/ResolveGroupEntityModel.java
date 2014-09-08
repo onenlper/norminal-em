@@ -15,14 +15,14 @@ public class ResolveGroupEntityModel implements Serializable {
 
 	String anaphorName;
 	
-	ArrayList<Entry> entries;
+	ArrayList<EntryEntityModel> entries;
 	
 	public ResolveGroupEntityModel(Mention m, CoNLLPart part) {
 		this.anaphorName = part.getPartName() + ":" + m.toName();
-		this.entries = new ArrayList<Entry>();
+		this.entries = new ArrayList<EntryEntityModel>();
 	}
 
-	public static class Entry implements Serializable {
+	public static class EntryEntityModel implements Serializable {
 		/**
 		 * 
 		 */
@@ -34,7 +34,7 @@ public class ResolveGroupEntityModel implements Serializable {
 		boolean isFake;
 		double p;
 		
-		public Entry(Mention ant, Context context, CoNLLPart part) {
+		public EntryEntityModel(Mention ant, Context context, CoNLLPart part) {
 			this.antName = part.getPartName() + ":" + ant.toName();
 			this.context = context;
 			this.isFake = ant.isFake;
