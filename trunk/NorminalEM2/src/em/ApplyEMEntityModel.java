@@ -119,7 +119,7 @@ public class ApplyEMEntityModel {
 		for (String file : files) {
 			System.out.println(file);
 			CoNLLDocument document = new CoNLLDocument(file
-			 .replace("auto_conll", "gold_conll")
+//			 .replace("auto_conll", "gold_conll")
 			);
 			for (int k = 0; k < document.getParts().size(); k++) {
 				CoNLLPart part = document.getParts().get(k);
