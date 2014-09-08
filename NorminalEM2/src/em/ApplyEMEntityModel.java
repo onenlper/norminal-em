@@ -254,8 +254,7 @@ public class ApplyEMEntityModel {
 				// ArrayList<Mention> cluster = new ArrayList<Mention>();
 				// cluster.add(cand);
 				ContextEntityModel context = ContextEntityModel.buildContext(
-						cluster.get(cluster.size()-1), anaphor, part, cands,
-						0);
+						cluster, anaphor, part, cands, 0);
 				EntryEntityModel entry = new EntryEntityModel(context, cluster);
 				entries.add(entry);
 			}
@@ -268,7 +267,8 @@ public class ApplyEMEntityModel {
 			Collections.reverse(entries);
 			for (int i = 0; i < entries.size(); i++) {
 				EntryEntityModel entry = entries.get(i);
-				Mention cand = entries.get(i).cluster.get(entries.get(i).cluster.size()-1);
+				Mention cand = entries.get(i).cluster
+						.get(entries.get(i).cluster.size() - 1);
 
 				boolean coref = chainMap.containsKey(anaphor.toName())
 						&& chainMap.containsKey(cand.toName())
@@ -318,8 +318,8 @@ public class ApplyEMEntityModel {
 
 			if (antecedent != null) {
 				anaphor.antecedent = antecedent;
-				 int newClusterID = clusterMap.get(antecedent.toName());
-				 clusterMap.put(anaphor.toName(), newClusterID);
+				int newClusterID = clusterMap.get(antecedent.toName());
+				clusterMap.put(anaphor.toName(), newClusterID);
 			}
 			if (anaphor.antecedent != null
 					&& anaphor.antecedent.end != -1

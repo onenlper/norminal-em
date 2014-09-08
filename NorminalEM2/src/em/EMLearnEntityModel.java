@@ -305,12 +305,12 @@ public class EMLearnEntityModel {
 				}
 				cluster.add(cand);
 			}
-			
+//			System.out.println(group.cands.size() + "#" + previousClusters.size());
 			for(Integer key : previousClusters.keySet()) {
 				ArrayList<Mention> cluster = previousClusters.get(key);
 				Collections.sort(cluster);
 				ContextEntityModel context = ContextEntityModel.buildContext(
-						cluster.get(cluster.size()-1), anaphor, group.part, group.cands, 0);
+						cluster, anaphor, group.part, group.cands, 0);
 
 				EntryEntityModel e = new EntryEntityModel(context, cluster);
 				group.entries.add(e);
@@ -326,7 +326,7 @@ public class EMLearnEntityModel {
 			Collections.reverse(group.entries);
 			
 			for (EntryEntityModel entry : group.entries) {
-				Mention ant = entry.cluster.get(0);
+				Mention ant = entry.cluster.get(entry.cluster.size()-1);
 				ContextEntityModel context = entry.context;
 
 				double p_number = numberP.getVal(ant.number.name(),
