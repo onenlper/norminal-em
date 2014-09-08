@@ -28,7 +28,7 @@ public class ResolveGroupEntityModel implements Serializable {
 		this.cands = new ArrayList<Mention>();
 	}
 
-	public static class EntryEntityModel implements Serializable {
+	public static class EntryEntityModel implements Serializable, Comparable<EntryEntityModel>{
 		/**
 		 * 
 		 */
@@ -42,6 +42,13 @@ public class ResolveGroupEntityModel implements Serializable {
 		public EntryEntityModel(Context context, ArrayList<Mention> cluster) {
 			this.cluster = cluster;
 			this.context = context;
+		}
+
+		@Override
+		public int compareTo(EntryEntityModel e2) {
+			Mention m1 = this.cluster.get(this.cluster.size()-1);
+			Mention m2 = e2.cluster.get(e2.cluster.size()-1);
+			return m1.compareTo(m2);
 		}
 	}
 }
