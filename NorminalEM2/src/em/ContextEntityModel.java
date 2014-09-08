@@ -74,6 +74,13 @@ public class ContextEntityModel implements Serializable {
 	public static ContextEntityModel buildContext(ArrayList<Mention> ants,
 			Mention anaphor, CoNLLPart part, ArrayList<Mention> allCands,
 			int mentionDis) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(ants.size()).append(" ");
+		for (Mention ant : ants) {
+			sb.append(ant.extent + ":" + ant.toName() + " ### ");
+		}
+//		 System.out.println(sb.toString());
+
 		Mention ant = ants.get(ants.size() - 1);
 		// exact match
 		int id = 0;
@@ -84,8 +91,8 @@ public class ContextEntityModel implements Serializable {
 		feas[id++] = getDistance(ant, anaphor, part); //
 		feas[id++] = isExactMatch(ants, anaphor, part); // 2
 		feas[id++] = headMatch(ants, anaphor, part); // 2
-		feas[id++] = haveIncompatibleModify(ants, anaphor, part); // 3
-		feas[id++] = wordInclusion(ants, anaphor, part);
+		feas[id++] = haveIncompatibleModify(ants, anaphor, part, ant); // 3
+		feas[id++] = wordInclusion(ants, anaphor, part, ant);
 
 		// feas[id++] = isSameGrammatic(ant, anaphor, part);
 		// feas[id++] = isIWithI(ant, anaphor, part); // 2
@@ -97,7 +104,9 @@ public class ContextEntityModel implements Serializable {
 	}
 
 	public static short wordInclusion(ArrayList<Mention> ants, Mention anaphor,
-			CoNLLPart part) {
+			CoNLLPart part,
+			Mention ant
+			) {
 		List<String> removeW = Arrays.asList(new String[] { "这个", "这", "那个",
 				"那", "自己", "的", "该", "公司", "这些", "那些", "'s" });
 		ArrayList<String> removeWords = new ArrayList<String>();
@@ -116,12 +125,12 @@ public class ContextEntityModel implements Serializable {
 
 		mentionClusterStrs.remove(anaphor.head.toLowerCase());
 		HashSet<String> candidateClusterStrs = new HashSet<String>();
-		for(Mention ant : ants) {
+//		for (Mention ant : ants) {
 			for (int i = ant.start; i <= ant.end; i++) {
 				candidateClusterStrs.add(part.getWord(i).orig.toLowerCase());
 			}
 			candidateClusterStrs.remove(ant.head.toLowerCase());
-		}
+//		}
 		if (candidateClusterStrs.containsAll(mentionClusterStrs))
 			return 1;
 		else
@@ -293,8 +302,10 @@ public class ContextEntityModel implements Serializable {
 		return 1;
 	}
 
-	public static short haveIncompatibleModify(ArrayList<Mention> ants, Mention anaphor,
-			CoNLLPart part) {
+	public static short haveIncompatibleModify(ArrayList<Mention> ants,
+			Mention anaphor, CoNLLPart part,
+			Mention ant
+			) {
 
 		boolean thisHasExtra = false;
 		Set<String> thisWordSet = new HashSet<String>();
@@ -310,12 +321,12 @@ public class ContextEntityModel implements Serializable {
 			}
 			thisWordSet.add(w1);
 		}
-		for(Mention ant : ants) {
+//		for (Mention ant : ants) {
 			for (int j = ant.start; j <= ant.end; j++) {
 				String w2 = part.getWord(j).orig.toLowerCase();
 				antWordSet.add(w2);
 			}
-		}
+//		}
 		for (String w : thisWordSet) {
 			if (!antWordSet.contains(w)) {
 				thisHasExtra = true;

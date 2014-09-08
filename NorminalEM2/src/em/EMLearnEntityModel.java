@@ -130,7 +130,8 @@ public class EMLearnEntityModel {
 			for (int j = 0; j < s.mentions.size(); j++) {
 				Mention m = s.mentions.get(j);
 				if (goldPNs.contains(m.toName())
-						|| goldNEs.contains(m.toName())) {
+//						|| goldNEs.contains(m.toName())
+						) {
 					continue;
 				}
 				qid++;
@@ -177,7 +178,7 @@ public class EMLearnEntityModel {
 		return groups;
 	}
 
-	static int percent = 10;
+	static int percent = 1;
 
 	private static void extractCoNLL(ArrayList<ResolveGroupEntityModel> groups) {
 		// CoNLLDocument d = new CoNLLDocument("train_auto_conll");
