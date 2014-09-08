@@ -104,9 +104,16 @@ public class EMLearnEntityModel {
 		for (int i = 0; i < part.getCoNLLSentences().size(); i++) {
 			CoNLLSentence s = part.getCoNLLSentences().get(i);
 			s.mentions = EMUtil.extractMention(s);
-
+			
 			EMUtil.assignNE(s.mentions, part.getNameEntities());
 
+			for(Mention em : s.mentions) {
+				em.animacy = EMUtil.getAntAnimacy(em);
+				em.gender = EMUtil.getAntGender(em);
+				em.number = EMUtil.getAntNumber(em);
+				em.semantic = EMUtil.getSemantic(em);
+			}
+			
 			ArrayList<Mention> precedMs = new ArrayList<Mention>();
 
 			for (int j = maxDistance; j >= 1; j--) {
@@ -161,16 +168,23 @@ public class EMLearnEntityModel {
 					// add antecedents
 
 					rg.cands.add(ant);
-					Context context = Context.buildContext(ant, m, part, ants,
-							k);
+//					Context context = Context.buildContext(ant, m, part, ants,
+//							k);
+//					ArrayList<Mention> cluster = new ArrayList<Mention>();
+//					cluster.add(ant);
+//					EntryEntityModel entry = new EntryEntityModel(context, cluster);
+//					rg.entries.add(entry);
+					//TODO
 					count++;
-					Double d = contextPrior.get(context.toString());
-					if (d == null) {
-						contextPrior.put(context.toString(), 1.0);
-					} else {
-						contextPrior.put(context.toString(),
-								1.0 + d.doubleValue());
-					}
+					
+//					Double d = contextPrior.get(context.toString());
+//					if (d == null) {
+//						contextPrior.put(context.toString(), 1.0);
+//					} else {
+//						contextPrior.put(context.toString(),
+//								1.0 + d.doubleValue());
+//					}
+					
 					// boolean coref = chainMap.containsKey(m.toName())
 					// && chainMap.containsKey(ant.toName())
 					// && chainMap.get(m.toName()).intValue() == chainMap
@@ -182,7 +196,7 @@ public class EMLearnEntityModel {
 		return groups;
 	}
 
-	static int percent = 10;
+	static int percent = 10	;
 
 	private static void extractCoNLL(ArrayList<ResolveGroupEntityModel> groups) {
 		// CoNLLDocument d = new CoNLLDocument("train_auto_conll");
@@ -285,6 +299,7 @@ public class EMLearnEntityModel {
 
 	public static void estep(ArrayList<ResolveGroupEntityModel> groups) {
 		System.out.println("estep starts:");
+		contextPrior.clear();
 		long t1 = System.currentTimeMillis();
 		for (ResolveGroupEntityModel group : groups) {
 			double norm = 0;
@@ -294,14 +309,24 @@ public class EMLearnEntityModel {
 			
 			for(int k=0;k<group.cands.size();k++) {
 				Mention cand = group.cands.get(k);
-				Context context = Context.buildContext(cand, anaphor, group.part, group.cands,
-						k);
+
 				ArrayList<Mention> cluster = new ArrayList<Mention>();
 				cluster.add(cand);
+				
+				Context context = Context.buildContext(cluster.get(0), anaphor, group.part, group.cands,
+						k);
+
 				EntryEntityModel e = new EntryEntityModel(context, cluster);
 				group.entries.add(e);
+				
+				Double d = contextPrior.get(context.toString());
+				if (d == null) {
+					contextPrior.put(context.toString(), 1.0);
+				} else {
+					contextPrior.put(context.toString(),
+							1.0 + d.doubleValue());
+				}
 			}
-			
 			
 			for (EntryEntityModel entry : group.entries) {
 				Mention ant = entry.cluster.get(0);
@@ -396,6 +421,99 @@ public class EMLearnEntityModel {
 		}
 		System.out.println(System.currentTimeMillis() - t1);
 	}
+	
+//	public static void estep(ArrayList<ResolveGroupEntityModel> groups) {
+//		System.out.println("estep starts:");
+//		long t1 = System.currentTimeMillis();
+//		for (ResolveGroupEntityModel group : groups) {
+//			double norm = 0;
+//			for (EntryEntityModel entry : group.entries) {
+//				Context context = entry.context;
+//
+//				double p_number = numberP.getVal(entry.number.name(),
+//						group.anaphor.number.name());
+//				double p_gender = genderP.getVal(entry.gender.name(),
+//						group.anaphor.number.name());
+//				double p_animacy = animacyP.getVal(entry.animacy.name(),
+//						group.anaphor.number.name());
+//				double p_grammatic = grammaticP.getVal(entry.gram.name(),
+//						group.anaphor.number.name());
+//
+//				double p_semetic = semanticP.getVal(entry.sem, group.anaphor.semantic);
+//
+//				double p_context = .5;
+//				Double d = contextVals.get(context.toString());
+//				if (contextVals.containsKey(context.toString())) {
+//					p_context = d.doubleValue();
+//				} else {
+//					p_context = .5;
+//					// if(context.toString().startsWith("0")) {
+//					// p_context = .1;
+//					// }
+//				}
+//
+//				entry.p = p_context;
+//				entry.p *= 1 * p_number * p_gender * p_animacy * p_semetic
+//				// * p_grammatic
+//				;
+//				norm += entry.p;
+//			}
+//
+//			for (EntryEntityModel entry : group.entries) {
+//				entry.p = entry.p / norm;
+//			}
+//		}
+//		System.out.println(System.currentTimeMillis() - t1);
+//	}
+//
+//	public static void mstep(ArrayList<ResolveGroupEntityModel> groups) {
+//		System.out.println("mstep starts:");
+//		long t1 = System.currentTimeMillis();
+//		genderP.resetCounts();
+//		numberP.resetCounts();
+//		animacyP.resetCounts();
+//		contextVals.clear();
+//		semanticP.resetCounts();
+//		grammaticP.resetCounts();
+//		fracContextCount.clear();
+//		for (ResolveGroupEntityModel group : groups) {
+//			for (EntryEntityModel entry : group.entries) {
+//				double p = entry.p;
+//				Context context = entry.context;
+//
+//				numberP.addFracCount(entry.number.name(), group.number.name(),
+//						p);
+//				genderP.addFracCount(entry.gender.name(), group.gender.name(),
+//						p);
+//				animacyP.addFracCount(entry.animacy.name(),
+//						group.animacy.name(), p);
+//
+//				semanticP.addFracCount(entry.sem, group.sem, p);
+//
+//				grammaticP
+//						.addFracCount(entry.gram.name(), group.gram.name(), p);
+//
+//				Double d = fracContextCount.get(context.toString());
+//				if (d == null) {
+//					fracContextCount.put(context.toString(), p);
+//				} else {
+//					fracContextCount.put(context.toString(), d.doubleValue()
+//							+ p);
+//				}
+//			}
+//		}
+//		genderP.setVals();
+//		numberP.setVals();
+//		animacyP.setVals();
+//		semanticP.setVals();
+//		grammaticP.setVals();
+//		for (String key : fracContextCount.keySet()) {
+//			double p_context = (EMUtil.alpha + fracContextCount.get(key))
+//					/ (2.0 * EMUtil.alpha + contextPrior.get(key));
+//			contextVals.put(key, p_context);
+//		}
+//		System.out.println(System.currentTimeMillis() - t1);
+//	}
 
 	public static void main(String args[]) throws Exception {
 		run();
