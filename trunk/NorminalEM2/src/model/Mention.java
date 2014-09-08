@@ -60,6 +60,8 @@ public class Mention implements Comparable<Mention>, Serializable {
 
 	public boolean notInChainZero;
 
+	public String semantic = "unknown";
+	
 	public int sentenceID;
 
 	public CoNLLSentence s;
