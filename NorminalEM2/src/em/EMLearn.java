@@ -181,7 +181,7 @@ public class EMLearn {
 		return groups;
 	}
 
-	static int percent = 1;
+	static int percent = 10;
 
 	private static void extractCoNLL(ArrayList<ResolveGroup> groups) {
 		// CoNLLDocument d = new CoNLLDocument("train_auto_conll");
