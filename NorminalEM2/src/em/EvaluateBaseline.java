@@ -17,8 +17,8 @@ public class EvaluateBaseline {
 	public static void main(String args[]) {
 //		String path = "key.chinese.test.open.goldMentions";
 //		String path = "key.chinese.development.open.systemParse";
-//		String path = "/users/yzcchen/chen3/conll12/chinese/key.chinese.test.open";
-		String path = "key.chinese.test.open.systemParse";
+		String path = "/users/yzcchen/chen3/conll12/chinese/key.chinese.test.open";
+//		String path = "key.chinese.test.open.systemParse";
 //		String path = "key.chinese.test.open.systemParse";
 		
 		HashMap<String, HashMap<String, String>> allSys = EMUtil.extractSysKeys(path);

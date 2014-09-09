@@ -79,7 +79,7 @@ public class ApplyEM {
 
 			// modelInput2.close();
 			// loadGuessProb();
-			EMUtil.loadPredictNE(folder, "dev");
+			EMUtil.loadPredictNE(folder, "test");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -137,6 +137,9 @@ public class ApplyEM {
 						.extractMention(part);
 				Collections.sort(goldBoundaryNPMentions);
 
+				EMUtil.assignNE(goldBoundaryNPMentions, EMUtil.predictNEs.get(part.getDocument().getDocumentID() + "_"
+						+ part.getPartID()));
+				
 				ArrayList<Mention> candidates = new ArrayList<Mention>();
 				for (Mention m : goldBoundaryNPMentions) {
 					if (!goldPNs.contains(m.toName())) {
@@ -146,30 +149,24 @@ public class ApplyEM {
 
 				Collections.sort(candidates);
 
-				// ArrayList<Mention> anaphors = getGoldNouns(
-				// part.getChains(), part);
-				// ArrayList<Mention> anaphors = getGoldAnaphorNouns(
-				// part.getChains(), part);
-
-				HashMap<String, String> anas = maps.get(part.getPartName());
-				
 				ArrayList<Mention> anaphors = new ArrayList<Mention>();
 				for (Mention m : goldBoundaryNPMentions) {
-//					if (!goldNEs.contains(m.toName()) && !goldPNs.contains(m.toName())) {
-//						anaphors.add(m);
-//					}
-					if(anas.containsKey(m.toName())) {
-						anaphors.add(m);
-						anas.remove(m.toName());
+					if (m.start==m.end && part.getWord(m.end).posTag.equals("PN")) {
+						continue;
 					}
+					anaphors.add(m);
 				}
 
-				findAntecedent(file, part, chainMap, corefResult, anaphors,
+				findAntecedent(file, part, chainMap, anaphors,
 						candidates);
 
-				// findAntecedentMaxEnt(file, part, chainMap, corefResult,
-				// anaphorZeros,
-				// candidates);
+
+				for(Mention m : anaphors) {
+					if (goldPNs.contains(m.toName()) || goldNEs.contains(m.toName()) || m.antecedent==null) {
+						continue;
+					}
+					corefResult.add(m);
+				}
 			}
 		}
 		System.out.println("Good: " + good);
@@ -186,7 +183,7 @@ public class ApplyEM {
 	}
 	
 	private void findAntecedent(String file, CoNLLPart part,
-			HashMap<String, Integer> chainMap, ArrayList<Mention> corefResult,
+			HashMap<String, Integer> chainMap, 
 			ArrayList<Mention> anaphors, ArrayList<Mention> allCandidates) {
 		for (Mention anaphor : anaphors) {
 			anaphor.sentenceID = part.getWord(anaphor.start).sentence
@@ -216,9 +213,9 @@ public class ApplyEM {
 
 			double probs[] = new double[cands.size()];
 
-//			if (!RuleAnaphorNounDetector.isAnahporic(anaphor, cands, part)) {
-//				continue;
-//			}
+			if (!RuleAnaphorNounDetector.isAnahporic(anaphor, cands, part)) {
+				continue;
+			}
 
 			for (int i = 0; i < cands.size(); i++) {
 				Mention cand = cands.get(i);
@@ -374,11 +371,6 @@ public class ApplyEM {
 			// // }
 			//
 			// }
-		}
-		for (Mention anaphor : anaphors) {
-			if (anaphor.antecedent != null) {
-				corefResult.add(anaphor);
-			}
 		}
 	}
 
