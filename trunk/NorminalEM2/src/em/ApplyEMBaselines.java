@@ -221,7 +221,7 @@ public class ApplyEMBaselines {
 				if (cand.head.equals(anaphor.head) && cand.end != anaphor.end
 //						&& cand.extent.contains(anaphor.extent)
 //						&& cand.extent.equals(anaphor.extent)
-						&& Context.wordInclusion(cand, anaphor, part)==1
+//						&& Context.wordInclusion(cand, anaphor, part)==1
 						) {
 					// if (cand.extent.equals(anaphor.extent)) {
 					antecedent = cand;
