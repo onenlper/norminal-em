@@ -604,6 +604,9 @@ public class EMUtil {
 
 	public static void assignNE(ArrayList<Mention> mentions,
 			ArrayList<Element> elements) {
+		if(elements==null) {
+			return;
+		}
 		for (Mention mention : mentions) {
 			int end = mention.end;
 			for (Element element : elements) {
@@ -1483,7 +1486,7 @@ public class EMUtil {
 		if (predictNEs == null) {
 			NEMap = new HashMap<String, String>();
 			predictNEs = new HashMap<String, ArrayList<Element>>();
-			String fn = "chinese_" + folder + ".neresult";
+			String fn = "chinese_" + folder + ".neresult.test";
 			ArrayList<String> lines = Common.getLines(fn);
 			for (int i = 0; i < lines.size(); i++) {
 				String line = lines.get(i);

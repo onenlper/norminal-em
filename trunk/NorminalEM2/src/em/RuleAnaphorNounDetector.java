@@ -21,8 +21,8 @@ public class RuleAnaphorNounDetector {
 		}
 		
 		for (Mention cand : cands) {
-			if (cand.head.equals(m.head)
-					&& cand.extent.contains(m.extent)
+			if (cand.head.equals(m.head) && 
+					Context.wordInclusion(cand, m, part)==1
 					) {
 				anaphor = true;
 				break;

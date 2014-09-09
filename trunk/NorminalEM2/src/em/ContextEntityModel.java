@@ -79,7 +79,7 @@ public class ContextEntityModel implements Serializable {
 		for (Mention ant : ants) {
 			sb.append(ant.extent + ":" + ant.toName() + " ### ");
 		}
-//		 System.out.println(sb.toString());
+		// System.out.println(sb.toString());
 
 		Mention ant = ants.get(ants.size() - 1);
 		// exact match
@@ -91,12 +91,12 @@ public class ContextEntityModel implements Serializable {
 		feas[id++] = getDistance(ant, anaphor, part); //
 		feas[id++] = isExactMatch(ants, anaphor, part); // 2
 		feas[id++] = headMatch(ants, anaphor, part); // 2
-		feas[id++] = haveIncompatibleModify(ants, anaphor, part, ant); // 3
-		feas[id++] = wordInclusion(ants, anaphor, part, ant);
+		feas[id++] = haveIncompatibleModify(ants, anaphor, part); // 3
+		feas[id++] = wordInclusion(ants, anaphor, part);
 
 		// feas[id++] = isSameGrammatic(ant, anaphor, part);
 		// feas[id++] = isIWithI(ant, anaphor, part); // 2
-		// feas[id++] = isSamePredicate(ant, anaphor, part);
+		// feas[id++] = isSamePredicate(ants, anaphor, part);
 		// feas[id++] = getMentionDiss(mentionDis);
 		// feas[id++] = modifierMatch(ant, anaphor, part);
 		// feas[id++] = isSemanticSame(ant, anaphor, part);
@@ -104,16 +104,14 @@ public class ContextEntityModel implements Serializable {
 	}
 
 	public static short wordInclusion(ArrayList<Mention> ants, Mention anaphor,
-			CoNLLPart part,
-			Mention ant
-			) {
+			CoNLLPart part) {
 		List<String> removeW = Arrays.asList(new String[] { "这个", "这", "那个",
 				"那", "自己", "的", "该", "公司", "这些", "那些", "'s" });
 		ArrayList<String> removeWords = new ArrayList<String>();
 		removeWords.addAll(removeW);
 		HashSet<String> mentionClusterStrs = new HashSet<String>();
 		for (int i = anaphor.start; i <= anaphor.end; i++) {
-			mentionClusterStrs.add(part.getWord(i).orig.toLowerCase());
+			mentionClusterStrs.add(part.getWord(i).word.toLowerCase());
 			if (part.getWord(i).posTag.equalsIgnoreCase("DT")
 					&& i < anaphor.end
 					&& part.getWord(i + 1).posTag.equalsIgnoreCase("M")) {
@@ -125,12 +123,12 @@ public class ContextEntityModel implements Serializable {
 
 		mentionClusterStrs.remove(anaphor.head.toLowerCase());
 		HashSet<String> candidateClusterStrs = new HashSet<String>();
-//		for (Mention ant : ants) {
+		for (Mention ant : ants) {
 			for (int i = ant.start; i <= ant.end; i++) {
-				candidateClusterStrs.add(part.getWord(i).orig.toLowerCase());
+				candidateClusterStrs.add(part.getWord(i).word.toLowerCase());
 			}
 			candidateClusterStrs.remove(ant.head.toLowerCase());
-//		}
+		}
 		if (candidateClusterStrs.containsAll(mentionClusterStrs))
 			return 1;
 		else
@@ -168,22 +166,22 @@ public class ContextEntityModel implements Serializable {
 		return (short) (Math.log(diss) / Math.log(4));
 	}
 
-	private static short isSamePredicate(Mention ant, Mention anaphor,
-			CoNLLPart part) {
-		if (ant.gram == anaphor.gram) {
-			if (ant.V != null && anaphor.V != null) {
-				String v1 = EMUtil.getPredicateNode(ant.V);
-				String v2 = EMUtil.getPredicateNode(anaphor.V);
-				if (v1 != null && v2 != null && v1.equals(v2)) {
-					// System.out.println(v1);
-					// Common.bangErrorPOS(v1);
-					return 2;
+	private static short isSamePredicate(ArrayList<Mention> ants,
+			Mention anaphor, CoNLLPart part) {
+		for (Mention ant : ants) {
+			if (ant.gram == anaphor.gram) {
+				if (ant.V != null && anaphor.V != null) {
+					String v1 = EMUtil.getPredicateNode(ant.V);
+					String v2 = EMUtil.getPredicateNode(anaphor.V);
+					if (v1 != null && v2 != null && v1.equals(v2)) {
+						// System.out.println(v1);
+						// Common.bangErrorPOS(v1);
+						return 2;
+					}
 				}
 			}
-			return 1;
-		} else {
-			return 0;
 		}
+		return 0;
 	}
 
 	private static short isSameGrammatic(Mention ant, Mention anaphor,
@@ -303,9 +301,7 @@ public class ContextEntityModel implements Serializable {
 	}
 
 	public static short haveIncompatibleModify(ArrayList<Mention> ants,
-			Mention anaphor, CoNLLPart part,
-			Mention ant
-			) {
+			Mention anaphor, CoNLLPart part) {
 
 		boolean thisHasExtra = false;
 		Set<String> thisWordSet = new HashSet<String>();
@@ -314,19 +310,19 @@ public class ContextEntityModel implements Serializable {
 				"南", "西", "北", "中", "东面", "南面", "西面", "北面", "中部", "东北", "西部",
 				"南部", "下", "上", "新", "旧", "前"));
 		for (int i = anaphor.start; i <= anaphor.end; i++) {
-			String w1 = part.getWord(i).orig.toLowerCase();
+			String w1 = part.getWord(i).word.toLowerCase();
 			String pos1 = part.getWord(i).posTag;
 			if ((pos1.startsWith("PU") || w1.equalsIgnoreCase(anaphor.head))) {
 				continue;
 			}
 			thisWordSet.add(w1);
 		}
-//		for (Mention ant : ants) {
+		for (Mention ant : ants) {
 			for (int j = ant.start; j <= ant.end; j++) {
-				String w2 = part.getWord(j).orig.toLowerCase();
+				String w2 = part.getWord(j).word.toLowerCase();
 				antWordSet.add(w2);
 			}
-//		}
+		}
 		for (String w : thisWordSet) {
 			if (!antWordSet.contains(w)) {
 				thisHasExtra = true;

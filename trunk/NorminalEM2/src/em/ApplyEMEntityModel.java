@@ -80,7 +80,7 @@ public class ApplyEMEntityModel {
 
 			// modelInput2.close();
 			// loadGuessProb();
-			EMUtil.loadPredictNE(folder, "dev");
+			EMUtil.loadPredictNE(folder, "test");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -98,8 +98,10 @@ public class ApplyEMEntityModel {
 	double good = 0;
 	double bad = 0;
 
+	String dataset = "test";
+	
 	public void test() {
-		String dataset = "test";
+		
 		ArrayList<String> files = Common.getLines("chinese_list_" + folder
 				+ "_" + dataset);
 
@@ -138,6 +140,14 @@ public class ApplyEMEntityModel {
 						.extractMention(part);
 				Collections.sort(goldBoundaryNPMentions);
 
+//				System.out.println(part.getDocument().getDocumentID() + "_"
+//						+ part.getPartID());
+//				
+//				System.out.println(EMUtil.predictNEs.keySet().iterator().next());
+				
+				EMUtil.assignNE(goldBoundaryNPMentions, EMUtil.predictNEs.get(part.getDocument().getDocumentID() + "_"
+						+ part.getPartID()));
+				
 				ArrayList<Mention> candidates = new ArrayList<Mention>();
 				for (Mention m : goldBoundaryNPMentions) {
 					if (m.start==m.end && part.getWord(m.end).posTag.equals("PN")) {
