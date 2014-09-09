@@ -158,7 +158,7 @@ public class ApplyEM {
 				}
 
 				findAntecedent(file, part, chainMap, anaphors,
-						candidates);
+						candidates, goldNEs);
 
 
 				for(Mention m : anaphors) {
@@ -180,11 +180,13 @@ public class ApplyEM {
 		}
 		System.out.println(all + "@@@");
 		System.out.println(all2 + "@@@");
+		
+		System.out.println(ApplyEM.allL);
 	}
 	
 	private void findAntecedent(String file, CoNLLPart part,
 			HashMap<String, Integer> chainMap, 
-			ArrayList<Mention> anaphors, ArrayList<Mention> allCandidates) {
+			ArrayList<Mention> anaphors, ArrayList<Mention> allCandidates, HashSet<String> goldNEs) {
 		for (Mention anaphor : anaphors) {
 			anaphor.sentenceID = part.getWord(anaphor.start).sentence
 					.getSentenceIdx();
@@ -270,48 +272,38 @@ public class ApplyEM {
 			if (antecedent != null) {
 				anaphor.antecedent = antecedent;
 			}
+			boolean sw = false;
 			if (anaphor.antecedent != null
 					&& anaphor.antecedent.end != -1
 					&& chainMap.containsKey(anaphor.toName())
 					&& chainMap.containsKey(anaphor.antecedent.toName())
 					&& chainMap.get(anaphor.toName()).intValue() == chainMap
 							.get(anaphor.antecedent.toName()).intValue()) {
+				
+				//TODO
+				if (!RuleAnaphorNounDetector.isAnahporic(anaphor, cands, part) && !goldNEs.contains(anaphor.toName())) {
+					System.out.println(anaphor.extent + " #### " + antecedent.extent); 
+					sw = true;
+					allL++;
+				}
+				
 				good++;
 				String key = part.docName + ":" + part.getPartID() + ":"
 						+ anaphor.start + "-" + anaphor.antecedent.start + ","
 						+ anaphor.antecedent.end + ":GOOD";
 				corrects.add(key);
-				// if(antecedent.mType==MentionType.tmporal) {
-				// System.out.println(antecedent.extent + "GOOD!");
-				// }
-				// System.out.println(overtPro + "  " + zero.antecedent.extent);
-				// System.out.println("+++");
-				// printResult(zero, zero.antecedent, part);
-				// System.out.println("Predicate: " +
-				// this.getPredicate(zero.V));
-				// System.out.println("Object NP: " +
-				// this.getObjectNP(zero));
-				// System.out.println("===");
-				// if (zero.antecedent.MI < 0) {
-				// System.out.println("Right!!! " + good + "/" + bad);
-				// System.out.println(zero.antecedent.msg);
-				// if(!zero.antecedent.isFS) {
-				System.out.println("==========");
-				System.out.println("Correct!!! " + good + "/" + bad);
-				if (anaphor.antecedent != null) {
-					System.out.println(anaphor.antecedent.extent + ":"
-							+ anaphor.antecedent.NE + "#"
-							+ anaphor.antecedent.number + "#"
-							+ anaphor.antecedent.gender + "#"
-							+ anaphor.antecedent.person + "#"
-							+ anaphor.antecedent.animacy);
-					System.out.println(anaphor);
-					printResult(anaphor, anaphor.antecedent, part);
-				}
-				// System.out.println(overtPro + "#" + bestMSg);
-				// System.out.println("它: " + taMSg);
-				// }
-				// }
+//				System.out.println("==========");
+//				System.out.println("Correct!!! " + good + "/" + bad);
+//				if (anaphor.antecedent != null) {
+//					System.out.println(anaphor.antecedent.extent + ":"
+//							+ anaphor.antecedent.NE + "#"
+//							+ anaphor.antecedent.number + "#"
+//							+ anaphor.antecedent.gender + "#"
+//							+ anaphor.antecedent.person + "#"
+//							+ anaphor.antecedent.animacy);
+//					System.out.println(anaphor);
+//					printResult(anaphor, anaphor.antecedent, part);
+//				}
 			} else if (anaphor.antecedent != null) {
 				if (anaphor.antecedent == null) {
 					String key = part.docName + ":" + part.getPartID() + ":"
@@ -323,56 +315,30 @@ public class ApplyEM {
 							+ "," + anaphor.antecedent.end + ":BAD";
 					corrects.add(key);
 				}
-				// if(antecedent!=null && antecedent.mType==MentionType.tmporal)
-				// {
-				// System.out.println(antecedent.extent + "BAD !");
-				// }
 				bad++;
-				System.out.println("==========");
-				System.out.println("Error??? " + good + "/" + bad);
-				if (anaphor.antecedent != null) {
-					System.out.println(anaphor.antecedent.extent + ":"
-							+ anaphor.antecedent.NE + "#"
-							+ anaphor.antecedent.number + "#"
-							+ anaphor.antecedent.gender + "#"
-							+ anaphor.antecedent.person + "#"
-							+ anaphor.antecedent.animacy);
-					System.out.println(anaphor);
-					printResult(anaphor, anaphor.antecedent, part);
-				}
+//				System.out.println("==========");
+//				System.out.println("Error??? " + good + "/" + bad);
+//				if (anaphor.antecedent != null) {
+//					System.out.println(anaphor.antecedent.extent + ":"
+//							+ anaphor.antecedent.NE + "#"
+//							+ anaphor.antecedent.number + "#"
+//							+ anaphor.antecedent.gender + "#"
+//							+ anaphor.antecedent.person + "#"
+//							+ anaphor.antecedent.animacy);
+//					System.out.println(anaphor);
+//					printResult(anaphor, anaphor.antecedent, part);
+//				}
 			}
 			String conllPath = file;
 			int aa = conllPath.indexOf(anno);
 			int bb = conllPath.indexOf(".");
 			String middle = conllPath.substring(aa + anno.length(), bb);
-			String path = prefix + middle + suffix;
+			String path = prefix + middle + ".source";
+			if(sw)
 			System.out.println(path);
-			// System.out.println("=== " + file);
-
-			// if (antecedent != null) {
-			// CoNLLWord candWord = part.getWord(antecedent.start);
-			// CoNLLWord zeroWord = part.getWord(zero.start);
-			//
-			// String zeroSpeaker = part.getWord(zero.start).speaker;
-			// String candSpeaker = part.getWord(antecedent.start).speaker;
-			// // if (!zeroSpeaker.equals(candSpeaker)) {
-			// // if (antecedent.source.equals("我") &&
-			// // zeroWord.toSpeaker.contains(candSpeaker)) {
-			// // zero.head = "你";
-			// // zero.source = "你";
-			// // } else if (antecedent.source.equals("你") &&
-			// // candWord.toSpeaker.contains(zeroSpeaker)) {
-			// // zero.head = "我";
-			// // zero.source = "我";
-			// // }
-			// // } else {
-			// zero.extent = antecedent.extent;
-			// zero.head = antecedent.head;
-			// // }
-			//
-			// }
 		}
 	}
+	static int allL = 0;
 
 	protected void printResult(Mention zero, Mention systemAnte, CoNLLPart part) {
 		StringBuilder sb = new StringBuilder();

@@ -369,9 +369,11 @@ public class EMLearnEntityModel {
 			}
 			
 			// reorder activeClusterMap
-			Mention antecedent = group.entries.get(maxIdx).cluster.get(0);
-			int newClusterId = activeClusterMap.get(group.part.getPartName() + ":" + antecedent.toName());
-			activeClusterMap.put(group.part.getPartName() + ":" + anaphor.toName(), newClusterId);
+			if(maxIdx!=-1) {
+				Mention antecedent = group.entries.get(maxIdx).cluster.get(0);
+				int newClusterId = activeClusterMap.get(group.part.getPartName() + ":" + antecedent.toName());
+				activeClusterMap.put(group.part.getPartName() + ":" + anaphor.toName(), newClusterId);
+			}
 		}
 		System.out.println(System.currentTimeMillis() - t1);
 	}

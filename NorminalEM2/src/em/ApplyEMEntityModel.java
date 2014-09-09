@@ -236,7 +236,7 @@ public class ApplyEMEntityModel {
 			double probs[] = new double[cands.size()];
 
 			 if (!RuleAnaphorNounDetector.isAnahporic(anaphor, cands, part)) {
-			 continue;
+//			 continue;
 			 }
 
 			ArrayList<EntryEntityModel> entries = new ArrayList<EntryEntityModel>();

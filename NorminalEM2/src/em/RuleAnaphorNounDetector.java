@@ -18,11 +18,12 @@ public class RuleAnaphorNounDetector {
 		if(m.extent.startsWith("这")
 					|| m.extent.startsWith("那") || m.extent.startsWith("该") || m.extent.startsWith("此")
 				) {
+//			return true;
 		}
 		
 		for (Mention cand : cands) {
-			if (cand.head.equals(m.head) && 
-					Context.wordInclusion(cand, m, part)==1
+			if ((cand.head.equals(m.head) && 
+					Context.wordInclusion(cand, m, part)==1) || Context.sieve4Rule(cand, m, part)==1
 					) {
 				anaphor = true;
 				break;

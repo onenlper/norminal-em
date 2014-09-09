@@ -13,6 +13,7 @@ import model.Mention;
 import model.CoNLL.CoNLLPart;
 import model.syntaxTree.MyTreeNode;
 import util.Common;
+import dict.ChDictionary;
 
 public class ContextEntityModel implements Serializable {
 
@@ -93,6 +94,10 @@ public class ContextEntityModel implements Serializable {
 		feas[id++] = headMatch(ants, anaphor, part); // 2
 		feas[id++] = haveIncompatibleModify(ants, anaphor, part); // 3
 		feas[id++] = wordInclusion(ants, anaphor, part);
+		
+		feas[id++] = sameProperHeadLastWord(ant, anaphor, part);
+		feas[id++] = chHaveDifferentLocation(ant, anaphor, part);
+		feas[id++] = numberInLaterMention(ant, anaphor, part);
 
 		// feas[id++] = isSameGrammatic(ant, anaphor, part);
 		// feas[id++] = isIWithI(ant, anaphor, part); // 2
@@ -532,5 +537,106 @@ public class ContextEntityModel implements Serializable {
 				return 0;
 			}
 		}
+	}
+	
+//	public boolean sameProperHeadLastWordCluster(Mention antecedent, Mention em, CoNLLPart part) {
+//		for (Mention ante : antecedent.entity.mentions) {
+//			for (Mention cur : em.entity.mentions) {
+//				if (sameProperHeadLastWord(ante, cur, part)) {
+//					return true;
+//				}
+//			}
+//		}
+//		return false;
+//	}
+
+	public static short sameProperHeadLastWord(Mention a, Mention m, CoNLLPart part) {
+		String ner1 = part.getWord(a.headID).getRawNamedEntity();
+		String ner2 = part.getWord(m.headID).getRawNamedEntity();
+		if (a.head.equalsIgnoreCase(m.head) && part.getWord(a.headID).posTag.equals("NR")
+				&& part.getWord(m.headID).posTag.equals("NR")) {
+			return 1;
+		}
+		if(a.head.equalsIgnoreCase(m.head) && ner1.equalsIgnoreCase(ner2) && 
+				(ner1.equalsIgnoreCase("PERSON") || ner1.equalsIgnoreCase("GPE") || ner1.equalsIgnoreCase("LOC"))) {
+			return 1;
+		}
+		return 0;
+	}
+	
+	public static short chHaveDifferentLocation(Mention antecedent, Mention mention, CoNLLPart part) {
+		// state and country cannot be coref
+		if ((ChDictionary.getInstance().statesAbbreviation.containsKey(antecedent.extent) || ChDictionary.getInstance().statesAbbreviation
+				.containsValue(mention.extent))
+				&& (antecedent.head.equalsIgnoreCase("国")))
+			return 1;
+		Set<String> locationM = new HashSet<String>();
+		Set<String> locationA = new HashSet<String>();
+		String mString = mention.extent.toLowerCase();
+		String aString = antecedent.extent.toLowerCase();
+		Set<String> locationModifier = new HashSet<String>(Arrays.asList("东", "南", "西", "北", "中", "东面", "南面", "西面",
+				"北面", "中部", "东北", "西部", "南部", "下", "上", "新", "旧"));
+
+		for (int i = mention.start; i <= mention.end; i++) {
+			String word = part.getWord(i).word;
+			if (locationModifier.contains(word)) {
+				return 1;
+			}
+			if (part.getWord(i).rawNamedEntity.equals("LOC")) {
+				String loc = part.getWord(i).word;
+				if (ChDictionary.getInstance().statesAbbreviation.containsKey(loc))
+					loc = ChDictionary.getInstance().statesAbbreviation.get(loc);
+				locationM.add(loc);
+			}
+		}
+		for (int i = antecedent.start; i <= antecedent.end; i++) {
+			String word = part.getWord(i).word;
+			if (locationModifier.contains(word)) {
+				return 1;
+			}
+			if (part.getWord(i).rawNamedEntity.equals("LOC")) {
+				String loc = part.getWord(i).word;
+				if (ChDictionary.getInstance().statesAbbreviation.containsKey(loc))
+					loc = ChDictionary.getInstance().statesAbbreviation.get(loc);
+				locationA.add(loc);
+			}
+		}
+		boolean mHasExtra = false;
+		boolean aHasExtra = false;
+		for (String s : locationM) {
+			if (!aString.contains(s.toLowerCase()))
+				mHasExtra = true;
+		}
+		for (String s : locationA) {
+			if (!mString.contains(s.toLowerCase()))
+				aHasExtra = true;
+		}
+		if (mHasExtra && aHasExtra) {
+			return 1;
+		}
+		return 0;
+	}
+	
+	public static short numberInLaterMention(Mention ant, Mention mention, CoNLLPart part) {
+		Set<String> antecedentWords = new HashSet<String>();
+		Set<String> numbers = new HashSet<String>();
+		numbers.addAll(ChDictionary.getInstance().singleWords);
+		numbers.addAll(ChDictionary.getInstance().pluralWords);
+		for (int i = ant.start; i <= ant.end; i++) {
+			antecedentWords.add(part.getWord(i).word.toLowerCase());
+		}
+		for (int i = mention.start; i < mention.end; i++) {
+			String word = part.getWord(i).word.toLowerCase();
+			try {
+				Double.parseDouble(word);
+				if (!antecedentWords.contains(word))
+					return 1;
+			} catch (NumberFormatException e) {
+				if (numbers.contains(word.toLowerCase()) && !antecedentWords.contains(word))
+					return 1;
+				continue;
+			}
+		}
+		return 0;
 	}
 }
