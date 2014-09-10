@@ -102,10 +102,36 @@ public class ContextEntityModel implements Serializable {
 		 feas[id++] = isSameGrammatic(ant, anaphor, part);
 		 feas[id++] = isIWithI(ant, anaphor, part); // 2
 		 feas[id++] = isSamePredicate(ants, anaphor, part);
+		 
+		 feas[id++] = sieve4Rule(ant, anaphor, part);
+		 
 //		 feas[id++] = getMentionDiss(mentionDis);
 		// feas[id++] = modifierMatch(ant, anaphor, part);
 		// feas[id++] = isSemanticSame(ant, anaphor, part);
 		return getContext(feas);
+	}
+	
+	public static short sieve4Rule(Mention a, Mention m, CoNLLPart part) {
+		if(sameProperHeadLastWord(a, m, part)==1) {
+			if(chHaveDifferentLocation(a, m, part)==0 && numberInLaterMention(a, m, part)==0) {
+				return 1;
+			}
+		}
+		return 0;
+	}
+	
+	public static short sameProperHeadLastWord(Mention a, Mention m, CoNLLPart part) {
+		String ner1 = a.NE;
+		String ner2 = m.NE;
+		if (a.head.equalsIgnoreCase(m.head) && part.getWord(a.headID).posTag.equals("NR")
+				&& part.getWord(m.headID).posTag.equals("NR")) {
+			return 1;
+		}
+		if(a.head.equalsIgnoreCase(m.head) && ner1.equalsIgnoreCase(ner2) && 
+				(ner1.equalsIgnoreCase("PERSON") || ner1.equalsIgnoreCase("GPE") || ner1.equalsIgnoreCase("LOC"))) {
+			return 1;
+		}
+		return 0;
 	}
 
 	public static short wordInclusion(ArrayList<Mention> ants, Mention anaphor,
@@ -537,31 +563,6 @@ public class ContextEntityModel implements Serializable {
 				return 0;
 			}
 		}
-	}
-	
-//	public boolean sameProperHeadLastWordCluster(Mention antecedent, Mention em, CoNLLPart part) {
-//		for (Mention ante : antecedent.entity.mentions) {
-//			for (Mention cur : em.entity.mentions) {
-//				if (sameProperHeadLastWord(ante, cur, part)) {
-//					return true;
-//				}
-//			}
-//		}
-//		return false;
-//	}
-
-	public static short sameProperHeadLastWord(Mention a, Mention m, CoNLLPart part) {
-		String ner1 = part.getWord(a.headID).getRawNamedEntity();
-		String ner2 = part.getWord(m.headID).getRawNamedEntity();
-		if (a.head.equalsIgnoreCase(m.head) && part.getWord(a.headID).posTag.equals("NR")
-				&& part.getWord(m.headID).posTag.equals("NR")) {
-			return 1;
-		}
-		if(a.head.equalsIgnoreCase(m.head) && ner1.equalsIgnoreCase(ner2) && 
-				(ner1.equalsIgnoreCase("PERSON") || ner1.equalsIgnoreCase("GPE") || ner1.equalsIgnoreCase("LOC"))) {
-			return 1;
-		}
-		return 0;
 	}
 	
 	public static short chHaveDifferentLocation(Mention antecedent, Mention mention, CoNLLPart part) {

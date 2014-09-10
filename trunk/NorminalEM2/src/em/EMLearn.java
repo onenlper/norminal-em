@@ -286,6 +286,7 @@ public class EMLearn {
 	public static void estep(ArrayList<ResolveGroup> groups) {
 		System.out.println("estep starts:");
 		long t1 = System.currentTimeMillis();
+		min_amongMax = 1;
 		for (ResolveGroup group : groups) {
 			double norm = 0;
 			for (Entry entry : group.entries) {
@@ -320,13 +321,20 @@ public class EMLearn {
 				norm += entry.p;
 			}
 
+			double max = 0;
 			for (Entry entry : group.entries) {
 //				System.out.println(entry.p);
 				entry.p = entry.p / norm;
+				if(entry.p>max) {
+					max = entry.p;
+				}
 			}
+			min_amongMax = Math.min(min_amongMax, max);
 		}
 		System.out.println(System.currentTimeMillis() - t1);
 	}
+	
+	static double min_amongMax = 1;
 
 	public static void mstep(ArrayList<ResolveGroup> groups) {
 		System.out.println("mstep starts:");
@@ -441,12 +449,14 @@ public class EMLearn {
 
 		ApplyEM.run("all");
 
-		ApplyEM.run("nw");
-		ApplyEM.run("mz");
-		ApplyEM.run("wb");
-		ApplyEM.run("bn");
-		ApplyEM.run("bc");
-		ApplyEM.run("tc");
+		System.out.println(min_amongMax + " ### ");
+		
+//		ApplyEM.run("nw");
+//		ApplyEM.run("mz");
+//		ApplyEM.run("wb");
+//		ApplyEM.run("bn");
+//		ApplyEM.run("bc");
+//		ApplyEM.run("tc");
 	}
 
 }
