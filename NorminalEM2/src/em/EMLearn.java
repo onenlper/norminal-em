@@ -181,7 +181,7 @@ public class EMLearn {
 		return groups;
 	}
 
-	static int percent = 10;
+	static int percent = 1;
 
 	private static void extractCoNLL(ArrayList<ResolveGroup> groups) {
 		// CoNLLDocument d = new CoNLLDocument("train_auto_conll");
@@ -321,6 +321,7 @@ public class EMLearn {
 			}
 
 			for (Entry entry : group.entries) {
+//				System.out.println(entry.p);
 				entry.p = entry.p / norm;
 			}
 		}

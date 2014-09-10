@@ -125,7 +125,9 @@ public class ApplyEMEntityModel {
 			);
 			for (int k = 0; k < document.getParts().size(); k++) {
 				CoNLLPart part = document.getParts().get(k);
-
+				part.setNameEntities(EMUtil.predictNEs.get(part.getDocument().getDocumentID() + "_"
+						+ part.getPartID()));
+				
 				CoNLLPart goldPart = EMUtil.getGoldPart(part, dataset);
 
 				ArrayList<Entity> goldChains = goldPart.getChains();
@@ -144,9 +146,6 @@ public class ApplyEMEntityModel {
 //						+ part.getPartID());
 //				
 //				System.out.println(EMUtil.predictNEs.keySet().iterator().next());
-				
-				EMUtil.assignNE(goldBoundaryNPMentions, EMUtil.predictNEs.get(part.getDocument().getDocumentID() + "_"
-						+ part.getPartID()));
 				
 				ArrayList<Mention> candidates = new ArrayList<Mention>();
 				for (Mention m : goldBoundaryNPMentions) {
@@ -236,7 +235,7 @@ public class ApplyEMEntityModel {
 			double probs[] = new double[cands.size()];
 
 			 if (!RuleAnaphorNounDetector.isAnahporic(anaphor, cands, part)) {
-//			 continue;
+			 continue;
 			 }
 
 			ArrayList<EntryEntityModel> entries = new ArrayList<EntryEntityModel>();

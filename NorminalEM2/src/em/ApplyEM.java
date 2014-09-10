@@ -120,7 +120,9 @@ public class ApplyEM {
 			);
 			for (int k = 0; k < document.getParts().size(); k++) {
 				CoNLLPart part = document.getParts().get(k);
-
+				part.setNameEntities(EMUtil.predictNEs.get(part.getDocument().getDocumentID() + "_"
+						+ part.getPartID()));
+				
 				CoNLLPart goldPart = EMUtil.getGoldPart(part, dataset);
 				HashSet<String> goldPNs = EMUtil.getGoldPNs(goldPart);
 				HashSet<String> goldNEs = EMUtil.getGoldNEs(goldPart);
@@ -137,9 +139,6 @@ public class ApplyEM {
 						.extractMention(part);
 				Collections.sort(goldBoundaryNPMentions);
 
-				EMUtil.assignNE(goldBoundaryNPMentions, EMUtil.predictNEs.get(part.getDocument().getDocumentID() + "_"
-						+ part.getPartID()));
-				
 				ArrayList<Mention> candidates = new ArrayList<Mention>();
 				for (Mention m : goldBoundaryNPMentions) {
 					if (!goldPNs.contains(m.toName())) {
@@ -154,7 +153,8 @@ public class ApplyEM {
 					if (m.start==m.end && part.getWord(m.end).posTag.equals("PN")) {
 						continue;
 					}
-					anaphors.add(m);
+//					if(maps.get(part.getPartName()).containsKey(m.toName()))
+						anaphors.add(m);
 				}
 
 				findAntecedent(file, part, chainMap, anaphors,
