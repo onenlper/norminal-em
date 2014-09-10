@@ -122,7 +122,9 @@ public class ApplyEMBaselines {
 			);
 			for (int k = 0; k < document.getParts().size(); k++) {
 				CoNLLPart part = document.getParts().get(k);
-
+				part.setNameEntities(EMUtil.predictNEs.get(part.getDocument().getDocumentID() + "_"
+						+ part.getPartID()));
+						
 				CoNLLPart goldPart = EMUtil.getGoldPart(part, dataset);
 
 				ArrayList<Entity> goldChains = goldPart.getChains();
@@ -154,9 +156,9 @@ public class ApplyEMBaselines {
 
 				ArrayList<Mention> anaphors = new ArrayList<Mention>();
 				for (Mention m : goldBoundaryNPMentions) {
-					if (m.start==m.end && part.getWord(m.end).posTag.equals("PN")) {
-						continue;
-					}
+//					if (m.start==m.end && part.getWord(m.end).posTag.equals("PN")) {
+//						continue;
+//					}
 					anaphors.add(m);
 				}
 
@@ -218,7 +220,13 @@ public class ApplyEMBaselines {
 			for (int i = 0; i < cands.size(); i++) {
 				Mention cand = cands.get(i);
 
-				if (cand.head.equals(anaphor.head) && cand.end != anaphor.end
+				if (cand.end != anaphor.end && 
+//						Context.exactMatchSieve1(cand, anaphor, part)==1
+						(Context.sieve4Rule(cand, anaphor, part)==1 || 
+						Context.headSieve1(cand, anaphor, part)==1 ||
+						Context.headSieve2(cand, anaphor, part)==1 || 
+						Context.headSieve3(cand, anaphor, part)==1 || 
+						Context.exactMatchSieve1(cand, anaphor, part)==1)
 //						&& cand.extent.contains(anaphor.extent)
 //						&& cand.extent.equals(anaphor.extent)
 //						&& Context.wordInclusion(cand, anaphor, part)==1

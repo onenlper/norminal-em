@@ -95,14 +95,14 @@ public class ContextEntityModel implements Serializable {
 		feas[id++] = haveIncompatibleModify(ants, anaphor, part); // 3
 		feas[id++] = wordInclusion(ants, anaphor, part);
 		
-		feas[id++] = sameProperHeadLastWord(ant, anaphor, part);
-		feas[id++] = chHaveDifferentLocation(ant, anaphor, part);
-		feas[id++] = numberInLaterMention(ant, anaphor, part);
+//		feas[id++] = sameProperHeadLastWord(ant, anaphor, part);
+//		feas[id++] = chHaveDifferentLocation(ant, anaphor, part);
+//		feas[id++] = numberInLaterMention(ant, anaphor, part);
 
-		// feas[id++] = isSameGrammatic(ant, anaphor, part);
-		// feas[id++] = isIWithI(ant, anaphor, part); // 2
-		// feas[id++] = isSamePredicate(ants, anaphor, part);
-		// feas[id++] = getMentionDiss(mentionDis);
+		 feas[id++] = isSameGrammatic(ant, anaphor, part);
+		 feas[id++] = isIWithI(ant, anaphor, part); // 2
+		 feas[id++] = isSamePredicate(ants, anaphor, part);
+//		 feas[id++] = getMentionDiss(mentionDis);
 		// feas[id++] = modifierMatch(ant, anaphor, part);
 		// feas[id++] = isSemanticSame(ant, anaphor, part);
 		return getContext(feas);

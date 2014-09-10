@@ -11,21 +11,27 @@ import util.Common;
 
 public class RuleAnaphorNounDetector {
 
-	public static boolean isAnahporic(Mention m, ArrayList<Mention> cands,
+	public static boolean isAnahporic(Mention anaphor, ArrayList<Mention> cands,
 			CoNLLPart part) {
-		boolean anaphor = false;
+		boolean isAnaphor = false;
 		
-		if(m.extent.startsWith("这")
-					|| m.extent.startsWith("那") || m.extent.startsWith("该") || m.extent.startsWith("此")
-				) {
-//			return true;
-		}
+//		if(m.extent.startsWith("这")
+//					|| m.extent.startsWith("那") || m.extent.startsWith("该") || m.extent.startsWith("此")
+//				) {
+////			return true;
+//		}
 		
 		for (Mention cand : cands) {
-			if ((cand.head.equals(m.head) && 
-					Context.wordInclusion(cand, m, part)==1) || Context.sieve4Rule(cand, m, part)==1
+			if (
+					(Context.sieve4Rule(cand, anaphor, part)==1 || 
+					Context.headSieve1(cand, anaphor, part)==1 ||
+					Context.headSieve2(cand, anaphor, part)==1 || 
+					Context.headSieve3(cand, anaphor, part)==1 || 
+					Context.exactMatchSieve1(cand, anaphor, part)==1)
 					) {
-				anaphor = true;
+//			if(Context.sieve1(cand, m, part)==1 || Context.sieve2(cand, m, part)==1 ||
+//					Context.sieve3(cand, m, part)==1 || Context.sieve4Rule(cand, m, part)==1) {
+				isAnaphor = true;
 				break;
 			}
 //			String t1 = EMUtil.getSemantic(cand);
@@ -36,7 +42,7 @@ public class RuleAnaphorNounDetector {
 //				break;
 //			}
 		}
-		return anaphor;
+		return isAnaphor;
 	}
 
 	public static void main(String args[]) {

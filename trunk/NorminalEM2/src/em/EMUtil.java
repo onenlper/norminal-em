@@ -906,6 +906,8 @@ public class EMUtil {
 //			return nounPhrases;
 //		}
 		
+		EMUtil.assignNE(nounPhrases, sentence.part.getNameEntities());
+		
 		CoNLLPart part = sentence.part;
 		//TODO
 		for (int i = 0; i < nounPhrases.size(); i++) {
