@@ -1,4 +1,4 @@
-package em;
+	package em;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -106,27 +106,29 @@ public class ApplyEM {
 
 		// ArrayList<HashSet<String>> goldAnaphorses = new
 		// ArrayList<HashSet<String>>();
-		HashMap<String, HashMap<String, String>> maps = EMUtil.extractSysKeys("key.chinese.test.open.systemParse");
+		HashMap<String, HashMap<String, String>> maps = EMUtil
+				.extractSysKeys("key.chinese.test.open.systemParse");
 		int all2 = 0;
-		for(String key : maps.keySet()) {
+		for (String key : maps.keySet()) {
 			all2 += maps.get(key).size();
 		}
-		HashMap<String, HashMap<String, HashSet<String>>> goldKeyses = EMUtil.extractGoldKeys();
+		HashMap<String, HashMap<String, HashSet<String>>> goldKeyses = EMUtil
+				.extractGoldKeys();
 
 		for (String file : files) {
-			System.out.println(file);
+//			System.out.println(file);
 			CoNLLDocument document = new CoNLLDocument(file
 			// .replace("auto_conll", "gold_conll")
 			);
 			for (int k = 0; k < document.getParts().size(); k++) {
 				CoNLLPart part = document.getParts().get(k);
-				part.setNameEntities(EMUtil.predictNEs.get(part.getDocument().getDocumentID() + "_"
-						+ part.getPartID()));
-				
+				part.setNameEntities(EMUtil.predictNEs.get(part.getDocument()
+						.getDocumentID() + "_" + part.getPartID()));
+
 				CoNLLPart goldPart = EMUtil.getGoldPart(part, dataset);
 				HashSet<String> goldPNs = EMUtil.getGoldPNs(goldPart);
 				HashSet<String> goldNEs = EMUtil.getGoldNEs(goldPart);
-				
+
 				ArrayList<Entity> goldChains = goldPart.getChains();
 
 				HashMap<String, Integer> chainMap = EMUtil
@@ -150,19 +152,21 @@ public class ApplyEM {
 
 				ArrayList<Mention> anaphors = new ArrayList<Mention>();
 				for (Mention m : goldBoundaryNPMentions) {
-					if (m.start==m.end && part.getWord(m.end).posTag.equals("PN")) {
+					if (m.start == m.end
+							&& part.getWord(m.end).posTag.equals("PN")) {
 						continue;
 					}
-//					if(maps.get(part.getPartName()).containsKey(m.toName()))
-						anaphors.add(m);
+					// if(maps.get(part.getPartName()).containsKey(m.toName()))
+					anaphors.add(m);
 				}
 
-				findAntecedent(file, part, chainMap, anaphors,
-						candidates, goldNEs);
+				findAntecedent(file, part, chainMap, anaphors, candidates,
+						goldNEs);
 
-
-				for(Mention m : anaphors) {
-					if (goldPNs.contains(m.toName()) || goldNEs.contains(m.toName()) || m.antecedent==null) {
+				for (Mention m : anaphors) {
+					if (goldPNs.contains(m.toName())
+							|| goldNEs.contains(m.toName())
+							|| m.antecedent == null) {
 						continue;
 					}
 					corefResult.add(m);
@@ -175,18 +179,22 @@ public class ApplyEM {
 
 		evaluate(corefResults, goldKeyses);
 		int all = 0;
-		for(String key : maps.keySet()) {
+		for (String key : maps.keySet()) {
 			all += maps.get(key).size();
 		}
 		System.out.println(all + "@@@");
 		System.out.println(all2 + "@@@");
-		
+
 		System.out.println(ApplyEM.allL);
 	}
+
+	static double min_amongMax = 1;
+
+	static ArrayList<String> goodAnas = new ArrayList<String>();
 	
 	private void findAntecedent(String file, CoNLLPart part,
-			HashMap<String, Integer> chainMap, 
-			ArrayList<Mention> anaphors, ArrayList<Mention> allCandidates, HashSet<String> goldNEs) {
+			HashMap<String, Integer> chainMap, ArrayList<Mention> anaphors,
+			ArrayList<Mention> allCandidates, HashSet<String> goldNEs) {
 		for (Mention anaphor : anaphors) {
 			anaphor.sentenceID = part.getWord(anaphor.start).sentence
 					.getSentenceIdx();
@@ -216,7 +224,11 @@ public class ApplyEM {
 			double probs[] = new double[cands.size()];
 
 			if (!RuleAnaphorNounDetector.isAnahporic(anaphor, cands, part)) {
-				continue;
+				 continue;
+			}
+			String mKey = part.getPartName() + ":" + anaphor.toName();
+			if(!predictGoodOnes.contains(mKey)) {
+//				continue;
 			}
 
 			for (int i = 0; i < cands.size(); i++) {
@@ -268,6 +280,8 @@ public class ApplyEM {
 					maxP = p;
 				}
 			}
+			if(maxP>0)
+				min_amongMax = Math.min(min_amongMax, maxP);
 
 			if (antecedent != null) {
 				anaphor.antecedent = antecedent;
@@ -279,31 +293,38 @@ public class ApplyEM {
 					&& chainMap.containsKey(anaphor.antecedent.toName())
 					&& chainMap.get(anaphor.toName()).intValue() == chainMap
 							.get(anaphor.antecedent.toName()).intValue()) {
-				
-				//TODO
-				if (!RuleAnaphorNounDetector.isAnahporic(anaphor, cands, part) && !goldNEs.contains(anaphor.toName())) {
-					System.out.println(anaphor.extent + " #### " + antecedent.extent); 
+
+				// TODO
+				if (!RuleAnaphorNounDetector.isAnahporic(anaphor, cands, part)
+						&& !goldNEs.contains(anaphor.toName())) {
+//					System.out.println(anaphor.extent + " #### "
+//							+ antecedent.extent);
 					sw = true;
 					allL++;
 				}
 				
+				if(!goldNEs.contains(anaphor.toName()))	{
+//					System.out.println(part.getPartName() + ":" + anaphor.toName());
+					goodAnas.add(part.getPartName() + ":" + anaphor.toName());
+				}
+
 				good++;
 				String key = part.docName + ":" + part.getPartID() + ":"
 						+ anaphor.start + "-" + anaphor.antecedent.start + ","
 						+ anaphor.antecedent.end + ":GOOD";
 				corrects.add(key);
-//				System.out.println("==========");
-//				System.out.println("Correct!!! " + good + "/" + bad);
-//				if (anaphor.antecedent != null) {
-//					System.out.println(anaphor.antecedent.extent + ":"
-//							+ anaphor.antecedent.NE + "#"
-//							+ anaphor.antecedent.number + "#"
-//							+ anaphor.antecedent.gender + "#"
-//							+ anaphor.antecedent.person + "#"
-//							+ anaphor.antecedent.animacy);
-//					System.out.println(anaphor);
-//					printResult(anaphor, anaphor.antecedent, part);
-//				}
+				// System.out.println("==========");
+				// System.out.println("Correct!!! " + good + "/" + bad);
+				// if (anaphor.antecedent != null) {
+				// System.out.println(anaphor.antecedent.extent + ":"
+				// + anaphor.antecedent.NE + "#"
+				// + anaphor.antecedent.number + "#"
+				// + anaphor.antecedent.gender + "#"
+				// + anaphor.antecedent.person + "#"
+				// + anaphor.antecedent.animacy);
+				// System.out.println(anaphor);
+				// printResult(anaphor, anaphor.antecedent, part);
+				// }
 			} else if (anaphor.antecedent != null) {
 				if (anaphor.antecedent == null) {
 					String key = part.docName + ":" + part.getPartID() + ":"
@@ -316,28 +337,29 @@ public class ApplyEM {
 					corrects.add(key);
 				}
 				bad++;
-//				System.out.println("==========");
-//				System.out.println("Error??? " + good + "/" + bad);
-//				if (anaphor.antecedent != null) {
-//					System.out.println(anaphor.antecedent.extent + ":"
-//							+ anaphor.antecedent.NE + "#"
-//							+ anaphor.antecedent.number + "#"
-//							+ anaphor.antecedent.gender + "#"
-//							+ anaphor.antecedent.person + "#"
-//							+ anaphor.antecedent.animacy);
-//					System.out.println(anaphor);
-//					printResult(anaphor, anaphor.antecedent, part);
-//				}
+				// System.out.println("==========");
+				// System.out.println("Error??? " + good + "/" + bad);
+				// if (anaphor.antecedent != null) {
+				// System.out.println(anaphor.antecedent.extent + ":"
+				// + anaphor.antecedent.NE + "#"
+				// + anaphor.antecedent.number + "#"
+				// + anaphor.antecedent.gender + "#"
+				// + anaphor.antecedent.person + "#"
+				// + anaphor.antecedent.animacy);
+				// System.out.println(anaphor);
+				// printResult(anaphor, anaphor.antecedent, part);
+				// }
 			}
 			String conllPath = file;
 			int aa = conllPath.indexOf(anno);
 			int bb = conllPath.indexOf(".");
 			String middle = conllPath.substring(aa + anno.length(), bb);
 			String path = prefix + middle + ".source";
-			if(sw)
-			System.out.println(path);
+//			if (sw)
+//				System.out.println(path);
 		}
 	}
+
 	static int allL = 0;
 
 	protected void printResult(Mention zero, Mention systemAnte, CoNLLPart part) {
@@ -459,12 +481,24 @@ public class ApplyEM {
 	}
 
 	static ArrayList<String> corrects = new ArrayList<String>();
-
+	static HashSet<String> predictGoodOnes;
 	public static void main(String args[]) {
 		if (args.length != 1) {
 			System.err.println("java ~ folder");
 			System.exit(1);
 		}
+		
+		ArrayList<String> allMs = Common.getLines("allMs");
+		ArrayList<String> preds = Common.getLines("/users/yzcchen/tool/svmlight/svm.anaphor.pred");
+		predictGoodOnes = new HashSet<String>();
+		for(int i=0;i<allMs.size();i++) {
+			String m = allMs.get(i);
+			String pred = preds.get(i);
+			if(Double.parseDouble(pred)>0) {
+				predictGoodOnes.add(m);
+			}
+		}
+//		predictGoodOnes = Common.readFile2Set("goodAnaphors");
 		run(args[0]);
 		run("nw");
 		run("mz");
@@ -479,21 +513,7 @@ public class ApplyEM {
 		ApplyEM test = new ApplyEM(folder);
 		test.test();
 
-		// System.out.println(EMUtil.missed);
-		System.out.println(EMUtil.missed.size());
-
-		Common.outputLines(goods, "goods");
-		Common.outputLines(bads, "bas");
-
-		// Common.outputHashMap(EMUtil.NEMap, "NEMAP");
-
-		// Common.outputHashSet(Context.ss, "miniS");
-		// Common.outputHashSet(Context.vs, "miniV");
-
-		// System.out.println(Context.svoStat.unigramAll);
-		// System.out.println(Context.svoStat.svoAll);
-
-		// Common.outputLines(corrects, "EM.correct.all");
+//		Common.outputLines(goodAnas, "goodAnaphors");
 		Common.pause("!!#");
 	}
 }

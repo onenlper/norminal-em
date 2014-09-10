@@ -29,8 +29,7 @@ public class RuleAnaphorNounDetector {
 					Context.headSieve3(cand, anaphor, part)==1 || 
 					Context.exactMatchSieve1(cand, anaphor, part)==1)
 					) {
-//			if(Context.sieve1(cand, m, part)==1 || Context.sieve2(cand, m, part)==1 ||
-//					Context.sieve3(cand, m, part)==1 || Context.sieve4Rule(cand, m, part)==1) {
+//			if(cand.head.equals(anaphor.head) && anaphor.extent.contains(cand.extent)) {
 				isAnaphor = true;
 				break;
 			}
@@ -75,10 +74,9 @@ public class RuleAnaphorNounDetector {
 				}
 
 				ArrayList<Mention> anaphors = new ArrayList<Mention>();
-				for (Mention m : sysMentions) {
-					String pos = part.getWord(m.end).posTag;
-					if (pos.equals("NT") || pos.equals("NR")
-							|| pos.equals("PN")) {
+				for (Mention anaphor : sysMentions) {
+					String pos = part.getWord(anaphor.end).posTag;
+					if (pos.equals("PN") && anaphor.end==anaphor.start) {
 						continue;
 					}
 					ArrayList<Mention> cands = new ArrayList<Mention>();
@@ -87,24 +85,16 @@ public class RuleAnaphorNounDetector {
 						cand.sentenceID = part.getWord(cand.start).sentence
 								.getSentenceIdx();
 						cand.s = part.getWord(cand.start).sentence;
-						if (cand.start < m.start
-								&& m.sentenceID - cand.sentenceID <= EMLearn.maxDistance
-								&& cand.end != m.end) {
+						if (cand.start < anaphor.start
+								&& anaphor.sentenceID - cand.sentenceID <= EMLearn.maxDistance
+								&& cand.end != anaphor.end) {
 							cands.add(cand);
 						}
 					}
-					if (!isAnahporic(m, cands, part)) {
-						
-						
-						if(goldAnaphors.containsKey(m.toName())) {
-							System.out.println(m.extent);
-							System.out.println(line);
-						}
-						
-						
-						continue;
+					if (isAnahporic(anaphor, cands, part)) {
+						anaphors.add(anaphor);
 					}
-					anaphors.add(m);
+					
 				}
 				sys += anaphors.size();
 
