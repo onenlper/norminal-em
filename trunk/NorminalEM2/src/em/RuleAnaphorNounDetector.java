@@ -1,6 +1,7 @@
 package em;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -11,7 +12,7 @@ import util.Common;
 
 public class RuleAnaphorNounDetector {
 
-	public static boolean isAnahporic(Mention anaphor, ArrayList<Mention> cands,
+	public static boolean isAnahporic2(Mention anaphor, ArrayList<Mention> cands,
 			CoNLLPart part) {
 		boolean isAnaphor = false;
 		
@@ -20,6 +21,49 @@ public class RuleAnaphorNounDetector {
 //				) {
 ////			return true;
 //		}
+		
+		for (Mention cand : cands) {
+			if (
+					(Context.sieve4Rule(cand, anaphor, part)==1 || 
+					Context.headSieve1(cand, anaphor, part)==1 ||
+					Context.headSieve2(cand, anaphor, part)==1 || 
+					Context.headSieve3(cand, anaphor, part)==1 || 
+					Context.exactMatchSieve1(cand, anaphor, part)==1)
+					) {
+//			if(cand.head.equals(anaphor.head) && anaphor.extent.contains(cand.extent)) {
+				isAnaphor = true;
+				break;
+			}
+//			String t1 = EMUtil.getSemantic(cand);
+//			String t2 = EMUtil.getSemantic(m);
+//			if( t1.equals(t2) && !"unknown".startsWith(t1) && cand.getModifier(part).contains(m.getModifier(part))
+//					&& !cand.getModifier(part).trim().isEmpty()) {
+//				anaphor = true;
+//				break;
+//			}
+		}
+		return isAnaphor;
+	}
+	
+	
+	public static boolean isAnahporic(Mention anaphor, ArrayList<Mention> cands,
+			CoNLLPart part) {
+		boolean isAnaphor = false;
+		HashSet<String> filters = new HashSet<String>(Arrays.asList("喜悦", "骄傲", "正常", "特色", "前提"));
+		if(filters.contains(anaphor.extent)) {
+//			return false;
+		}
+		
+		for(int i=anaphor.start;i<=anaphor.end;i++) {
+			if(part.getWord(i).posTag.equals("PU")) {
+//				return false;
+			}
+		}
+		
+		if(part.getWord(anaphor.start).posTag.startsWith("P")) {
+//			return false;
+		}
+		
 		
 		for (Mention cand : cands) {
 			if (

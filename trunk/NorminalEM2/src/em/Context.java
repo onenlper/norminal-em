@@ -94,7 +94,7 @@ public class Context implements Serializable {
 //		feas[id++] = headSieve1(ant, anaphor, part);
 //		feas[id++] = headSieve2(ant, anaphor, part);
 //		feas[id++] = headSieve3(ant, anaphor, part);
-		feas[id++] = sieve4Rule(ant, anaphor, part);
+//		feas[id++] = sieve4Rule(ant, anaphor, part);
 		
 //		feas[id++] = sameProperHeadLastWord(ant, anaphor, part);
 //		feas[id++] = chHaveDifferentLocation(ant, anaphor, part);
@@ -103,7 +103,43 @@ public class Context implements Serializable {
 		// feas[id++] = getMentionDiss(mentionDis);
 		// feas[id++] = modifierMatch(ant, anaphor, part);
 		// feas[id++] = isSemanticSame(ant, anaphor, part);
+		feas[id++] = head5(ant, anaphor, part);
+		
+//		feas[id++] = head6(ant, anaphor, part);
 		return getContext(feas);
+	}
+	
+	public static short head6(Mention ant, Mention anaphor, CoNLLPart part) {
+			boolean overlap = false;
+			for(String modifier : ant.modifyList) {
+				for(String modifier2 : anaphor.modifyList) {
+					if(modifier.equals(modifier2)) {
+						overlap = true;
+					}
+				}
+			}
+			if(overlap) {
+				return 1;
+			}
+		return 0;
+	}
+	
+	public static short head5(Mention ant, Mention anaphor, CoNLLPart part) {
+		if(ant.head.contains(anaphor.head) || anaphor.head.contains(ant.head)) {
+			
+			boolean overlap = false;
+			for(String modifier : ant.modifyList) {
+				for(String modifier2 : anaphor.modifyList) {
+					if(modifier.equals(modifier2)) {
+						overlap = true;
+					}
+				}
+			}
+			if(overlap) {
+				return 1;
+			}
+		}
+		return 0;
 	}
 	
 	public static short exactMatchSieve1(Mention ant, Mention anaphor, CoNLLPart part) {
