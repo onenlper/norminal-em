@@ -85,11 +85,11 @@ public class Context implements Serializable {
 		feas[id++] = getDistance(ant, anaphor, part); //
 		feas[id++] = isExactMatch(ant, anaphor, part); // 2
 		feas[id++] = headMatch(ant, anaphor, part); // 2
-		feas[id++] = haveIncompatibleModify(ant, anaphor, part); // 3
+//		feas[id++] = haveIncompatibleModify(ant, anaphor, part); // 3
 		feas[id++] = wordInclusion(ant, anaphor, part);
 		feas[id++] = isSameGrammatic(ant, anaphor, part);
-		 feas[id++] = isIWithI(ant, anaphor, part); // 2
-		 feas[id++] = isSamePredicate(ant, anaphor, part);
+//		 feas[id++] = isIWithI(ant, anaphor, part); // 2
+//		 feas[id++] = isSamePredicate(ant, anaphor, part);
 		 
 //		feas[id++] = headSieve1(ant, anaphor, part);
 //		feas[id++] = headSieve2(ant, anaphor, part);
