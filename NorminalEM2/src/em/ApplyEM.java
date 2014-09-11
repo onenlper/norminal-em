@@ -150,12 +150,15 @@ public class ApplyEM {
 
 				Collections.sort(candidates);
 
+				HashMap<String, HashSet<String>> goldAnaNouns = EMUtil.getGoldAnaphorKeys(goldChains, goldPart);
+				
 				ArrayList<Mention> anaphors = new ArrayList<Mention>();
 				for (Mention m : goldBoundaryNPMentions) {
 					if (m.start == m.end
 							&& part.getWord(m.end).posTag.equals("PN")) {
 						continue;
 					}
+//					if(goldAnaNouns.containsKey(m.toName()))
 					// if(maps.get(part.getPartName()).containsKey(m.toName()))
 					anaphors.add(m);
 				}
@@ -227,9 +230,9 @@ public class ApplyEM {
 				 continue;
 			}
 			String mKey = part.getPartName() + ":" + anaphor.toName();
-			if(!predictGoodOnes.contains(mKey)) {
+//			if(!predictGoodOnes.contains(mKey)) {
 //				continue;
-			}
+//			}
 
 			for (int i = 0; i < cands.size(); i++) {
 				Mention cand = cands.get(i);
@@ -498,7 +501,6 @@ public class ApplyEM {
 				predictGoodOnes.add(m);
 			}
 		}
-//		predictGoodOnes = Common.readFile2Set("goodAnaphors");
 		run(args[0]);
 		run("nw");
 		run("mz");
