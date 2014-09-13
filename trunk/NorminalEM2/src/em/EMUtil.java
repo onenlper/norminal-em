@@ -100,7 +100,7 @@ public class EMUtil {
 		if (sems != null) {
 			sem = sems[0];
 		}
-		return sem.substring(0, 5);
+		return sem.substring(0, 1);
 	}
 
 	public static CoNLLPart getGoldPart(CoNLLPart part, String stage) {
@@ -677,15 +677,6 @@ public class EMUtil {
 		MyTreeNode rightLeaf = sentence.getSyntaxTree().leaves.get(endIdx);
 
 		
-		MyTreeNode maxTree = getMaxNPTreeNode(rightLeaf);
-		MyTreeNode minTree = getMinNPTreeNode(rightLeaf);
-		int begin = maxTree.getLeaves().get(0).leafIdx;
-		int end = minTree.getLeaves().get(0).leafIdx;
-
-		for (int i = begin; i < end; i++) {
-			em.modifyList.add(sentence.getWord(i).word);
-		}
-		
 		ArrayList<MyTreeNode> leftAns = leftLeaf.getAncestors();
 		ArrayList<MyTreeNode> rightAns = rightLeaf.getAncestors();
 
@@ -720,7 +711,7 @@ public class EMUtil {
 				}
 			}
 		}
-
+		
 		if (treeNode == null) {
 			treeNode = rightLeaf.parent;
 		}
@@ -732,6 +723,14 @@ public class EMUtil {
 		em.head = head.value;
 		em.NP = treeNode;
 
+		MyTreeNode maxTree = getMaxNPTreeNode(rightLeaf);
+		MyTreeNode minTree = getMinNPTreeNode(rightLeaf);
+		int begin = maxTree.getLeaves().get(0).leafIdx;
+		int end = minTree.getLeaves().get(0).leafIdx;
+
+		for (int i = begin; i < end; i++) {
+			em.modifyList.add(sentence.getWord(i).word);
+		}
 		
 		// em.headInS = em.endInS;
 		// em.head = sentence.getWord(em.headInS).word;
@@ -806,6 +805,12 @@ public class EMUtil {
 		em.gender = EMUtil.getAntGender(em);
 		em.number = EMUtil.getAntNumber(em);
 		em.semantic = EMUtil.getSemantic(em);
+		
+		for(int i=em.start;i<=em.end;i++) {
+			if(part.getWord(i).posTag.equals("CC") || part.getWord(i).word.equals("、")) {
+				em.isCC = true;
+			}
+		}
 	}
 
 	public static Mention formPhrase(MyTreeNode treeNode, CoNLLSentence sentence) {
@@ -2312,6 +2317,16 @@ public class EMUtil {
 			}
 		}
 		return goldPNs;
+	}
+	
+	public static HashSet<String> getGoldInChain(ArrayList<Entity> chains) {
+		HashSet<String> set = new HashSet<String>();
+		for(Entity e : chains) {
+			for(Mention m : e.getMentions()) {
+				set.add(m.toName());
+			}
+		}
+		return set;
 	}
 	
 	public static HashMap<String, HashSet<String>> getGoldAnaphorKeys(
