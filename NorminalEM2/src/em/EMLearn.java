@@ -36,13 +36,15 @@ public class EMLearn {
 
 	static Parameter animacyP;
 
+	static double word2vecSimi = -50000;
+	
 	static HashMap<String, Double> contextPrior;
 	static HashMap<String, Double> contextOverall;
 	static HashMap<String, Double> fracContextCount;
 
 	static HashMap<String, Double> contextVals;
 
-	static int maxDistance = 100000;
+	static int maxDistance = 1000;
 
 	static int maxDisFeaValue = 10;
 	// static int contextSize = 2 * 2 * 2 * 3 * 2 * (maxDisFeaValue + 1);
@@ -158,7 +160,11 @@ public class EMLearn {
 					// add antecedents
 
 					Context context = Context.buildContext(ant, m, part, ants, k);
-
+					double simi = Context.getSimi(ant.head, m.head);
+					if(simi<word2vecSimi) {
+						continue;
+					}
+					
 					Entry entry = new Entry(ant, context);
 					rg.entries.add(entry);
 					count++;

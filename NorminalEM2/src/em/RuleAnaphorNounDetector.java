@@ -12,7 +12,7 @@ import util.Common;
 
 public class RuleAnaphorNounDetector {
 
-	public static boolean isAnahporic2(Mention anaphor, ArrayList<Mention> cands,
+	public static boolean isAnahporic(Mention anaphor, ArrayList<Mention> cands,
 			CoNLLPart part) {
 		boolean isAnaphor = false;
 		
@@ -21,7 +21,6 @@ public class RuleAnaphorNounDetector {
 //				) {
 ////			return true;
 //		}
-		
 		for (Mention cand : cands) {
 			if (
 					(Context.sieve4Rule(cand, anaphor, part)==1 || 
@@ -46,12 +45,12 @@ public class RuleAnaphorNounDetector {
 	}
 	
 	
-	public static boolean isAnahporic(Mention anaphor, ArrayList<Mention> cands,
+	public static boolean isAnahporic2(Mention anaphor, ArrayList<Mention> cands,
 			CoNLLPart part) {
 		boolean isAnaphor = false;
-		HashSet<String> filters = new HashSet<String>(Arrays.asList("喜悦", "骄傲", "正常", "特色", "前提"));
-		if(filters.contains(anaphor.extent)) {
-//			return false;
+//		System.out.println(EMUtil.getSemantic(anaphor));
+		if(EMUtil.getSemantic(anaphor).startsWith("J")) {
+			return false;
 		}
 		
 		for(int i=anaphor.start;i<=anaphor.end;i++) {
@@ -94,6 +93,9 @@ public class RuleAnaphorNounDetector {
 		double gold = 0;
 		double sys = 0;
 
+		HashMap<String, HashMap<String, String>> maps = EMUtil
+				.extractSysKeys("key.chinese.test.open.systemParse");
+		
 		for (String line : lines) {
 			CoNLLDocument doc = new CoNLLDocument(line
 //					.replace("auto_conll", "gold_conll")
@@ -102,7 +104,7 @@ public class RuleAnaphorNounDetector {
 			for (CoNLLPart part : doc.getParts()) {
 
 				CoNLLPart goldPart = EMUtil.getGoldPart(part, "test");
-
+				HashSet<String> goldNEs = EMUtil.getGoldNEs(goldPart);
 				HashMap<String, HashSet<String>> goldAnaphors = EMUtil
 						.getGoldAnaphorKeys(goldPart.getChains(), goldPart);
 				gold += goldAnaphors.size();
@@ -123,6 +125,9 @@ public class RuleAnaphorNounDetector {
 					if (pos.equals("PN") && anaphor.end==anaphor.start) {
 						continue;
 					}
+					if(goldNEs.contains(anaphor.toName())) {
+						continue;
+					}
 					ArrayList<Mention> cands = new ArrayList<Mention>();
 					for (int h = allCandidates.size() - 1; h >= 0; h--) {
 						Mention cand = allCandidates.get(h);
@@ -140,8 +145,15 @@ public class RuleAnaphorNounDetector {
 					}
 					
 				}
-				sys += anaphors.size();
+//				HashMap<String, String> map = maps.get(part.getPartName());
+//				sys += map.size();
+//				for(String k : map.keySet()) {
+//					if(goldAnaphors.containsKey(k)) {
+//						hit += 1;
+//					}
+//				}
 
+				sys += anaphors.size();
 				for (Mention ana : anaphors) {
 					if (goldAnaphors.containsKey(ana.toName())) {
 						hit += 1;

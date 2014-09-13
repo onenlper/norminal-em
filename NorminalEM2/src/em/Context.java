@@ -73,12 +73,31 @@ public class Context implements Serializable {
 
 	static short[] feas = new short[18];
 
+	public static HashMap<String, Double> simiCache = Common.readFile2Map5("simiCache");
+	
+	public static HashSet<String> todo = new HashSet<String>();
+	
+	public static double getSimi(String h1, String h2) {
+		String key = "";
+		if(h1.compareTo(h2)>0) {
+			key = h2 + " " + h1;
+		} else {
+			key = h1 + " " + h2;
+		}
+		if(simiCache.containsKey(key)) {
+			return simiCache.get(key);
+		} else {
+			todo.add(key);
+			return -1;
+		}
+	}
+	
 	public static Context buildContext(Mention ant, Mention anaphor,
 			CoNLLPart part, ArrayList<Mention> allCands, int mentionDis) {
-
+		
 		// exact match
 		int id = 0;
-		short[] feas = new short[15];
+		short[] feas = new short[7];
 
 		// feas[id++] = getIsFake(ant, anaphor, part);
 		// feas[id++] = getHasSameHead(allCands, anaphor, part);
@@ -86,8 +105,29 @@ public class Context implements Serializable {
 		feas[id++] = isExactMatch(ant, anaphor, part); // 2
 		feas[id++] = headMatch(ant, anaphor, part); // 2
 //		feas[id++] = haveIncompatibleModify(ant, anaphor, part); // 3
+		
 		feas[id++] = wordInclusion(ant, anaphor, part);
 		feas[id++] = isSameGrammatic(ant, anaphor, part);
+		
+		feas[id++] = head5(ant, anaphor, part);		
+		
+//		feas[id++] = head6(ant, anaphor, part);
+		
+		if(feas[0]==1 && feas[4]==0) {
+//			System.out.println(ant.extent);
+//			System.out.println(anaphor.extent);
+//			
+//			for(String m1 : ant.modifyList) {
+//				System.out.println("m1: " + m1);
+//			}
+//			System.out.println("---------");
+//			for(String m2 : anaphor.modifyList) {
+//				System.out.println("m2: " + m2);
+//			}
+//			System.out.println(part.getPartName());
+//			Common.pause("");
+		}
+		
 //		 feas[id++] = isIWithI(ant, anaphor, part); // 2
 //		 feas[id++] = isSamePredicate(ant, anaphor, part);
 		 
@@ -103,30 +143,31 @@ public class Context implements Serializable {
 		// feas[id++] = getMentionDiss(mentionDis);
 		// feas[id++] = modifierMatch(ant, anaphor, part);
 		// feas[id++] = isSemanticSame(ant, anaphor, part);
-		feas[id++] = head5(ant, anaphor, part);
 		
 //		feas[id++] = head6(ant, anaphor, part);
 		return getContext(feas);
 	}
 	
 	public static short head6(Mention ant, Mention anaphor, CoNLLPart part) {
-			boolean overlap = false;
-			for(String modifier : ant.modifyList) {
-				for(String modifier2 : anaphor.modifyList) {
-					if(modifier.equals(modifier2)) {
-						overlap = true;
-					}
-				}
-			}
-			if(overlap) {
-				return 1;
-			}
+		if(ant.head.equals(anaphor.head) && !anaphor.extent.equals(ant.extent) && anaphor.extent.contains(ant.extent)) {
+			return 1;
+		}
 		return 0;
+	}
+	
+	public static boolean ccCompatible(Mention ant, Mention anaphor, CoNLLPart part) {
+		if(ant.extent.equals(anaphor.extent)) {
+			return true;
+		}
+		if(ant.isCC || anaphor.isCC) {
+			return false;
+		} else {
+			return true;
+		}
 	}
 	
 	public static short head5(Mention ant, Mention anaphor, CoNLLPart part) {
 		if(ant.head.contains(anaphor.head) || anaphor.head.contains(ant.head)) {
-			
 			boolean overlap = false;
 			for(String modifier : ant.modifyList) {
 				for(String modifier2 : anaphor.modifyList) {

@@ -1,25 +1,17 @@
 package em;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-
-import model.Element;
-import model.Entity;
-import model.Mention;
-import model.CoNLL.CoNLLDocument;
-import model.CoNLL.CoNLLPart;
-import util.Common;
 
 public class EvaluateBaseline {
 
 	public static void main(String args[]) {
 //		String path = "key.chinese.test.open.goldMentions";
 //		String path = "key.chinese.development.open.systemParse";
-		String path = "/users/yzcchen/chen3/conll12/chinese/key.chinese.test.open";
-//		String path = "key.chinese.test.open.systemParse";
-//		String path = "key.chinese.test.open.systemParse";
+//		String path = "/users/yzcchen/chen3/conll12/chinese/key.chinese.test.open";
+//		String path = "ims-out1.key";
+		String path = "key.chinese.test.open.systemParse";
+//		String path = "/users/yzcchen/CoNLL-2012/conll-2012/v4/data/test/data/chinese/annotations/all_chi_test.coref";
 		
 		HashMap<String, HashMap<String, String>> allSys = EMUtil.extractSysKeys(path);
 		HashMap<String, HashMap<String, HashSet<String>>> allKeys = EMUtil.extractGoldKeys();
@@ -45,9 +37,9 @@ public class EvaluateBaseline {
 		System.out.println("Gol: " + allG);
 		System.out.println("Sys: " + allS);
 		System.out.println("=====================");
-		System.out.println("Recall: " + r);
-		System.out.println("Precis: " + p);
-		System.out.println("F-scor: " + f);
+		System.out.println("Recall: " + r * 100);
+		System.out.println("Precis: " + p * 100);
+		System.out.println("F-scor: " + f * 100);
 	}
 
 }
