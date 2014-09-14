@@ -806,6 +806,33 @@ public class EMUtil {
 		em.number = EMUtil.getAntNumber(em);
 		em.semantic = EMUtil.getSemantic(em);
 		
+		MyTreeNode ip = head.getAncestors().get(0);
+		for(int i=head.getAncestors().size()-1;i>=0;i--) {
+			MyTreeNode node = head.getAncestors().get(i);
+			if(node.value.equals("IP")) {
+				ip = node;
+				break;
+			}
+		}
+		for(MyTreeNode l : ip.getLeaves()) {
+			if(l.parent.value.equals("NT")) {
+				 ArrayList<String> nts = em.moreModifiers.get("NT");
+				 if(nts==null) {
+					 nts = new ArrayList<String>();
+					 em.moreModifiers.put("NT", nts);
+				 }
+				 nts.add(l.value);
+			}
+			if(l.parent.value.equals("CD")) {
+				 ArrayList<String> cds = em.moreModifiers.get("CD");
+				 if(cds==null) {
+					 cds = new ArrayList<String>();
+					 em.moreModifiers.put("CD", cds);
+				 }
+				 cds.add(l.value);
+			}
+		}
+		
 		for(int i=em.start;i<=em.end;i++) {
 			if(part.getWord(i).posTag.equals("CC") || part.getWord(i).word.equals("、")) {
 				em.isCC = true;
