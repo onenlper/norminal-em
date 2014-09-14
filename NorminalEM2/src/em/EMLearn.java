@@ -57,7 +57,7 @@ public class EMLearn {
 		// Double>();
 		numberP = new Parameter(1.0 / ((double) EMUtil.Number.values().length));
 		genderP = new Parameter(1.0 / ((double) EMUtil.Gender.values().length));
-		semanticP = new Parameter(1.0 / 109.0);
+		semanticP = new Parameter(1.0 / 2286.0);
 		grammaticP = new Parameter(1.0 / 4.0);
 
 		animacyP = new Parameter(
@@ -175,7 +175,7 @@ public class EMLearn {
 		return groups;
 	}
 
-	static int percent = 10;
+	static int percent = 1;
 
 	private static void extractCoNLL(ArrayList<ResolveGroup> groups) {
 		// CoNLLDocument d = new CoNLLDocument("train_auto_conll");
@@ -307,7 +307,11 @@ public class EMLearn {
 				}
 
 				entry.p = p_context * entry.p_c;
-				entry.p *= 1 * p_number * p_gender * p_animacy * p_semetic
+				entry.p *= 1 
+//						* p_number 
+//						* p_gender 
+//						* p_animacy 
+						* p_semetic
 				// * p_grammatic
 				;
 

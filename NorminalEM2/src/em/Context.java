@@ -260,7 +260,7 @@ public class Context implements Serializable {
 		mentionClusterStrs.remove(anaphor.head.toLowerCase());
 		HashSet<String> candidateClusterStrs = new HashSet<String>();
 		for (int i = ant.start; i <= ant.end; i++) {
-			candidateClusterStrs.add(part.getWord(i).orig.toLowerCase());
+			candidateClusterStrs.add(part.getWord(i).word.toLowerCase());
 		}
 		candidateClusterStrs.remove(ant.head.toLowerCase());
 		if (candidateClusterStrs.containsAll(mentionClusterStrs))
