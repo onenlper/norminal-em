@@ -259,6 +259,10 @@ public class ApplyEM {
 
 				entry.p_c = EMUtil.getP_C(cand, anaphor, part);
 				
+				if(entry.p_c==0 && coref) {
+					print(cand, anaphor, part, chainMap);
+				}
+				
 				double p_number = numberP.getVal(entry.number.name(), EMUtil
 						.getAntNumber(anaphor).name());
 				double p_animacy = animacyP.getVal(entry.animacy.name(), EMUtil
@@ -307,25 +311,26 @@ public class ApplyEM {
 						&& chainMap.get(anaphor.toName()).intValue() == chainMap
 								.get(antecedent.toName()).intValue();
 
-				if (!coref && goldKeys.get(part.getPartName()).containsKey(anaphor.toName())
-						&& chainMap.containsKey(antecedent.toName())
-						) {
-
-					System.out.println(antecedent.extent + " # " + chainMap.containsKey(antecedent.toName()));
-					System.out.println(antecedent.s.getText());
-					System.out.println(anaphor.extent + " # " + chainMap.containsKey(anaphor.toName()));
-					System.out.println(anaphor.s.getText());
-					System.out.println(coref);
-					System.out.println(part.getDocument().getFilePath()
-							.replace("v5_auto_conll", "v4_gold_conll"));
-					System.out.println("----");
-					
-					String trueAnte = goldKeys.get(part.getPartName()).get(anaphor.toName()).iterator().next();
-					int k = trueAnte.indexOf(",");
-//					anaphor.antecedent = new Mention(Integer.parseInt(trueAnte.substring(0, k)), Integer.parseInt(trueAnte.substring(k+1)));
-				}
+//				if (!coref && goldKeys.get(part.getPartName()).containsKey(anaphor.toName())
+//						&& chainMap.containsKey(antecedent.toName())
+//						) {
+//
+//					String trueAnte = goldKeys.get(part.getPartName()).get(anaphor.toName()).iterator().next();
+//					int k = trueAnte.indexOf(",");
+////					anaphor.antecedent = new Mention(Integer.parseInt(trueAnte.substring(0, k)), Integer.parseInt(trueAnte.substring(k+1)));
+//				}
 			}
 		}
+	}
+	
+	public static void print(Mention antecedent, Mention anaphor, CoNLLPart part, HashMap<String, Integer> chainMap) {
+		System.out.println(antecedent.extent + " # " + chainMap.containsKey(antecedent.toName()));
+		System.out.println(antecedent.s.getText());
+		System.out.println(anaphor.extent + " # " + chainMap.containsKey(anaphor.toName()));
+		System.out.println(anaphor.s.getText());
+		System.out.println(part.getDocument().getFilePath()
+				.replace("v5_auto_conll", "v4_gold_conll"));
+		System.out.println("----");
 	}
 
 	static int allL = 0;

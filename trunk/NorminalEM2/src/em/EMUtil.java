@@ -698,6 +698,10 @@ public class EMUtil {
 			return 0;
 		}
 
+//		if(ant.start==m.start && m.start==m.end && (ant.extent.contains(m.extent)||m.extent.contains(ant.extent))) {
+//			return 1;
+//		}
+		
 		if (Context.sieve4Rule(ant, m, part) == 1
 				|| Context.headSieve2(ant, m, part) == 1) {
 			ret = 1;
