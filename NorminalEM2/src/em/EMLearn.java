@@ -36,7 +36,7 @@ public class EMLearn {
 
 	static Parameter animacyP;
 
-	static double word2vecSimi = -50000;
+	static double word2vecSimi = .5;
 	
 	static HashMap<String, Double> contextPrior;
 	static HashMap<String, Double> contextOverall;
@@ -161,7 +161,7 @@ public class EMLearn {
 
 					Context context = Context.buildContext(ant, m, part, ants, k);
 					double simi = Context.getSimi(ant.head, m.head);
-					if(simi<word2vecSimi) {
+					if(simi<word2vecSimi && simi!=-10) {
 						continue;
 					}
 					

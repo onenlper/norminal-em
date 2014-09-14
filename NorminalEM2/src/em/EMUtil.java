@@ -897,9 +897,10 @@ public class EMUtil {
 		for (Mention s : nounPhrases) {
 			for (Mention l : nounPhrases) {
 				if (s.end == l.end && l.end - l.start > s.end - s.start) {
-					if (!sentence.part.folder.equals("nw")) {
-						removes.add(s);
+					if (sentence.part.folder.equals("nw")) {
+						l.innerMs.add(s);
 					}
+					removes.add(s);
 				}
 			}
 		}
