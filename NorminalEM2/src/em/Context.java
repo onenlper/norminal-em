@@ -110,7 +110,7 @@ public class Context implements Serializable {
 		feas[id++] = isSameGrammatic(ant, anaphor, part);
 		
 		feas[id++] = head5(ant, anaphor, part);		
-		
+//		feas[id++] = headMatch2(ant, anaphor, part); // 
 //		feas[id++] = head6(ant, anaphor, part);
 		
 		if(feas[0]==1 && feas[4]==0) {
@@ -221,7 +221,7 @@ public class Context implements Serializable {
 	}
 	
 	public static short headSieve2(Mention ant, Mention anaphor, CoNLLPart part) {
-		if(ant.head.equals(anaphor.head)) {
+		if(ant.head.contains(anaphor.head)) {
 			if(wordInclusion(ant, anaphor, part)==1) {
 				return 1;
 			}
@@ -241,7 +241,7 @@ public class Context implements Serializable {
 
 	public static short wordInclusion(Mention ant, Mention anaphor,
 			CoNLLPart part) {
-		List<String> removeW = Arrays.asList(new String[] { "这个", "这", "那个",
+		List<String> removeW = Arrays.asList(new String[] { "这个", "这", "那个", "全",
 				"那", "自己", "的", "该", "公司", "这些", "那些", "'s" });
 		ArrayList<String> removeWords = new ArrayList<String>();
 		removeWords.addAll(removeW);
@@ -396,6 +396,14 @@ public class Context implements Serializable {
 
 	public static short headMatch(Mention ant, Mention anaphor, CoNLLPart part) {
 		if (ant.head.equalsIgnoreCase(anaphor.head)) {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
+	
+	public static short headMatch2(Mention ant, Mention anaphor, CoNLLPart part) {
+		if (ant.head.contains(anaphor.head)) {
 			return 1;
 		} else {
 			return 0;
