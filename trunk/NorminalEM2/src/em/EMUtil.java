@@ -92,8 +92,8 @@ public class EMUtil {
 	}
 
 	public static String getSemantic(Mention m) {
-		if(true) {
-//			return m.head;
+		if (true) {
+			// return m.head;
 		}
 		if (!m.NE.equals("OTHER")) {
 			return m.NE;
@@ -194,43 +194,43 @@ public class EMUtil {
 
 	public static HashMap<String, HashMap<String, HashSet<String>>> extractGoldKeys() {
 		HashMap<String, HashMap<String, HashSet<String>>> allKeys = new HashMap<String, HashMap<String, HashSet<String>>>();
-		ArrayList<String> fnLines = Common
-				.getLines("chinese_list_all_test");
+		ArrayList<String> fnLines = Common.getLines("chinese_list_all_test");
 		for (String line : fnLines) {
 			CoNLLDocument goldDoc = new CoNLLDocument(line.replace(
 					"auto_conll", "gold_conll"));
-			for(CoNLLPart part : goldDoc.getParts()) {
-				HashMap<String, HashSet<String>> keys = EMUtil.getGoldAnaphorKeys(
-						part.getChains(), part);
+			for (CoNLLPart part : goldDoc.getParts()) {
+				HashMap<String, HashSet<String>> keys = EMUtil
+						.getGoldAnaphorKeys(part.getChains(), part);
 				allKeys.put(part.getPartName(), keys);
 			}
 		}
 		return allKeys;
 	}
-	
+
 	public static HashMap<String, HashMap<String, String>> extractSysKeys(
 			String path) {
 		CoNLLDocument sysDoc = new CoNLLDocument(path);
 		HashMap<String, HashMap<String, String>> allSys = new HashMap<String, HashMap<String, String>>();
-		for(CoNLLPart part : sysDoc.getParts()) {
+		for (CoNLLPart part : sysDoc.getParts()) {
 			CoNLLPart goldPart = EMUtil.getGoldPart(part, "test");
 			HashSet<String> goldNEs = EMUtil.getGoldNEs(goldPart);
 			HashSet<String> goldPNs = EMUtil.getGoldPNs(goldPart);
-			
+
 			HashMap<String, String> sys = new HashMap<String, String>();
 			allSys.put(part.getPartName(), sys);
 			ArrayList<Entity> chains = part.getChains();
-			for(Entity e : chains) {
+			for (Entity e : chains) {
 				Collections.sort(e.mentions);
-				for(int i=0;i<e.mentions.size();i++) {
+				for (int i = 0; i < e.mentions.size(); i++) {
 					Mention m1 = e.mentions.get(i);
-					if(goldNEs.contains(m1.toName()) || goldPNs.contains(m1.toName())) {
+					if (goldNEs.contains(m1.toName())
+							|| goldPNs.contains(m1.toName())) {
 						continue;
 					}
-					
-					for(int j=i-1;j>=0;j--) {
+
+					for (int j = i - 1; j >= 0; j--) {
 						Mention m2 = e.mentions.get(j);
-						if(!goldPNs.contains(m2.toName()) && m2.end!=m1.end) {
+						if (!goldPNs.contains(m2.toName()) && m2.end != m1.end) {
 							String[] s = new String[2];
 							s[0] = m1.toName();
 							s[1] = m2.toName();
@@ -243,8 +243,7 @@ public class EMUtil {
 		}
 		return allSys;
 	}
-	
-	
+
 	public static HashMap<String, CoNLLSentence> loadTranslateEngCoNLL(
 			CoNLLDocument doc, String setting) {
 		ArrayList<String> chiLines = Common.getLines(setting + "/docs/train.f");
@@ -607,7 +606,7 @@ public class EMUtil {
 
 	public static void assignNE(ArrayList<Mention> mentions,
 			ArrayList<Element> elements) {
-		if(elements==null) {
+		if (elements == null) {
 			return;
 		}
 		for (Mention mention : mentions) {
@@ -631,65 +630,81 @@ public class EMUtil {
 		}
 		return numerator / denominator;
 	}
-	
+
 	public static MyTreeNode getMaxNPTreeNode(MyTreeNode node) {
 		ArrayList<MyTreeNode> ancestors = node.getAncestors();
 		MyTreeNode np = null;
-		for(int i=ancestors.size()-1;i>=0;i--) {
+		for (int i = ancestors.size() - 1; i >= 0; i--) {
 			MyTreeNode tmp = ancestors.get(i);
-			MyTreeNode lastLeaf = tmp.getLeaf(tmp.getLeaves().size()-1);
-			if(tmp.value.equals("NP") && lastLeaf==node) {
+			MyTreeNode lastLeaf = tmp.getLeaf(tmp.getLeaves().size() - 1);
+			if (tmp.value.equals("NP") && lastLeaf == node) {
 				np = tmp;
 			}
 		}
-		if(np==null) {
+		if (np == null) {
 			np = node.parent;
 		}
 		return np;
 	}
-	
+
 	public static MyTreeNode getMinNPTreeNode(MyTreeNode node) {
 		ArrayList<MyTreeNode> ancestors = node.getAncestors();
 		MyTreeNode np = null;
-		for(int i=0;i<ancestors.size();i++) {
+		for (int i = 0; i < ancestors.size(); i++) {
 			MyTreeNode tmp = ancestors.get(i);
-			MyTreeNode lastLeaf = tmp.getLeaf(tmp.getLeaves().size()-1);
-			if(tmp.value.equals("NP") && lastLeaf==node) {
+			MyTreeNode lastLeaf = tmp.getLeaf(tmp.getLeaves().size() - 1);
+			if (tmp.value.equals("NP") && lastLeaf == node) {
 				np = tmp;
 			}
 		}
-		if(np==null) {
+		if (np == null) {
 			np = node.parent;
 		}
 		return np;
 	}
-	
+
 	public static double getP_C(Mention ant, Mention m, CoNLLPart part) {
 		double ret = 0;
-		
-		if(ant.gender!=m.gender || ant.number!=m.number || ant.animacy!=m.animacy) {
+		if (ant.gender != m.gender || ant.number != m.number
+				|| ant.animacy != m.animacy) {
 			return 0;
 		}
-		
-//		if(Context.wordInclusion(ant, m, part)==0 && part.getWord(ant.headID).posTag.equals("NN")) {
-//			return 0;
-//		}
-//		
-//		if(Context.chHaveDifferentLocation(ant, m, part)==1) {
-//			return 0;
-//		}
-		if(Context.numberInLaterMention(ant, m, part)==1) {
-			return 0;
+
+		if(m.gram==Grammatic.subject) {
+			double mi1 = EMUtil.calMISubject(m, m);
+			double mi2 = EMUtil.calMISubject(ant, m);
+//			System.out.println(mi);
+			if(mi2<0 && mi2<mi1) {
+				return 0;
+			}
+		}
+		if(m.gram==Grammatic.object) {
+			double mi1 = EMUtil.calMIObject(m, m);
+			double mi2 = EMUtil.calMIObject(ant, m);
+			if(mi2<0 && mi2<mi1) {
+				return 0;
+			}
 		}
 		
-		if (
-				Context.sieve4Rule(ant, m, part) == 1 ||
-				Context.headSieve2(ant, m, part) == 1) {
+		// if(Context.wordInclusion(ant, m, part)==0 &&
+		// part.getWord(ant.headID).posTag.equals("NN")) {
+		// return 0;
+		// }
+		//
+		// if(Context.chHaveDifferentLocation(ant, m, part)==1) {
+		// return 0;
+		// }
+		if (Context.numberInLaterMention(ant, m, part) == 1) {
+			return 0;
+		}
+
+		if (Context.sieve4Rule(ant, m, part) == 1
+				|| Context.headSieve2(ant, m, part) == 1) {
 			ret = 1;
 		}
 		return ret;
 	}
-	
+
 	public static void setMentionAttri(Mention em, CoNLLPart part) {
 		int startIdx = part.getWord(em.start).indexInSentence;
 		int endIdx = part.getWord(em.end).indexInSentence;
@@ -705,7 +720,6 @@ public class EMUtil {
 		MyTreeNode leftLeaf = sentence.getSyntaxTree().leaves.get(startIdx);
 		MyTreeNode rightLeaf = sentence.getSyntaxTree().leaves.get(endIdx);
 
-		
 		ArrayList<MyTreeNode> leftAns = leftLeaf.getAncestors();
 		ArrayList<MyTreeNode> rightAns = rightLeaf.getAncestors();
 
@@ -740,7 +754,7 @@ public class EMUtil {
 				}
 			}
 		}
-		
+
 		if (treeNode == null) {
 			treeNode = rightLeaf.parent;
 		}
@@ -760,7 +774,7 @@ public class EMUtil {
 		for (int i = begin; i < end; i++) {
 			em.modifyList.add(sentence.getWord(i).word);
 		}
-		
+
 		// em.headInS = em.endInS;
 		// em.head = sentence.getWord(em.headInS).word;
 
@@ -834,36 +848,37 @@ public class EMUtil {
 		em.gender = EMUtil.getAntGender(em);
 		em.number = EMUtil.getAntNumber(em);
 		em.semantic = EMUtil.getSemantic(em);
-		
+
 		MyTreeNode ip = head.getAncestors().get(0);
-		for(int i=head.getAncestors().size()-1;i>=0;i--) {
+		for (int i = head.getAncestors().size() - 1; i >= 0; i--) {
 			MyTreeNode node = head.getAncestors().get(i);
-			if(node.value.equals("IP")) {
+			if (node.value.equals("IP")) {
 				ip = node;
 				break;
 			}
 		}
-		for(MyTreeNode l : ip.getLeaves()) {
-			if(l.parent.value.equals("NT")) {
-				 ArrayList<String> nts = em.moreModifiers.get("NT");
-				 if(nts==null) {
-					 nts = new ArrayList<String>();
-					 em.moreModifiers.put("NT", nts);
-				 }
-				 nts.add(l.value);
+		for (MyTreeNode l : ip.getLeaves()) {
+			if (l.parent.value.equals("NT")) {
+				ArrayList<String> nts = em.moreModifiers.get("NT");
+				if (nts == null) {
+					nts = new ArrayList<String>();
+					em.moreModifiers.put("NT", nts);
+				}
+				nts.add(l.value);
 			}
-			if(l.parent.value.equals("CD")) {
-				 ArrayList<String> cds = em.moreModifiers.get("CD");
-				 if(cds==null) {
-					 cds = new ArrayList<String>();
-					 em.moreModifiers.put("CD", cds);
-				 }
-				 cds.add(l.value);
+			if (l.parent.value.equals("CD")) {
+				ArrayList<String> cds = em.moreModifiers.get("CD");
+				if (cds == null) {
+					cds = new ArrayList<String>();
+					em.moreModifiers.put("CD", cds);
+				}
+				cds.add(l.value);
 			}
 		}
-		
-		for(int i=em.start;i<=em.end;i++) {
-			if(part.getWord(i).posTag.equals("CC") || part.getWord(i).word.equals("、")) {
+
+		for (int i = em.start; i <= em.end; i++) {
+			if (part.getWord(i).posTag.equals("CC")
+					|| part.getWord(i).word.equals("、")) {
 				em.isCC = true;
 			}
 		}
@@ -960,28 +975,32 @@ public class EMUtil {
 				}
 			}
 		}
-		
+
 		nounPhrases.removeAll(removes);
 		removeDuplicateMentions(nounPhrases);
 		Collections.sort(nounPhrases);
-//		if(true) {
-//			return nounPhrases;
-//		}
-		
+		// if(true) {
+		// return nounPhrases;
+		// }
+
 		EMUtil.assignNE(nounPhrases, sentence.part.getNameEntities());
-		
+
 		CoNLLPart part = sentence.part;
-		//TODO
+		// TODO
 		for (int i = 0; i < nounPhrases.size(); i++) {
 			Mention mention = nounPhrases.get(i);
-			if (mention.NE.equalsIgnoreCase("QUANTITY") || mention.NE.equalsIgnoreCase("CARDINAL")
-					|| mention.NE.equalsIgnoreCase("PERCENT") || mention.NE.equalsIgnoreCase("MONEY")) {
+			if (mention.NE.equalsIgnoreCase("QUANTITY")
+					|| mention.NE.equalsIgnoreCase("CARDINAL")
+					|| mention.NE.equalsIgnoreCase("PERCENT")
+					|| mention.NE.equalsIgnoreCase("MONEY")) {
 				removes.add(mention);
 				continue;
 			}
 
-			if (mention.extent.equalsIgnoreCase("我") && (mention.end + 2) < part.getWordCount()
-					&& part.getWord(mention.end + 1).word.equals("啊") && part.getWord(mention.end + 2).word.equals("，")) {
+			if (mention.extent.equalsIgnoreCase("我")
+					&& (mention.end + 2) < part.getWordCount()
+					&& part.getWord(mention.end + 1).word.equals("啊")
+					&& part.getWord(mention.end + 2).word.equals("，")) {
 				removes.add(mention);
 				continue;
 			}
@@ -1005,15 +1024,17 @@ public class EMUtil {
 				continue;
 			}
 
-			// 
+			//
 			if (mention.extent.contains("什么") || mention.extent.contains("多少")) {
 				removes.add(mention);
 				continue;
 			}
 			String lastWord = part.getWord(mention.end).word;
 			if (mention.extent.endsWith("的")
-					|| (mention.extent.endsWith("人") && mention.start == mention.end && ChDictionary.getInstance().countries
-							.contains(lastWord.substring(0, lastWord.length() - 1)))) {
+					|| (mention.extent.endsWith("人")
+							&& mention.start == mention.end && ChDictionary
+								.getInstance().countries.contains(lastWord
+							.substring(0, lastWord.length() - 1)))) {
 				removes.add(mention);
 				continue;
 			}
@@ -1026,7 +1047,7 @@ public class EMUtil {
 		nounPhrases.removeAll(removes);
 		removeDuplicateMentions(nounPhrases);
 		Collections.sort(nounPhrases);
-		
+
 		return nounPhrases;
 	}
 
@@ -1703,10 +1724,11 @@ public class EMUtil {
 
 	public static String getPredicateNode(MyTreeNode vp) {
 		ArrayList<MyTreeNode> leaves = vp.getLeaves();
-		HashSet<String> filter = new HashSet<String>(Arrays.asList("是", "有","要","会", "可以", "没有", "为", "无", "应该", "让", "能", "必须"));
+		HashSet<String> filter = new HashSet<String>(Arrays.asList("是", "有",
+				"要", "会", "可以", "没有", "为", "无", "应该", "让", "能", "必须"));
 		for (MyTreeNode leaf : leaves) {
 			if (leaf.parent.value.startsWith("V")
-			 && !filter.contains(leaf.value)) {
+					&& !filter.contains(leaf.value)) {
 				return leaf.value;
 			}
 		}
@@ -2360,53 +2382,53 @@ public class EMUtil {
 
 	public static HashSet<String> getGoldNEs(CoNLLPart goldPart) {
 		HashSet<String> goldNEs = new HashSet<String>();
-		for(Element ne : goldPart.getNameEntities()) {
+		for (Element ne : goldPart.getNameEntities()) {
 			goldNEs.add(ne.start + "," + ne.end);
 		}
 		return goldNEs;
 	}
-	
+
 	public static HashSet<String> getGoldPNs(CoNLLPart goldPart) {
 		HashSet<String> goldPNs = new HashSet<String>();
-		for(int i=0;i<goldPart.getWordCount();i++) {
-			if(goldPart.getWord(i).posTag.equals("PN")) {
+		for (int i = 0; i < goldPart.getWordCount(); i++) {
+			if (goldPart.getWord(i).posTag.equals("PN")) {
 				goldPNs.add(i + "," + i);
 			}
 		}
 		return goldPNs;
 	}
-	
+
 	public static HashSet<String> getGoldInChain(ArrayList<Entity> chains) {
 		HashSet<String> set = new HashSet<String>();
-		for(Entity e : chains) {
-			for(Mention m : e.getMentions()) {
+		for (Entity e : chains) {
+			for (Mention m : e.getMentions()) {
 				set.add(m.toName());
 			}
 		}
 		return set;
 	}
-	
+
 	public static HashMap<String, HashSet<String>> getGoldAnaphorKeys(
 			ArrayList<Entity> entities, CoNLLPart goldPart) {
 		HashSet<String> neSet = new HashSet<String>();
-		for(Element ne : goldPart.getNameEntities()) {
+		for (Element ne : goldPart.getNameEntities()) {
 			neSet.add(ne.start + "," + ne.end);
 		}
-		
+
 		HashSet<String> pnSet = new HashSet<String>();
-		for(int i=0;i<goldPart.getWordCount();i++) {
+		for (int i = 0; i < goldPart.getWordCount(); i++) {
 			CoNLLWord w = goldPart.getWord(i);
-			if(w.posTag.equals("PN")) {
+			if (w.posTag.equals("PN")) {
 				pnSet.add(w.index + "," + w.index);
 			}
 		}
-		
+
 		HashMap<String, HashSet<String>> anaphorKeys = new HashMap<String, HashSet<String>>();
 		for (Entity e : entities) {
 			Collections.sort(e.mentions);
 			for (int i = 1; i < e.mentions.size(); i++) {
 				Mention m1 = e.mentions.get(i);
-				if(neSet.contains(m1.toName()) || pnSet.contains(m1.toName())) {
+				if (neSet.contains(m1.toName()) || pnSet.contains(m1.toName())) {
 					continue;
 				}
 				HashSet<String> ants = new HashSet<String>();
@@ -2422,6 +2444,114 @@ public class EMUtil {
 			}
 		}
 		return anaphorKeys;
+	}
+
+	public static SVOStat svoStat;
+
+	public static double calMIObject(Mention ant, Mention anaphor) {
+		// if(true)
+		// return 1;
+		if (svoStat == null) {
+			svoStat = new SVOStat();
+			svoStat.loadMIInfo();
+		}
+		String o = ant.head;
+		String pos = ant.s.getWord(ant.headInS).posTag;
+		String v = EMUtil.getFirstVerb(anaphor.V);
+
+		String NE = ant.NE;
+		if (ant.NE.equals("OTHER") && EMUtil.NEMap != null
+				&& EMUtil.NEMap.containsKey(ant.head)) {
+			NE = EMUtil.NEMap.get(ant.head);
+		}
+
+		if (NE.equals("PERSON")) {
+			o = "他";
+			pos = "PN";
+		} else if (NE.equals("LOC") || NE.equals("GPE") || NE.equals("ORG")) {
+			o = "它";
+			pos = "PN";
+		}
+
+		if (!svoStat.unigrams.containsKey(o + " " + pos)
+				|| svoStat.unigrams.get(o + " " + pos) < 15000) {
+			return 1;
+		}
+
+		double objC = getValue(svoStat.unigrams, o + " " + pos);
+		double objP = (objC + 1)
+				/ (svoStat.unigramAll + svoStat.unigrams.size());
+
+		if (!svoStat.vCounts.containsKey(v) || svoStat.vCounts.get(v) < 1000) {
+			return 1;
+		}
+
+		double vC = getValue(svoStat.vCounts, v);
+		double vP = (vC) / (svoStat.svoAll);
+
+		double voC = getValue(svoStat.voCounts, v + " " + o);
+		double voP = (voC) / (svoStat.svoAll);
+
+		double MI = Math.log(voP / (vP * objP));
+
+		return MI;
+	}
+	
+	public static double calMISubject(Mention ant, Mention anaphor) {
+		// if(true)
+		// return 1;
+		if (svoStat == null) {
+			svoStat = new SVOStat();
+			svoStat.loadMIInfo();
+		}
+		String s = ant.head;
+		String pos = ant.s.getWord(ant.headInS).posTag;
+		String v = EMUtil.getFirstVerb(anaphor.V);
+
+		String NE = ant.NE;
+		if (ant.NE.equals("OTHER") && EMUtil.NEMap != null
+				&& EMUtil.NEMap.containsKey(ant.head)) {
+			NE = EMUtil.NEMap.get(ant.head);
+		}
+
+		if (NE.equals("PERSON")) {
+			s = "他";
+			pos = "PN";
+		} else if (NE.equals("LOC") || NE.equals("GPE") || NE.equals("ORG")) {
+			s = "它";
+			pos = "PN";
+		}
+
+		if (!svoStat.unigrams.containsKey(s + " " + pos)
+				|| svoStat.unigrams.get(s + " " + pos) < 15000) {
+			return 1;
+		}
+
+		double subjC = getValue(svoStat.unigrams, s + " " + pos);
+		double subjP = (subjC + 1)
+				/ (svoStat.unigramAll + svoStat.unigrams.size());
+
+		if (!svoStat.vCounts.containsKey(v) || svoStat.vCounts.get(v) < 1000) {
+			return 1;
+		}
+
+		double voC = getValue(svoStat.vCounts, v);
+		double voP = (voC) / (svoStat.svoAll);
+
+		double svoC = getValue(svoStat.svCounts, s + " " + v);
+		double svoP = (svoC) / (svoStat.svoAll);
+
+		double MI = Math.log(svoP / (voP * subjP));
+
+		return MI;
+	}
+
+	public static double getValue(HashMap<String, Integer> map, String key) {
+		if (map.containsKey(key)) {
+			return map.get(key);
+		} else {
+			return 0.00000001;
+		}
 	}
 
 	public static void main(String args[]) {

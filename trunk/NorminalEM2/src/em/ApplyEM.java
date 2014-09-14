@@ -282,7 +282,11 @@ public class ApplyEM {
 				}
 
 				double p2nd = p_context * entry.p_c;
-				p2nd *= 1 * p_number * p_gender * p_animacy * p_sem
+				p2nd *= 1 * 
+//						p_number * 
+//						p_gender * 
+//						p_animacy * 
+						p_sem
 				// * p_gram
 				;
 				double p = p2nd;
