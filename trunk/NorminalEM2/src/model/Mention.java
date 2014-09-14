@@ -19,7 +19,12 @@ public class Mention implements Comparable<Mention>, Serializable {
 	/**
          *
          */
+	
+	public ArrayList<Mention> innerMs = new ArrayList<Mention>();
+	
 	double th = 0.0;
+	
+	public HashMap<String, ArrayList<String>> moreModifiers = new HashMap<String, ArrayList<String>>();
 
 	public boolean isFake = false;
 
@@ -57,6 +62,8 @@ public class Mention implements Comparable<Mention>, Serializable {
 	public String msg;
 
 	public double MI;
+	
+	public boolean isCC = false;
 
 	public boolean notInChainZero;
 

@@ -495,10 +495,10 @@ public class Common {
 
 	public static HashMap<String, Double> readFile2Map5(String filename) {
 		HashMap<String, Double> map = null;
+		String line = "";
 		try {
 			map = new HashMap<String, Double>();
 			BufferedReader br = new BufferedReader(new FileReader(filename));
-			String line;
 			while ((line = br.readLine()) != null) {
 				int pos = line.lastIndexOf(' ');
 				String str = line.substring(0, pos);
@@ -514,6 +514,11 @@ public class Common {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch(Exception e) {
+			System.out.println(line);
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+			System.exit(0);
 		}
 		return map;
 	}
