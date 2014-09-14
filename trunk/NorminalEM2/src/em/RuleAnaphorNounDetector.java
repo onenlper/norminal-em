@@ -18,11 +18,12 @@ public class RuleAnaphorNounDetector {
 
 		for (Mention cand : cands) {
 			if (Context.sieve4Rule(cand, anaphor, part) == 1
-//					|| Context.headSieve1(cand, anaphor, part) == 1
 					|| Context.headSieve2(cand, anaphor, part) == 1
-					|| Context.headSieve3(cand, anaphor, part) == 1 
+//					|| Context.headSieve1(cand, anaphor, part) == 1
+//					|| Context.headSieve3(cand, anaphor, part) == 1 
 //					|| Context.exactMatchSieve1(cand, anaphor, part) == 1)
 					) {
+				anaphor.antecedent = cand;
 				isAnaphor = true;
 				break;
 			}
