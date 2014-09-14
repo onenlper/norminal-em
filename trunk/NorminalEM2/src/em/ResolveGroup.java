@@ -55,7 +55,7 @@ public class ResolveGroup implements Serializable {
 		boolean isFake;
 		double p;
 
-		
+		double p_c;
 		
 		public Entry(Mention ant, Context context) {
 			this.head = ant.head;

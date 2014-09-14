@@ -244,54 +244,33 @@ public class ApplyEM {
 
 			double probs[] = new double[cands.size()];
 
-			if (!RuleAnaphorNounDetector.isAnahporic(anaphor, cands, part)) {
-				continue;
-			}
-			String mKey = part.getPartName() + ":" + anaphor.toName();
-
+//			if (!RuleAnaphorNounDetector.isAnahporic(anaphor, cands, part)) {
+//				continue;
+//			}
+			
 			for (int i = 0; i < cands.size(); i++) {
 				Mention cand = cands.get(i);
 				boolean coref = chainMap.containsKey(anaphor.toName())
 						&& chainMap.containsKey(cand.toName())
 						&& chainMap.get(anaphor.toName()).intValue() == chainMap
 								.get(cand.toName()).intValue();
-
 				// calculate P(overt-pronoun|ant-context)
 				// TODO
 				Context context = Context.buildContext(cand, anaphor, part,
 						cands, i);
 				
 				double simi = Context.getSimi(cand.head, anaphor.head);
-				if(simi<EMLearn.word2vecSimi && simi!=-10) {
-//					continue;
-				}
 				
-				
-//				ArrayList<String> cd1 = cand.moreModifiers.get("CD");
-//				ArrayList<String> cd2 = anaphor.moreModifiers.get("CD");
-//				if(cd1!=null && cd2!=null) {
-//					if(!cd1.get(0).equals(cd2)) {
-//						continue;
-//					}
-//				}
-				
-//				ArrayList<String> nt1 = cand.moreModifiers.get("NT");
-//				ArrayList<String> nt2 = anaphor.moreModifiers.get("NT");
-//				if(nt1!=null && nt2!=null) {
-//					if(!nt1.get(0).equals(nt2)) {
-//						System.out.println(cand.extent + " # " + chainMap.containsKey(cand.toName()));
-//						System.out.println(cand.s.getText());
-//						System.out.println(anaphor.extent + " # " + chainMap.containsKey(anaphor.toName()));
-//						System.out.println(anaphor.s.getText());
-//						System.out.println(coref);
-//						System.out.println("-----------------");
-//						continue;
-//					}
-//				}
-
 				cand.msg = Context.message;
 				Entry entry = new Entry(cand, context);
 
+				entry.p_c = 0;
+				
+				if (Context.sieve4Rule(cand, anaphor, part) == 1
+						|| Context.headSieve2(cand, anaphor, part) == 1) {
+					entry.p_c = 1;
+				}
+				
 				double p_number = numberP.getVal(entry.number.name(), EMUtil
 						.getAntNumber(anaphor).name());
 				double p_animacy = animacyP.getVal(entry.animacy.name(), EMUtil
@@ -314,13 +293,13 @@ public class ApplyEM {
 					p_context = 1.0 / 2;
 				}
 
-				double p2nd = p_context;
+				double p2nd = p_context * entry.p_c;
 				p2nd *= 1 * p_number * p_gender * p_animacy * p_sem
 				// * p_gram
 				;
 				double p = p2nd;
 				probs[i] = p;
-				if (p > maxP) {
+				if (p > maxP && p!=0) {
 					antecedent = cand;
 					maxP = p;
 				}
