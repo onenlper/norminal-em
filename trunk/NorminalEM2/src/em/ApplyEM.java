@@ -176,6 +176,10 @@ public class ApplyEM {
 							|| m.antecedent == null) {
 						continue;
 					}
+					for(Mention i : m.innerMs) {
+						i.antecedent = m.antecedent;
+						corefResult.add(i);
+					}
 					corefResult.add(m);
 				}
 			}
@@ -272,7 +276,7 @@ public class ApplyEM {
 						cands, i);
 				
 				double simi = Context.getSimi(cand.head, anaphor.head);
-				if(simi<EMLearn.word2vecSimi) {
+				if(simi<EMLearn.word2vecSimi && simi!=-10) {
 					continue;
 				}
 				if(!cand.head.equals(anaphor.head)) {
