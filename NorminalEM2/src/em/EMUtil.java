@@ -92,6 +92,9 @@ public class EMUtil {
 	}
 
 	public static String getSemantic(Mention m) {
+		if(true) {
+			
+		}
 		if (!m.NE.equals("OTHER")) {
 			return m.NE;
 		}
@@ -100,7 +103,7 @@ public class EMUtil {
 		if (sems != null) {
 			sem = sems[0];
 		}
-		return sem.substring(0, 1);
+		return sem.substring(0, 4);
 	}
 
 	public static CoNLLPart getGoldPart(CoNLLPart part, String stage) {
@@ -668,8 +671,20 @@ public class EMUtil {
 			return 0;
 		}
 		
-		if (Context.sieve4Rule(ant, m, part) == 1
-				|| Context.headSieve2(ant, m, part) == 1) {
+//		if(Context.wordInclusion(ant, m, part)==0 && part.getWord(ant.headID).posTag.equals("NN")) {
+//			return 0;
+//		}
+//		
+//		if(Context.chHaveDifferentLocation(ant, m, part)==1) {
+//			return 0;
+//		}
+		if(Context.numberInLaterMention(ant, m, part)==1) {
+			return 0;
+		}
+		
+		if (
+				Context.sieve4Rule(ant, m, part) == 1 ||
+				Context.headSieve2(ant, m, part) == 1) {
 			ret = 1;
 		}
 		return ret;
