@@ -141,10 +141,6 @@ public class EMLearn {
 					}
 				}
 
-				Mention fake = new Mention();
-				fake.isFake = true;
-				// ants.add(fake);
-
 				ResolveGroup rg = new ResolveGroup(m);
 
 				Collections.sort(ants);
