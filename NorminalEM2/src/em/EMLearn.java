@@ -57,7 +57,8 @@ public class EMLearn {
 		// Double>();
 		numberP = new Parameter(1.0 / ((double) EMUtil.Number.values().length));
 		genderP = new Parameter(1.0 / ((double) EMUtil.Gender.values().length));
-		semanticP = new Parameter(1.0 / 2286.0);
+//		semanticP = new Parameter(1.0 / 2286.0);
+		semanticP = new Parameter(1.0/25318.0);
 		grammaticP = new Parameter(1.0 / 4.0);
 
 		animacyP = new Parameter(

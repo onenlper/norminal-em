@@ -263,10 +263,34 @@ public class Context implements Serializable {
 			candidateClusterStrs.add(part.getWord(i).word.toLowerCase());
 		}
 		candidateClusterStrs.remove(ant.head.toLowerCase());
-		if (candidateClusterStrs.containsAll(mentionClusterStrs))
+		
+		HashSet<Character> s1 = new HashSet<Character>();
+		for(String k : candidateClusterStrs) {
+			for(int i=0;i<k.length();i++) {
+				Character c = k.charAt(i);
+				s1.add(c);
+			}
+		}
+		
+		HashSet<Character> s2 = new HashSet<Character>();
+		for(String k : mentionClusterStrs) {
+			for(int i=0;i<k.length();i++) {
+				Character c = k.charAt(i);
+				s2.add(c);
+			}
+		}
+		
+		if(s1.containsAll(s2)) { 
 			return 1;
-		else
+		}
+		else {
 			return 0;
+		}
+		
+//		if (candidateClusterStrs.containsAll(mentionClusterStrs))
+//			return 1;
+//		else
+//			return 0;
 	}
 
 	private static short isSemanticSame(Mention ana, Mention anaphor,
