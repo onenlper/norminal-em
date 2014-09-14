@@ -110,7 +110,7 @@ public class Context implements Serializable {
 		feas[id++] = isSameGrammatic(ant, anaphor, part);
 		
 		feas[id++] = head5(ant, anaphor, part);		
-//		feas[id++] = headMatch2(ant, anaphor, part); // 
+		feas[id++] = headMatch2(ant, anaphor, part); // 
 //		feas[id++] = head6(ant, anaphor, part);
 		
 		if(feas[0]==1 && feas[4]==0) {
@@ -241,7 +241,7 @@ public class Context implements Serializable {
 
 	public static short wordInclusion(Mention ant, Mention anaphor,
 			CoNLLPart part) {
-		List<String> removeW = Arrays.asList(new String[] { "这个", "这", "那个", "全",
+		List<String> removeW = Arrays.asList(new String[] { "这个", "这", "那个", "全", "此",
 				"那", "自己", "的", "该", "公司", "这些", "那些", "'s" });
 		ArrayList<String> removeWords = new ArrayList<String>();
 		removeWords.addAll(removeW);
