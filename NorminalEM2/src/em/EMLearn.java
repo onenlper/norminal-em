@@ -37,7 +37,7 @@ public class EMLearn {
 	static Parameter animacyP;
 
 	static double word2vecSimi = .9;
-	
+
 	static HashMap<String, Double> contextPrior;
 	static HashMap<String, Double> contextOverall;
 	static HashMap<String, Double> fracContextCount;
@@ -94,12 +94,12 @@ public class EMLearn {
 	}
 
 	public static ArrayList<ResolveGroup> extractGroups(CoNLLPart part) {
-		
-//		CoNLLPart goldPart = EMUtil.getGoldPart(part, "train");
+
+		// CoNLLPart goldPart = EMUtil.getGoldPart(part, "train");
 		CoNLLPart goldPart = part;
 		HashSet<String> goldNEs = EMUtil.getGoldNEs(goldPart);
 		HashSet<String> goldPNs = EMUtil.getGoldPNs(goldPart);
-		
+
 		ArrayList<ResolveGroup> groups = new ArrayList<ResolveGroup>();
 		for (int i = 0; i < part.getCoNLLSentences().size(); i++) {
 			CoNLLSentence s = part.getCoNLLSentences().get(i);
@@ -149,22 +149,23 @@ public class EMLearn {
 
 				Collections.sort(ants);
 				Collections.reverse(ants);
-				
-				if(!RuleAnaphorNounDetector.isAnahporic(m, ants, part)) {
-					continue;
-				}
-				
+
+//				if (!RuleAnaphorNounDetector.isAnahporic(m, ants, part)) {
+//					continue;
+//				}
+
 				// TODO
 				for (int k = 0; k < ants.size(); k++) {
 					Mention ant = ants.get(k);
 					// add antecedents
 
-					Context context = Context.buildContext(ant, m, part, ants, k);
+					Context context = Context.buildContext(ant, m, part, ants,
+							k);
 					double simi = Context.getSimi(ant.head, m.head);
-					if(simi<word2vecSimi && simi!=-10) {
-//						continue;
+					if (simi < word2vecSimi && simi != -10) {
+						// continue;
 					}
-					
+
 					Entry entry = new Entry(ant, context);
 					rg.entries.add(entry);
 					count++;
@@ -176,10 +177,14 @@ public class EMLearn {
 						contextPrior.put(context.toString(),
 								1.0 + d.doubleValue());
 					}
-					// boolean coref = chainMap.containsKey(m.toName())
-					// && chainMap.containsKey(ant.toName())
-					// && chainMap.get(m.toName()).intValue() == chainMap
-					// .get(ant.toName()).intValue();
+					
+					entry.p_c = 0;
+					
+					if (Context.sieve4Rule(ant, m, part) == 1
+							|| Context.headSieve2(ant, m, part) == 1) {
+						entry.p_c = 1;
+					}
+					
 				}
 				groups.add(rg);
 			}
@@ -200,9 +205,8 @@ public class EMLearn {
 		for (String line : lines) {
 			if (docNo % 10 < percent) {
 				CoNLLDocument d = new CoNLLDocument(line
-//						.replace("gold_conll", "auto_conll")
-						.replace("auto_conll", "gold_conll")
-						);
+				// .replace("gold_conll", "auto_conll")
+						.replace("auto_conll", "gold_conll"));
 				for (CoNLLPart part : d.getParts()) {
 					// System.out.println(part.docName + " " +
 					// part.getPartID());
@@ -292,7 +296,6 @@ public class EMLearn {
 	public static void estep(ArrayList<ResolveGroup> groups) {
 		System.out.println("estep starts:");
 		long t1 = System.currentTimeMillis();
-		min_amongMax = 1;
 		for (ResolveGroup group : groups) {
 			double norm = 0;
 			for (Entry entry : group.entries) {
@@ -320,27 +323,26 @@ public class EMLearn {
 					// }
 				}
 
-				entry.p = p_context;
+				entry.p = p_context * entry.p_c;
 				entry.p *= 1 * p_number * p_gender * p_animacy * p_semetic
 				// * p_grammatic
 				;
+
 				norm += entry.p;
 			}
 
 			double max = 0;
-			for (Entry entry : group.entries) {
-//				System.out.println(entry.p);
-				entry.p = entry.p / norm;
-				if(entry.p>max) {
-					max = entry.p;
+			if (norm != 0) {
+				for (Entry entry : group.entries) {
+					entry.p = entry.p / norm;
+					if (entry.p > max) {
+						max = entry.p;
+					}
 				}
 			}
-			min_amongMax = Math.min(min_amongMax, max);
 		}
 		System.out.println(System.currentTimeMillis() - t1);
 	}
-	
-	static double min_amongMax = 1;
 
 	public static void mstep(ArrayList<ResolveGroup> groups) {
 		System.out.println("mstep starts:");
@@ -455,14 +457,12 @@ public class EMLearn {
 
 		ApplyEM.run("all");
 
-		System.out.println(min_amongMax + " ### ");
-		
-//		ApplyEM.run("nw");
-//		ApplyEM.run("mz");
-//		ApplyEM.run("wb");
-//		ApplyEM.run("bn");
-//		ApplyEM.run("bc");
-//		ApplyEM.run("tc");
+		// ApplyEM.run("nw");
+		// ApplyEM.run("mz");
+		// ApplyEM.run("wb");
+		// ApplyEM.run("bn");
+		// ApplyEM.run("bc");
+		// ApplyEM.run("tc");
 	}
 
 }
