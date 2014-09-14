@@ -93,7 +93,7 @@ public class EMUtil {
 
 	public static String getSemantic(Mention m) {
 		if(true) {
-			
+//			return m.head;
 		}
 		if (!m.NE.equals("OTHER")) {
 			return m.NE;
@@ -103,7 +103,7 @@ public class EMUtil {
 		if (sems != null) {
 			sem = sems[0];
 		}
-		return sem.substring(0, 4);
+		return sem.substring(0, 7);
 	}
 
 	public static CoNLLPart getGoldPart(CoNLLPart part, String stage) {
