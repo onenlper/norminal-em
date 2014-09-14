@@ -159,11 +159,6 @@ public class ApplyEM {
 							&& part.getWord(m.end).posTag.equals("PN")) {
 						continue;
 					}
-					if (goldNEs.contains(m.toName())) {
-						continue;
-					}
-					// if(goldAnaNouns.containsKey(m.toName()))
-					// if(maps.get(part.getPartName()).containsKey(m.toName()))
 					anaphors.add(m);
 				}
 
@@ -173,12 +168,15 @@ public class ApplyEM {
 				for (Mention m : anaphors) {
 					if (goldPNs.contains(m.toName())
 							|| goldNEs.contains(m.toName())
+							|| goldNEs.contains(m.end + "," + m.end)
 							|| m.antecedent == null) {
 						continue;
 					}
 					for(Mention i : m.innerMs) {
 						if (goldPNs.contains(i.toName())
-								|| goldNEs.contains(i.toName())) {
+								|| goldNEs.contains(i.toName())
+								|| goldNEs.contains(i.end + "," + i.end)
+								) {
 							continue;
 						}
 						i.antecedent = m.antecedent;

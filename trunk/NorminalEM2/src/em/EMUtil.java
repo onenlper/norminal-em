@@ -2426,6 +2426,7 @@ public class EMUtil {
 		HashSet<String> neSet = new HashSet<String>();
 		for (Element ne : goldPart.getNameEntities()) {
 			neSet.add(ne.start + "," + ne.end);
+			neSet.add(ne.end + "," + ne.end);
 		}
 
 		HashSet<String> pnSet = new HashSet<String>();
@@ -2441,7 +2442,7 @@ public class EMUtil {
 			Collections.sort(e.mentions);
 			for (int i = 1; i < e.mentions.size(); i++) {
 				Mention m1 = e.mentions.get(i);
-				if (neSet.contains(m1.toName()) || pnSet.contains(m1.toName())) {
+				if (neSet.contains(m1.toName()) || pnSet.contains(m1.toName()) || neSet.contains(m1.end + "," + m1.end)) {
 					continue;
 				}
 				HashSet<String> ants = new HashSet<String>();
