@@ -93,7 +93,7 @@ public class EMUtil {
 
 	public static String getSemantic(Mention m) {
 		if (true) {
-			// return m.head;
+			 return m.head;
 		}
 		if (!m.NE.equals("OTHER")) {
 			return m.NE;
@@ -224,7 +224,9 @@ public class EMUtil {
 				for (int i = 0; i < e.mentions.size(); i++) {
 					Mention m1 = e.mentions.get(i);
 					if (goldNEs.contains(m1.toName())
-							|| goldPNs.contains(m1.toName())) {
+							|| goldPNs.contains(m1.toName())
+							|| goldNEs.contains(m1.end + "," + m1.end)
+							) {
 						continue;
 					}
 
@@ -578,6 +580,9 @@ public class EMUtil {
 		MyTreeNode np = mention.NP;
 		boolean plura = false;
 		for (MyTreeNode leaf : np.getLeaves()) {
+			if(leaf.value.equals("、")) {
+				plura = true;
+			}
 			if (leaf.parent.value.equals("CD") && !leaf.value.equals("一")) {
 				plura = true;
 			}
@@ -588,6 +593,9 @@ public class EMUtil {
 				plura = true;
 			}
 			if (leaf.value.contains("多")) {
+				plura = true;
+			}
+			if(leaf.value.contains("双")) {
 				plura = true;
 			}
 		}
@@ -2388,6 +2396,7 @@ public class EMUtil {
 		HashSet<String> goldNEs = new HashSet<String>();
 		for (Element ne : goldPart.getNameEntities()) {
 			goldNEs.add(ne.start + "," + ne.end);
+			goldNEs.add(ne.end + "," + ne.end);
 		}
 		return goldNEs;
 	}
