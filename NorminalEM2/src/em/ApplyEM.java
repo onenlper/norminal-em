@@ -177,6 +177,10 @@ public class ApplyEM {
 						continue;
 					}
 					for(Mention i : m.innerMs) {
+						if (goldPNs.contains(i.toName())
+								|| goldNEs.contains(i.toName())) {
+							continue;
+						}
 						i.antecedent = m.antecedent;
 						corefResult.add(i);
 					}
@@ -244,31 +248,13 @@ public class ApplyEM {
 				continue;
 			}
 			String mKey = part.getPartName() + ":" + anaphor.toName();
-			// if(predictBadOnes.contains(mKey)) {
-			// continue;
-			// }
 
 			for (int i = 0; i < cands.size(); i++) {
 				Mention cand = cands.get(i);
-				if (EMUtil.getSemantic(cand).startsWith("J")) {
-					continue;
-				}
 				boolean coref = chainMap.containsKey(anaphor.toName())
 						&& chainMap.containsKey(cand.toName())
 						&& chainMap.get(anaphor.toName()).intValue() == chainMap
 								.get(cand.toName()).intValue();
-
-				// if(!Context.ccCompatible(cand, anaphor, part) && !coref &&
-				// cand.head.equals(anaphor.head)) {
-				if (cand.head.equals(anaphor.head)
-						&& !cand.extent.equals(anaphor.extent)
-						&& anaphor.extent.contains(cand.extent)) {
-					// System.out.println(cand.extent);
-					// System.out.println(anaphor.extent);
-					// System.out.println(coref);
-					// System.out.println("----");
-					// continue;
-				}
 
 				// calculate P(overt-pronoun|ant-context)
 				// TODO
@@ -277,14 +263,33 @@ public class ApplyEM {
 				
 				double simi = Context.getSimi(cand.head, anaphor.head);
 				if(simi<EMLearn.word2vecSimi && simi!=-10) {
-					continue;
-				}
-				if(!cand.head.equals(anaphor.head)) {
 //					continue;
 				}
 				
-				cand.msg = Context.message;
+				
+//				ArrayList<String> cd1 = cand.moreModifiers.get("CD");
+//				ArrayList<String> cd2 = anaphor.moreModifiers.get("CD");
+//				if(cd1!=null && cd2!=null) {
+//					if(!cd1.get(0).equals(cd2)) {
+//						continue;
+//					}
+//				}
+				
+//				ArrayList<String> nt1 = cand.moreModifiers.get("NT");
+//				ArrayList<String> nt2 = anaphor.moreModifiers.get("NT");
+//				if(nt1!=null && nt2!=null) {
+//					if(!nt1.get(0).equals(nt2)) {
+//						System.out.println(cand.extent + " # " + chainMap.containsKey(cand.toName()));
+//						System.out.println(cand.s.getText());
+//						System.out.println(anaphor.extent + " # " + chainMap.containsKey(anaphor.toName()));
+//						System.out.println(anaphor.s.getText());
+//						System.out.println(coref);
+//						System.out.println("-----------------");
+//						continue;
+//					}
+//				}
 
+				cand.msg = Context.message;
 				Entry entry = new Entry(cand, context);
 
 				double p_number = numberP.getVal(entry.number.name(), EMUtil
@@ -320,9 +325,9 @@ public class ApplyEM {
 					maxP = p;
 				}
 			}
-			if (maxP > 0)
-				min_amongMax = Math.min(min_amongMax, maxP);
 
+//			antecedent = anaphor.antecedent;
+			
 			if (antecedent != null) {
 				anaphor.antecedent = antecedent;
 
@@ -349,93 +354,6 @@ public class ApplyEM {
 //					anaphor.antecedent = new Mention(Integer.parseInt(trueAnte.substring(0, k)), Integer.parseInt(trueAnte.substring(k+1)));
 				}
 			}
-			boolean sw = false;
-			if (anaphor.antecedent != null
-					&& anaphor.antecedent.end != -1
-					&& chainMap.containsKey(anaphor.toName())
-					&& chainMap.containsKey(anaphor.antecedent.toName())
-					&& chainMap.get(anaphor.toName()).intValue() == chainMap
-							.get(anaphor.antecedent.toName()).intValue()) {
-
-				// TODO
-				if (!RuleAnaphorNounDetector.isAnahporic(anaphor, cands, part)
-						&& !goldNEs.contains(anaphor.toName())) {
-					// System.out.println(anaphor.extent + " #### "
-					// + antecedent.extent);
-					sw = true;
-					allL++;
-				}
-
-				if (!goldNEs.contains(anaphor.toName())) {
-					// System.out.println(part.getPartName() + ":" +
-					// anaphor.toName());
-					goodAnas.add(part.getPartName() + ":" + anaphor.toName());
-				}
-
-				good++;
-				String key = part.docName + ":" + part.getPartID() + ":"
-						+ anaphor.start + "-" + anaphor.antecedent.start + ","
-						+ anaphor.antecedent.end + ":GOOD";
-				corrects.add(key);
-				// System.out.println("==========");
-				// System.out.println("Correct!!! " + good + "/" + bad);
-				// if (anaphor.antecedent != null) {
-				// System.out.println(anaphor.antecedent.extent + ":"
-				// + anaphor.antecedent.NE + "#"
-				// + anaphor.antecedent.number + "#"
-				// + anaphor.antecedent.gender + "#"
-				// + anaphor.antecedent.person + "#"
-				// + anaphor.antecedent.animacy);
-				// System.out.println(anaphor);
-				// printResult(anaphor, anaphor.antecedent, part);
-				// }
-			} else if (anaphor.antecedent != null) {
-				if (anaphor.antecedent == null) {
-					String key = part.docName + ":" + part.getPartID() + ":"
-							+ anaphor.start + "-NULL:BAD";
-					corrects.add(key);
-				} else {
-					String key = part.docName + ":" + part.getPartID() + ":"
-							+ anaphor.start + "-" + anaphor.antecedent.start
-							+ "," + anaphor.antecedent.end + ":BAD";
-					corrects.add(key);
-				}
-				bad++;
-
-				int anaID = 0;
-				if (chainMap.containsKey(anaphor.toName())) {
-					anaID = chainMap.get(anaphor.toName()).intValue();
-				}
-				int antID = 0;
-				if (chainMap.containsKey(anaphor.antecedent.toName())) {
-					antID = chainMap.get(anaphor.antecedent.toName());
-				}
-
-				if (anaID != 0 && antID != 0 && anaphor.antecedent != null
-						&& goldAnaNouns.containsKey(anaphor.toName())) {
-					// System.out.println("==========");
-					// System.out.println("Error??? " + good + "/" + bad);
-					// System.out.println(anaID + ":" + anaphor.extent + ":" +
-					// anaphor.headInS);
-					// System.out.println(anaphor.s.getSentenceIdx() + ":" +
-					// anaphor.s.getText());
-					// System.out.println("##");
-					// System.out.println(antID + ":" +
-					// anaphor.antecedent.extent + ":" +
-					// anaphor.antecedent.headInS);
-					// System.out.println(anaphor.antecedent.s.getSentenceIdx()
-					// + ":" + anaphor.antecedent.s.getText());
-					// System.out.println(part.getDocument().getFilePath().replace("v5_auto_conll",
-					// "v4_gold_conll"));
-				}
-			}
-			String conllPath = file;
-			int aa = conllPath.indexOf(anno);
-			int bb = conllPath.indexOf(".");
-			String middle = conllPath.substring(aa + anno.length(), bb);
-			String path = prefix + middle + ".source";
-			// if (sw)
-			// System.out.println(path);
 		}
 	}
 
