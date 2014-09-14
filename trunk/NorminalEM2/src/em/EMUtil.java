@@ -661,6 +661,20 @@ public class EMUtil {
 		return np;
 	}
 	
+	public static double getP_C(Mention ant, Mention m, CoNLLPart part) {
+		double ret = 0;
+		
+		if(ant.gender!=m.gender || ant.number!=m.number || ant.animacy!=m.animacy) {
+			return 0;
+		}
+		
+		if (Context.sieve4Rule(ant, m, part) == 1
+				|| Context.headSieve2(ant, m, part) == 1) {
+			ret = 1;
+		}
+		return ret;
+	}
+	
 	public static void setMentionAttri(Mention em, CoNLLPart part) {
 		int startIdx = part.getWord(em.start).indexInSentence;
 		int endIdx = part.getWord(em.end).indexInSentence;

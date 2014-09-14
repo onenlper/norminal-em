@@ -238,16 +238,9 @@ public class ApplyEM {
 					cands.add(cand);
 				}
 			}
-			Mention fake = new Mention();
-			fake.isFake = true;
-			// cands.add(fake);
 
 			double probs[] = new double[cands.size()];
 
-//			if (!RuleAnaphorNounDetector.isAnahporic(anaphor, cands, part)) {
-//				continue;
-//			}
-			
 			for (int i = 0; i < cands.size(); i++) {
 				Mention cand = cands.get(i);
 				boolean coref = chainMap.containsKey(anaphor.toName())
@@ -264,12 +257,7 @@ public class ApplyEM {
 				cand.msg = Context.message;
 				Entry entry = new Entry(cand, context);
 
-				entry.p_c = 0;
-				
-				if (Context.sieve4Rule(cand, anaphor, part) == 1
-						|| Context.headSieve2(cand, anaphor, part) == 1) {
-					entry.p_c = 1;
-				}
+				entry.p_c = EMUtil.getP_C(cand, anaphor, part);
 				
 				double p_number = numberP.getVal(entry.number.name(), EMUtil
 						.getAntNumber(anaphor).name());

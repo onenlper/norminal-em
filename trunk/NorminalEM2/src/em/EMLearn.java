@@ -150,10 +150,6 @@ public class EMLearn {
 				Collections.sort(ants);
 				Collections.reverse(ants);
 
-//				if (!RuleAnaphorNounDetector.isAnahporic(m, ants, part)) {
-//					continue;
-//				}
-
 				// TODO
 				for (int k = 0; k < ants.size(); k++) {
 					Mention ant = ants.get(k);
@@ -162,9 +158,7 @@ public class EMLearn {
 					Context context = Context.buildContext(ant, m, part, ants,
 							k);
 					double simi = Context.getSimi(ant.head, m.head);
-					if (simi < word2vecSimi && simi != -10) {
-						// continue;
-					}
+					
 
 					Entry entry = new Entry(ant, context);
 					rg.entries.add(entry);
@@ -177,14 +171,7 @@ public class EMLearn {
 						contextPrior.put(context.toString(),
 								1.0 + d.doubleValue());
 					}
-					
-					entry.p_c = 0;
-					
-					if (Context.sieve4Rule(ant, m, part) == 1
-							|| Context.headSieve2(ant, m, part) == 1) {
-						entry.p_c = 1;
-					}
-					
+					entry.p_c = EMUtil.getP_C(ant, m, part);
 				}
 				groups.add(rg);
 			}
