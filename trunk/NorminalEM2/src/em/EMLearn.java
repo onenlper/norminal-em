@@ -156,12 +156,13 @@ public class EMLearn {
 					Context context = Context.buildContext(ant, m, part, ants,
 							k);
 					double simi = Context.getSimi(ant.head, m.head);
-					
 
 					Entry entry = new Entry(ant, context);
 					rg.entries.add(entry);
 					count++;
 
+					entry.p_c = EMUtil.getP_C(ant, m, part);
+					
 					Double d = contextPrior.get(context.toString());
 					if (d == null) {
 						contextPrior.put(context.toString(), 1.0);
@@ -169,8 +170,10 @@ public class EMLearn {
 						contextPrior.put(context.toString(),
 								1.0 + d.doubleValue());
 					}
-					entry.p_c = EMUtil.getP_C(ant, m, part);
 				}
+				
+				
+				
 				groups.add(rg);
 			}
 		}

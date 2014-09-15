@@ -255,9 +255,9 @@ public class Context implements Serializable {
 				removeWords.add(part.getWord(i + 1).word);
 			}
 			
-//			if(part.getWord(i).posTag.equals("PU")) {
-//				removeWords.add(part.getWord(i).word);
-//			}
+			if(part.getWord(i).posTag.equals("PU")) {
+				removeWords.add(part.getWord(i).word);
+			}
 		}
 		mentionClusterStrs.removeAll(removeWords);
 
