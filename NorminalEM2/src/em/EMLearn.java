@@ -149,6 +149,7 @@ public class EMLearn {
 				Collections.reverse(ants);
 
 				// TODO
+				double allP_C = 0;
 				for (int k = 0; k < ants.size(); k++) {
 					Mention ant = ants.get(k);
 					// add antecedents
@@ -163,18 +164,23 @@ public class EMLearn {
 
 					entry.p_c = EMUtil.getP_C(ant, m, part);
 					
-					Double d = contextPrior.get(context.toString());
-					if (d == null) {
-						contextPrior.put(context.toString(), 1.0);
-					} else {
-						contextPrior.put(context.toString(),
-								1.0 + d.doubleValue());
-					}
+					allP_C += entry.p_c;
+					
 				}
 				
-				
-				
-				groups.add(rg);
+//				if(allP_C!=0) {
+					for(Entry e : rg.entries) {
+						Context context = e.context;
+						Double d = contextPrior.get(context.toString());
+						if (d == null) {
+							contextPrior.put(context.toString(), 1.0);
+						} else {
+							contextPrior.put(context.toString(),
+									1.0 + d.doubleValue());
+						}
+					}
+					groups.add(rg);
+//				}
 			}
 		}
 		return groups;
@@ -331,6 +337,8 @@ public class EMLearn {
 						max = entry.p;
 					}
 				}
+			} else {
+//				Common.bangErrorPOS("!");
 			}
 		}
 		System.out.println(System.currentTimeMillis() - t1);
