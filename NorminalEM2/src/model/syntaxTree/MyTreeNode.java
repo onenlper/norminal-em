@@ -392,7 +392,8 @@ public class MyTreeNode {
 			}
 			headPos--;
 		}
-		if(leaves.get(headPos).value.equals("自己") && leaves.size()!=1) {
+		if((leaves.get(headPos).value.equals("本身") || leaves.get(headPos).value.equals("自己") || leaves.get(headPos).value.equals("自己人"))
+				&& leaves.size()!=1) {
 			headPos--;
 		}
 		return leaves.get(headPos);

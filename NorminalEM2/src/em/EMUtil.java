@@ -679,7 +679,7 @@ public class EMUtil {
 		
 		HashSet<Character> c2 = new HashSet<Character>();
 		for(int i=0;i<h2.length();i++) {
-			c1.add(h2.charAt(i));
+			c2.add(h2.charAt(i));
 		}
 		
 		return c1.containsAll(c2);
@@ -692,20 +692,20 @@ public class EMUtil {
 			return 0;
 		}
 		
-		if (m.gram == Grammatic.subject) {
-			double mi1 = EMUtil.calMISubject(m, m);
-			double mi2 = EMUtil.calMISubject(ant, m);
-			if (mi2 < 0 && mi2 < mi1) {
-				return 0;
-			}
-		}
-		if (m.gram == Grammatic.object) {
-			double mi1 = EMUtil.calMIObject(m, m);
-			double mi2 = EMUtil.calMIObject(ant, m);
-			if (mi2 < 0 && mi2 < mi1) {
-				return 0;
-			}
-		}
+//		if (m.gram == Grammatic.subject) {
+//			double mi1 = EMUtil.calMISubject(m, m);
+//			double mi2 = EMUtil.calMISubject(ant, m);
+//			if (mi2 < 0 && mi2 < mi1) {
+//				return 0;
+//			}
+//		}
+//		if (m.gram == Grammatic.object) {
+//			double mi1 = EMUtil.calMIObject(m, m);
+//			double mi2 = EMUtil.calMIObject(ant, m);
+//			if (mi2 < 0 && mi2 < mi1) {
+//				return 0;
+//			}
+//		}
 		
 		if(ant.head.equalsIgnoreCase(m.head) && part.getWord(ant.headID).posTag.equals("NR")
 				&& part.getWord(m.headID).posTag.equals("NR")) {
@@ -717,10 +717,14 @@ public class EMUtil {
 		}
 		
 		if (ant.head.contains(m.head)) {
+//		if(characterContain(ant.head, m.head)) {
 			return 1;
 		}
 		
-		if(ant.end!=ant.start && part.getWord(ant.end-1).word.equals(m.head)) {
+		if(ant.end!=ant.start && part.getWord(ant.end-1).word.equals(m.head) && 
+				(ant.NE.equals("PERSON") || ant.NE.equals("LOC") || ant.NE.equals("GPE"))
+				&& part.getWord(m.end).posTag.equals("NN")
+				) {
 //			return 1;
 		}
 		
