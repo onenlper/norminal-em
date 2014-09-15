@@ -254,6 +254,10 @@ public class Context implements Serializable {
 				removeWords.add(part.getWord(i).word);
 				removeWords.add(part.getWord(i + 1).word);
 			}
+			
+//			if(part.getWord(i).posTag.equals("PU")) {
+//				removeWords.add(part.getWord(i).word);
+//			}
 		}
 		mentionClusterStrs.removeAll(removeWords);
 
@@ -685,11 +689,9 @@ public class Context implements Serializable {
 	
 	public static short sieve4Rule(Mention a, Mention m, CoNLLPart part) {
 		if(sameProperHeadLastWord(a, m, part)==1) {
-			if(chHaveDifferentLocation(a, m, part)==0
-//					&& numberInLaterMention(a, m, part)==0
-					) {
+//			if(chHaveDifferentLocation(a, m, part)==0)
+//					&& numberInLaterMention(a, m, part)==0)
 				return 1;
-			}
 		}
 		return 0;
 	}
@@ -699,11 +701,11 @@ public class Context implements Serializable {
 		String ner2 = m.NE;
 		if (a.head.equalsIgnoreCase(m.head) && part.getWord(a.headID).posTag.equals("NR")
 				&& part.getWord(m.headID).posTag.equals("NR")) {
-//			return 1;
+			return 1;
 		}
 		if(a.head.equalsIgnoreCase(m.head) && ner1.equalsIgnoreCase(ner2) && 
 				(ner1.equalsIgnoreCase("PERSON") || ner1.equalsIgnoreCase("GPE") || ner1.equalsIgnoreCase("LOC"))) {
-			return 1;
+//			return 1;
 		}
 		return 0;
 	}

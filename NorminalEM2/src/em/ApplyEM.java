@@ -257,7 +257,7 @@ public class ApplyEM {
 
 				entry.p_c = EMUtil.getP_C(cand, anaphor, part);
 				
-				if(entry.p_c==0 && coref) {
+				if(entry.p_c==0 && coref && !cand.head.equals(anaphor.head)) {
 					print(cand, anaphor, part, chainMap);
 				}
 				
