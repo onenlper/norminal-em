@@ -681,7 +681,6 @@ public class EMUtil {
 		if(m.gram==Grammatic.subject) {
 			double mi1 = EMUtil.calMISubject(m, m);
 			double mi2 = EMUtil.calMISubject(ant, m);
-//			System.out.println(mi);
 			if(mi2<0 && mi2<mi1) {
 				return 0;
 			}
