@@ -94,7 +94,7 @@ public class EMUtil {
 
 	public static String getSemantic(Mention m) {
 		if (true) {
-			 return m.head;
+			return m.head;
 		}
 		if (!m.NE.equals("OTHER")) {
 			return m.NE;
@@ -118,8 +118,7 @@ public class EMUtil {
 		}
 		return sem.substring(0, 5);
 	}
-	
-	
+
 	public static CoNLLPart getGoldPart(CoNLLPart part, String stage) {
 		String documentID = "/users/yzcchen/chen3/CoNLL/conll-2012/v4/data/"
 				+ stage + "/data/chinese/annotations/" + part.docName
@@ -239,8 +238,7 @@ public class EMUtil {
 					Mention m1 = e.mentions.get(i);
 					if (goldNEs.contains(m1.toName())
 							|| goldPNs.contains(m1.toName())
-							|| goldNEs.contains(m1.end + "," + m1.end)
-							) {
+							|| goldNEs.contains(m1.end + "," + m1.end)) {
 						continue;
 					}
 
@@ -594,7 +592,7 @@ public class EMUtil {
 		MyTreeNode np = mention.NP;
 		boolean plura = false;
 		for (MyTreeNode leaf : np.getLeaves()) {
-			if(leaf.value.equals("、")) {
+			if (leaf.value.equals("、")) {
 				plura = true;
 			}
 			if (leaf.parent.value.equals("CD") && !leaf.value.equals("一")) {
@@ -609,7 +607,7 @@ public class EMUtil {
 			if (leaf.value.contains("多")) {
 				plura = true;
 			}
-			if(leaf.value.contains("双")) {
+			if (leaf.value.contains("双")) {
 				plura = true;
 			}
 		}
@@ -687,62 +685,70 @@ public class EMUtil {
 
 	public static boolean characterContain(String h1, String h2) {
 		HashSet<Character> c1 = new HashSet<Character>();
-		for(int i=0;i<h1.length();i++) {
+		for (int i = 0; i < h1.length(); i++) {
 			c1.add(h1.charAt(i));
 		}
-		
+
 		HashSet<Character> c2 = new HashSet<Character>();
-		for(int i=0;i<h2.length();i++) {
+		for (int i = 0; i < h2.length(); i++) {
 			c2.add(h2.charAt(i));
 		}
-		
+
 		return c1.containsAll(c2);
 	}
-	
+
 	public static double getP_C(Mention ant, Mention m, CoNLLPart part) {
+		if (ant.isFake) {
+			return 0;
+		}
 		double ret = 0;
 		if (ant.gender != m.gender || ant.number != m.number
 				|| ant.animacy != m.animacy) {
 			return 0;
 		}
-//		if (m.gram == Grammatic.subject) {
-//			double mi1 = EMUtil.calMISubject(m, m);
-//			double mi2 = EMUtil.calMISubject(ant, m);
-//			if (mi2 < 0 && mi2 < mi1) {
-//				return 0;
-//			}
-//		}
-//		if (m.gram == Grammatic.object) {
-//			double mi1 = EMUtil.calMIObject(m, m);
-//			double mi2 = EMUtil.calMIObject(ant, m);
-//			if (mi2 < 0 && mi2 < mi1) {
-//				return 0;
-//			}
-//		}
-		
-		if(ant.head.equalsIgnoreCase(m.head) && part.getWord(ant.headID).posTag.equals("NR")
+		// if (m.gram == Grammatic.subject) {
+		// double mi1 = EMUtil.calMISubject(m, m);
+		// double mi2 = EMUtil.calMISubject(ant, m);
+		// if (mi2 < 0 && mi2 < mi1) {
+		// return 0;
+		// }
+		// }
+		// if (m.gram == Grammatic.object) {
+		// double mi1 = EMUtil.calMIObject(m, m);
+		// double mi2 = EMUtil.calMIObject(ant, m);
+		// if (mi2 < 0 && mi2 < mi1) {
+		// return 0;
+		// }
+		// }
+
+		if (ant.head.equalsIgnoreCase(m.head)
+				&& part.getWord(ant.headID).posTag.equals("NR")
 				&& part.getWord(m.headID).posTag.equals("NR")) {
 			return 1;
 		}
-		
-		if(Context.wordInclusion(ant, m, part)==0) {
+
+		if (Context.wordInclusion(ant, m, part) == 0) {
 			return 0;
 		}
-		
-		if (ant.head.contains(m.head)) {
+
+		if (Context.isIWithI(ant, m, part) == 1) {
+			return 0;
+		}
+
+		int sDiss = m.s.getSentenceIdx() - ant.s.getSentenceIdx();
+		if (ant.head.contains(m.head) || sDiss < 0) {
 			return 1;
 		}
-		
-//		if(ant.end!=ant.start && part.getWord(ant.end-1).word.equals(m.head) && 
-//				(ant.NE.equals("PERSON") || ant.NE.equals("LOC") || ant.NE.equals("GPE") || part.getWord(ant.end).posTag.equals("NR"))
-//				&& part.getWord(m.end).posTag.equals("NN")
-//				) {
-//			return 2;
-//		}
-		
-		return ret;
-		
-		
+
+		// if(ant.end!=ant.start && part.getWord(ant.end-1).word.equals(m.head)
+		// &&
+		// (ant.NE.equals("PERSON") || ant.NE.equals("LOC") ||
+		// ant.NE.equals("GPE") || part.getWord(ant.end).posTag.equals("NR"))
+		// && part.getWord(m.end).posTag.equals("NN")
+		// ) {
+		// return 2;
+		// }
+		return 0;
 		// if(Context.wordInclusion(ant, m, part)==0 &&
 		// part.getWord(ant.headID).posTag.equals("NN")) {
 		// return 0;
@@ -751,46 +757,60 @@ public class EMUtil {
 		// if(Context.chHaveDifferentLocation(ant, m, part)==1) {
 		// return 0;
 		// }
-//		if (Context.numberInLaterMention(ant, m, part) == 1) {
-////			return 0;
-//		}
-
-//		if(ant.start==m.start && m.start==m.end && (ant.extent.contains(m.extent)||m.extent.contains(ant.extent))) {
-//			return 1;
-//		}
+		// if (Context.numberInLaterMention(ant, m, part) == 1) {
+		// // return 0;
+		// }
+		// if(ant.start==m.start && m.start==m.end &&
+		// (ant.extent.contains(m.extent)||m.extent.contains(ant.extent))) {
+		// return 1;
+		// }
+	}
+	public static final double log2 = Math.log(2);
+	
+	public static double klDivergence(double[] p1, double[] p2) {
+		double klDiv = 0.0;
+		for (int i = 0; i < p1.length; ++i) {
+			if (p1[i] == 0) {
+				continue;
+			}
+			if (p2[i] == 0.0) {
+				continue;
+			} // Limin
+			klDiv += p1[i] * Math.log(p1[i] / p2[i]);
+		}
+		return klDiv / log2; // moved this division out of the loop -DM
 	}
 
 	public static String getModifiers(Mention em, CoNLLPart part) {
-		List<String> removeW = Arrays.asList(new String[] { "这个", "这", "那个", "全", "此", "本",
-				"那", "自己", "的", "该", "公司", "这些", "那些", "'s" });
+		List<String> removeW = Arrays.asList(new String[] { "这个", "这", "那个",
+				"全", "此", "本", "那", "自己", "的", "该", "公司", "这些", "那些", "'s" });
 		ArrayList<String> removeWords = new ArrayList<String>();
 		removeWords.addAll(removeW);
 		for (int i = em.start; i < em.headID; i++) {
-			if (part.getWord(i).posTag.equalsIgnoreCase("DT")
-					&& i < em.end
+			if (part.getWord(i).posTag.equalsIgnoreCase("DT") && i < em.end
 					&& part.getWord(i + 1).posTag.equalsIgnoreCase("M")) {
 				removeWords.add(part.getWord(i).word);
 				removeWords.add(part.getWord(i + 1).word);
 			}
-			if(part.getWord(i).posTag.equals("PU")) {
+			if (part.getWord(i).posTag.equals("PU")) {
 				removeWords.add(part.getWord(i).word);
 			}
 		}
 		StringBuilder sb = new StringBuilder();
-		for(int i=em.start;i<em.headID;i++) {
+		for (int i = em.start; i < em.headID; i++) {
 			String w = part.getWord(i).word;
-			if(removeWords.contains(w)) {
+			if (removeWords.contains(w)) {
 				continue;
 			}
 			sb.append(w);
 		}
-		if(sb.toString().isEmpty()) {
+		if (sb.toString().isEmpty()) {
 			return "nulllll";
 		} else {
 			return sb.toString();
 		}
 	}
-	
+
 	public static void setMentionAttri(Mention em, CoNLLPart part) {
 		int startIdx = part.getWord(em.start).indexInSentence;
 		int endIdx = part.getWord(em.end).indexInSentence;
@@ -896,8 +916,8 @@ public class EMUtil {
 				}
 			}
 		}
-		
-		if(haveNPAncestor) {
+
+		if (haveNPAncestor) {
 			em.nested = true;
 		}
 
@@ -2520,7 +2540,8 @@ public class EMUtil {
 			Collections.sort(e.mentions);
 			for (int i = 1; i < e.mentions.size(); i++) {
 				Mention m1 = e.mentions.get(i);
-				if (neSet.contains(m1.toName()) || pnSet.contains(m1.toName()) || neSet.contains(m1.end + "," + m1.end)) {
+				if (neSet.contains(m1.toName()) || pnSet.contains(m1.toName())
+						|| neSet.contains(m1.end + "," + m1.end)) {
 					continue;
 				}
 				HashSet<String> ants = new HashSet<String>();
@@ -2588,7 +2609,7 @@ public class EMUtil {
 
 		return MI;
 	}
-	
+
 	public static double calMISubject(Mention ant, Mention anaphor) {
 		// if(true)
 		// return 1;

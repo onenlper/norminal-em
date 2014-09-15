@@ -239,21 +239,20 @@ public class ApplyEM {
 				}
 			}
 
+			Mention fake = new Mention();
+			fake.extent = "fakkkkke";
+			fake.isFake = true;
+//			cands.add(fake);
+			
 			double probs[] = new double[cands.size()];
 			int seq = 0;
-			for (int i = 0; i < cands.size(); i++) {
+			double norm = 0;
+			ArrayList<Entry> entries = new ArrayList<Entry>();
+			for(int i=0;i<cands.size();i++) {
 				Mention cand = cands.get(i);
-				boolean coref = chainMap.containsKey(anaphor.toName())
-						&& chainMap.containsKey(cand.toName())
-						&& chainMap.get(anaphor.toName()).intValue() == chainMap
-								.get(cand.toName()).intValue();
-				// calculate P(overt-pronoun|ant-context)
-				// TODO
 				Context context = Context.buildContext(cand, anaphor, part,
 						cands, seq);
-				
 				double simi = Context.getSimi(cand.head, anaphor.head);
-				
 				cand.msg = Context.message;
 				Entry entry = new Entry(cand, context, part);
 
@@ -262,6 +261,31 @@ public class ApplyEM {
 				if(entry.p_c!=0) {
 					seq += 1;
 				}
+				entries.add(entry);
+			}
+			
+			for (int i = 0; i < cands.size(); i++) {
+				Mention cand = cands.get(i);
+				Entry entry = entries.get(i);
+				Context context = entry.context;
+				
+				if(entry.isFake) {
+					entry.p_c = Entry.p_fake_decay/(Entry.p_fake_decay + seq);
+				} else if(entry.p_c!=0) {
+					entry.p_c = 1/(Entry.p_fake_decay + seq);
+				}
+				
+//				if(entry.p_c!=0) {
+//					entry.p_c = 1.0/(seq+1);
+//				}
+				
+				boolean coref = chainMap.containsKey(anaphor.toName())
+						&& chainMap.containsKey(cand.toName())
+						&& chainMap.get(anaphor.toName()).intValue() == chainMap
+								.get(cand.toName()).intValue();
+				// calculate P(overt-pronoun|ant-context)
+				// TODO
+				
 				
 //				if(entry.p_c!=0) {
 //					antecedent = cand;
@@ -307,21 +331,46 @@ public class ApplyEM {
 				;
 				double p = p2nd;
 				probs[i] = p;
+				norm += p;
 				if (p > maxP && p!=0) {
 					antecedent = cand;
 					maxP = p;
 				}
 			}
-
+			double uniform[] = new double[seq];
+			double norm_probs[] = new double[seq];
+			int id=0;
+			double minP = 1; 
+			for(int i=0;i<probs.length;i++) {
+				if(probs[i]==0) {
+					continue;
+				}
+				minP = Math.min(probs[i], minP);
+				norm_probs[id] = probs[i]/norm;
+				uniform[id] = 1.0/seq;
+				id++;
+			}
+//			double kl = EMUtil.klDivergence(norm_probs, uniform);
+//			System.out.println(seq + ":" + kl);
+//			if(kl>=6) {
+//				antecedent = null;
+//			}
+//			double scale = maxP/minP;
+//			System.out.println(scale);
+//			if(scale<50) {
+//				antecedent = null;
+//			}
+			
 //			antecedent = anaphor.antecedent;
 			
-			if (antecedent != null) {
+			if (antecedent != null && !antecedent.isFake) {
 				anaphor.antecedent = antecedent;
+				
 				boolean coref = chainMap.containsKey(anaphor.toName())
 						&& chainMap.containsKey(antecedent.toName())
 						&& chainMap.get(anaphor.toName()).intValue() == chainMap
 								.get(antecedent.toName()).intValue();
-
+				
 				if(!coref) {
 //					print(antecedent, anaphor, part, chainMap);
 				}

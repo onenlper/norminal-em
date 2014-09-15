@@ -55,9 +55,11 @@ public class ResolveGroup implements Serializable {
 		String sem = "unknown";
 		Grammatic gram;
 		
+		public static double p_fake_decay = .4;
+		
 		String cilin = "null";
 		
-		boolean isFake;
+		boolean isFake = false;
 		double p;
 
 		double p_c;

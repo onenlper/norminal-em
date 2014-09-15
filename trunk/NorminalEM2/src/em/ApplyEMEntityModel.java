@@ -177,8 +177,21 @@ public class ApplyEMEntityModel {
 				HashSet<String> goldPNs = EMUtil.getGoldPNs(goldPart);
 				HashSet<String> goldNEs = EMUtil.getGoldNEs(goldPart);
 				for(Mention m : anaphors) {
-					if (goldPNs.contains(m.toName()) || goldNEs.contains(m.toName()) || m.antecedent==null) {
+					if (goldPNs.contains(m.toName())
+							|| goldNEs.contains(m.toName())
+							|| goldNEs.contains(m.end + "," + m.end)
+							|| m.antecedent == null) {
 						continue;
+					}
+					for(Mention i : m.innerMs) {
+						if (goldPNs.contains(i.toName())
+								|| goldNEs.contains(i.toName())
+								|| goldNEs.contains(i.end + "," + i.end)
+								) {
+							continue;
+						}
+						i.antecedent = m.antecedent;
+						corefResult.add(i);
 					}
 					corefResult.add(m);
 				}
