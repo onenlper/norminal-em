@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import model.Mention;
+import model.CoNLL.CoNLLPart;
 import em.EMUtil.Animacy;
 import em.EMUtil.Gender;
 import em.EMUtil.Grammatic;
@@ -26,8 +27,9 @@ public class ResolveGroup implements Serializable {
 	Number number;
 	Grammatic gram;
 	String sem = "unknown";
+	String cilin = "null";
 	
-	public ResolveGroup(Mention m) {
+	public ResolveGroup(Mention m, CoNLLPart part) {
 		this.anaphor = m.extent;
 		this.entries = new ArrayList<Entry>();
 		
@@ -36,6 +38,7 @@ public class ResolveGroup implements Serializable {
 		this.number = EMUtil.getAntNumber(m);
 		this.sem = EMUtil.getSemantic(m);
 		this.gram = m.gram;
+		this.cilin = EMUtil.getCilin(m);
 	}
 
 	public static class Entry implements Serializable {
@@ -52,12 +55,14 @@ public class ResolveGroup implements Serializable {
 		String sem = "unknown";
 		Grammatic gram;
 		
+		String cilin = "null";
+		
 		boolean isFake;
 		double p;
 
 		double p_c;
 		
-		public Entry(Mention ant, Context context) {
+		public Entry(Mention ant, Context context, CoNLLPart part) {
 			this.head = ant.head;
 			this.context = context;
 			this.isFake = ant.isFake;
@@ -68,6 +73,7 @@ public class ResolveGroup implements Serializable {
 				this.sem = EMUtil.getSemantic(ant);
 			}
 			this.gram = ant.gram;
+			this.cilin = EMUtil.getCilin(ant);
 		}
 	}
 }

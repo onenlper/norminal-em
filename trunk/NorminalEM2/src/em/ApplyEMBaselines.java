@@ -241,9 +241,9 @@ public class ApplyEMBaselines {
 //						Context.headSieve3(cand, anaphor, part)==1 || 
 //						Context.exactMatchSieve1(cand, anaphor, part)==1)
 //						cand.extent.equals(anaphor.extent)
-						cand.head.contains(anaphor.head)
+						EMUtil.getP_C(cand, anaphor, part) != 0
 //						&& cand.extent.equals(anaphor.extent)
-						&& Context.wordInclusion(cand, anaphor, part)==1
+//						&& Context.wordInclusion(cand, anaphor, part)==1
 						) {
 					// if (cand.extent.equals(anaphor.extent)) {
 					antecedent = cand;
