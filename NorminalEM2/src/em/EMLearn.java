@@ -58,10 +58,9 @@ public class EMLearn {
 		// Double>();
 		numberP = new Parameter(1.0 / ((double) EMUtil.Number.values().length));
 		genderP = new Parameter(1.0 / ((double) EMUtil.Gender.values().length));
-		semanticP = new Parameter(1.0/25318.0);
+//		semanticP = new Parameter(1.0/25318.0);
 		
-		
-//		semanticP = new Parameter(1.0/5254.0);
+		semanticP = new Parameter(1.0/5254.0);
 		cilin = new Parameter(1.0/7089.0);
 		
 		grammaticP = new Parameter(1.0 / 4.0);
@@ -152,6 +151,11 @@ public class EMLearn {
 				Collections.sort(ants);
 				Collections.reverse(ants);
 
+				Mention fake = new Mention();
+				fake.extent = "fakkkkke";
+				fake.isFake = true;
+//				ants.add(fake);
+				
 				// TODO
 				double allP_C = 0;
 				int seq = 0;
@@ -173,18 +177,22 @@ public class EMLearn {
 						seq += 1;
 					}
 					allP_C += entry.p_c;
-					
 				}
 				
 //				if(allP_C!=0) {
-					for(Entry e : rg.entries) {
-						Context context = e.context;
+					for(Entry entry : rg.entries) {
+						Context context = entry.context;
 						Double d = contextPrior.get(context.toString());
 						if (d == null) {
 							contextPrior.put(context.toString(), 1.0);
 						} else {
 							contextPrior.put(context.toString(),
 									1.0 + d.doubleValue());
+						}
+						if(entry.isFake) {
+							entry.p_c = Entry.p_fake_decay/(Entry.p_fake_decay + seq);
+						} else if(entry.p_c!=0) {
+							entry.p_c = 1/(Entry.p_fake_decay + seq);
 						}
 					}
 					groups.add(rg);
@@ -194,7 +202,7 @@ public class EMLearn {
 		return groups;
 	}
 
-	static int percent = 10;
+	static int percent = 1;
 
 	private static void extractCoNLL(ArrayList<ResolveGroup> groups) {
 		// CoNLLDocument d = new CoNLLDocument("train_auto_conll");
