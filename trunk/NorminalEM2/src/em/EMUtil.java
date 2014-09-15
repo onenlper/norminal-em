@@ -671,27 +671,61 @@ public class EMUtil {
 		return np;
 	}
 
+	public static boolean characterContain(String h1, String h2) {
+		HashSet<Character> c1 = new HashSet<Character>();
+		for(int i=0;i<h1.length();i++) {
+			c1.add(h1.charAt(i));
+		}
+		
+		HashSet<Character> c2 = new HashSet<Character>();
+		for(int i=0;i<h2.length();i++) {
+			c1.add(h2.charAt(i));
+		}
+		
+		return c1.containsAll(c2);
+	}
+	
 	public static double getP_C(Mention ant, Mention m, CoNLLPart part) {
 		double ret = 0;
 		if (ant.gender != m.gender || ant.number != m.number
 				|| ant.animacy != m.animacy) {
 			return 0;
 		}
-
-		if(m.gram==Grammatic.subject) {
+		
+		if (m.gram == Grammatic.subject) {
 			double mi1 = EMUtil.calMISubject(m, m);
 			double mi2 = EMUtil.calMISubject(ant, m);
-			if(mi2<0 && mi2<mi1) {
+			if (mi2 < 0 && mi2 < mi1) {
 				return 0;
 			}
 		}
-		if(m.gram==Grammatic.object) {
+		if (m.gram == Grammatic.object) {
 			double mi1 = EMUtil.calMIObject(m, m);
 			double mi2 = EMUtil.calMIObject(ant, m);
-			if(mi2<0 && mi2<mi1) {
+			if (mi2 < 0 && mi2 < mi1) {
 				return 0;
 			}
 		}
+		
+		if(ant.head.equalsIgnoreCase(m.head) && part.getWord(ant.headID).posTag.equals("NR")
+				&& part.getWord(m.headID).posTag.equals("NR")) {
+			return 1;
+		}
+		
+		if(Context.wordInclusion(ant, m, part)==0) {
+			return 0;
+		}
+		
+		if (ant.head.contains(m.head)) {
+			return 1;
+		}
+		
+		if(ant.end!=ant.start && part.getWord(ant.end-1).word.equals(m.head)) {
+//			return 1;
+		}
+		
+		return ret;
+		
 		
 		// if(Context.wordInclusion(ant, m, part)==0 &&
 		// part.getWord(ant.headID).posTag.equals("NN")) {
@@ -701,19 +735,13 @@ public class EMUtil {
 		// if(Context.chHaveDifferentLocation(ant, m, part)==1) {
 		// return 0;
 		// }
-		if (Context.numberInLaterMention(ant, m, part) == 1) {
-			return 0;
-		}
+//		if (Context.numberInLaterMention(ant, m, part) == 1) {
+////			return 0;
+//		}
 
 //		if(ant.start==m.start && m.start==m.end && (ant.extent.contains(m.extent)||m.extent.contains(ant.extent))) {
 //			return 1;
 //		}
-		
-		if (Context.sieve4Rule(ant, m, part) == 1
-				|| Context.headSieve2(ant, m, part) == 1) {
-			ret = 1;
-		}
-		return ret;
 	}
 
 	public static void setMentionAttri(Mention em, CoNLLPart part) {
