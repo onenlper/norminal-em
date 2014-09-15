@@ -97,21 +97,27 @@ public class Context implements Serializable {
 		
 		// exact match
 		int id = 0;
-		short[] feas = new short[7];
+		short[] feas = new short[10];
 
 		// feas[id++] = getIsFake(ant, anaphor, part);
 		// feas[id++] = getHasSameHead(allCands, anaphor, part);
 		feas[id++] = getDistance(ant, anaphor, part); //
 		feas[id++] = isExactMatch(ant, anaphor, part); // 2
 		feas[id++] = headMatch(ant, anaphor, part); // 2
+		feas[id++] = isSamePredicate(ant, anaphor, part);
+		
+		
+//		feas[id++] = isIWithI(ant, anaphor, part); // 2
+//		feas[id++] = nested(ant, anaphor, part);
+//		feas[id++] = headMatch2(ant, anaphor, part); // 
+//		feas[id++] = head5(ant, anaphor, part);		
+//		feas[id++] = isSameGrammatic(ant, anaphor, part);
+//		feas[id++] = wordInclusion(ant, anaphor, part);
 //		feas[id++] = haveIncompatibleModify(ant, anaphor, part); // 3
-		
-		feas[id++] = wordInclusion(ant, anaphor, part);
-		feas[id++] = isSameGrammatic(ant, anaphor, part);
-		
-		feas[id++] = head5(ant, anaphor, part);		
-		feas[id++] = headMatch2(ant, anaphor, part); // 
+//		feas[id++] = (short)((ant.end!=ant.start && part.getWord(ant.end-1).word.equals(anaphor.head))?1:0);
 //		feas[id++] = head6(ant, anaphor, part);
+		
+//		feas[id++] = (short)(EMUtil.characterContain(ant.head, anaphor.head)?1:0);
 		
 		if(feas[0]==1 && feas[4]==0) {
 //			System.out.println(ant.extent);
@@ -128,9 +134,6 @@ public class Context implements Serializable {
 //			Common.pause("");
 		}
 		
-//		 feas[id++] = isIWithI(ant, anaphor, part); // 2
-//		 feas[id++] = isSamePredicate(ant, anaphor, part);
-		 
 //		feas[id++] = headSieve1(ant, anaphor, part);
 //		feas[id++] = headSieve2(ant, anaphor, part);
 //		feas[id++] = headSieve3(ant, anaphor, part);
@@ -146,6 +149,22 @@ public class Context implements Serializable {
 		
 //		feas[id++] = head6(ant, anaphor, part);
 		return getContext(feas);
+	}
+	
+	public static short nested(Mention ant, Mention anaphor, CoNLLPart part) {
+		if(ant.nested) {
+			if(anaphor.nested) {
+				return 0;
+			} else {
+				return 1;
+			}
+		} else {
+			if(anaphor.nested) {
+				return 0;
+			} else {
+				return 1;
+			}
+		}
 	}
 	
 	public static short head6(Mention ant, Mention anaphor, CoNLLPart part) {
@@ -330,19 +349,26 @@ public class Context implements Serializable {
 
 	private static short isSamePredicate(Mention ant, Mention anaphor,
 			CoNLLPart part) {
-		if (ant.gram == anaphor.gram) {
-			if (ant.V != null && anaphor.V != null) {
-				String v1 = EMUtil.getPredicateNode(ant.V);
-				String v2 = EMUtil.getPredicateNode(anaphor.V);
-				if (v1 != null && v2 != null && v1.equals(v2)) {
-					// System.out.println(v1);
-					// Common.bangErrorPOS(v1);
-					return 2;
-				}
+		boolean sameV = false;
+		if (ant.V != null && anaphor.V != null) {
+			String v1 = EMUtil.getPredicateNode(ant.V);
+			String v2 = EMUtil.getPredicateNode(anaphor.V);
+			if (v1 != null && v2 != null && v1.equals(v2)) {
+				sameV = true;
 			}
-			return 1;
+		}
+		
+		if (ant.gram == anaphor.gram) {
+			if (sameV) {
+				return 3;
+			}
+			return 2;
 		} else {
-			return 0;
+			if(sameV) {
+				return 1;
+			} else {
+				return 0;
+			}
 		}
 	}
 
@@ -423,8 +449,12 @@ public class Context implements Serializable {
 	}
 
 	public static short headMatch(Mention ant, Mention anaphor, CoNLLPart part) {
-		if (ant.head.equalsIgnoreCase(anaphor.head)) {
+		if(ant.head.equals(anaphor.head)) {
 			return 1;
+		} else if (ant.head.startsWith(anaphor.head)) {
+			return 2;
+		} else if(ant.head.endsWith(anaphor.head)) {
+			return 3;
 		} else {
 			return 0;
 		}

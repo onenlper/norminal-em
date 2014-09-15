@@ -44,7 +44,7 @@ public class EMLearn {
 
 	static HashMap<String, Double> contextVals;
 
-	static int maxDistance = 50;
+	static int maxDistance = 50000;
 
 	static int maxDisFeaValue = 10;
 	// static int contextSize = 2 * 2 * 2 * 3 * 2 * (maxDisFeaValue + 1);
@@ -410,7 +410,7 @@ public class EMLearn {
 		extractCoNLL(groups);
 		// extractGigaword(groups);
 		// Common.pause("count:  " + count);
-		Common.pause(groups.size());
+//		Common.pause(groups.size());
 
 		int it = 0;
 		while (it < 20) {

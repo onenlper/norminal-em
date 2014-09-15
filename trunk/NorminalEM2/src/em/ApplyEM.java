@@ -257,9 +257,12 @@ public class ApplyEM {
 
 				entry.p_c = EMUtil.getP_C(cand, anaphor, part);
 				
-				if(entry.p_c==0 && coref && !cand.head.equals(anaphor.head)) {
-					print(cand, anaphor, part, chainMap);
-				}
+//				if(entry.p_c==0 && coref && !cand.head.equals(anaphor.head)) {
+//				if(entry.p_c==2) {
+//					System.out.println(coref);
+//					print(cand, anaphor, part, chainMap);
+//					entry.p_c = 1;
+//				}
 				
 				double p_number = numberP.getVal(entry.number.name(), EMUtil
 						.getAntNumber(anaphor).name());
