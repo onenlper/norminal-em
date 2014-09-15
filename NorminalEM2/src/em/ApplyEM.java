@@ -29,6 +29,7 @@ public class ApplyEM {
 	Parameter animacyP;
 	Parameter semanticP;
 	Parameter gramP;
+	Parameter cilinP;
 
 	double contextOverall;
 
@@ -56,6 +57,7 @@ public class ApplyEM {
 			animacyP = (Parameter) modelInput.readObject();
 			semanticP = (Parameter) modelInput.readObject();
 			gramP = (Parameter) modelInput.readObject();
+			cilinP = (Parameter) modelInput.readObject();
 			fracContextCount = (HashMap<String, Double>) modelInput
 					.readObject();
 			contextPrior = (HashMap<String, Double>) modelInput.readObject();
@@ -238,7 +240,7 @@ public class ApplyEM {
 			}
 
 			double probs[] = new double[cands.size()];
-
+			int seq = 0;
 			for (int i = 0; i < cands.size(); i++) {
 				Mention cand = cands.get(i);
 				boolean coref = chainMap.containsKey(anaphor.toName())
@@ -248,20 +250,26 @@ public class ApplyEM {
 				// calculate P(overt-pronoun|ant-context)
 				// TODO
 				Context context = Context.buildContext(cand, anaphor, part,
-						cands, i);
+						cands, seq);
 				
 				double simi = Context.getSimi(cand.head, anaphor.head);
 				
 				cand.msg = Context.message;
-				Entry entry = new Entry(cand, context);
+				Entry entry = new Entry(cand, context, part);
 
 				entry.p_c = EMUtil.getP_C(cand, anaphor, part);
 				
+				if(entry.p_c!=0) {
+					seq += 1;
+				}
+				
+//				if(entry.p_c!=0) {
+//					antecedent = cand;
+//					break;
+//				}
 //				if(entry.p_c==0 && coref && !cand.head.equals(anaphor.head)) {
-//				if(entry.p_c==2) {
 //					System.out.println(coref);
 //					print(cand, anaphor, part, chainMap);
-//					entry.p_c = 1;
 //				}
 				
 				double p_number = numberP.getVal(entry.number.name(), EMUtil
@@ -273,6 +281,8 @@ public class ApplyEM {
 				double p_sem = semanticP.getVal(entry.sem,
 						EMUtil.getSemantic(anaphor));
 
+				double p_cilin = cilinP.getVal(entry.cilin, EMUtil.getModifiers(anaphor, part));
+				
 				double p_gram = semanticP.getVal(entry.gram.name(),
 						anaphor.gram.name());
 
@@ -292,6 +302,7 @@ public class ApplyEM {
 //						p_gender * 
 //						p_animacy * 
 						p_sem
+//						* p_cilin
 				// * p_gram
 				;
 				double p = p2nd;
@@ -306,12 +317,15 @@ public class ApplyEM {
 			
 			if (antecedent != null) {
 				anaphor.antecedent = antecedent;
-
 				boolean coref = chainMap.containsKey(anaphor.toName())
 						&& chainMap.containsKey(antecedent.toName())
 						&& chainMap.get(anaphor.toName()).intValue() == chainMap
 								.get(antecedent.toName()).intValue();
 
+				if(!coref) {
+//					print(antecedent, anaphor, part, chainMap);
+				}
+				
 //				if (!coref && goldKeys.get(part.getPartName()).containsKey(anaphor.toName())
 //						&& chainMap.containsKey(antecedent.toName())
 //						) {

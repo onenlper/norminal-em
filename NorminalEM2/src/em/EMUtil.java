@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import model.Element;
@@ -106,6 +107,19 @@ public class EMUtil {
 		return sem.substring(0, 7);
 	}
 
+	public static String getCilin(Mention m) {
+		if (!m.NE.equals("OTHER")) {
+			return m.NE;
+		}
+		String sems[] = Common.getSemantic(m.head);
+		String sem = "unknown";
+		if (sems != null) {
+			sem = sems[0];
+		}
+		return sem.substring(0, 5);
+	}
+	
+	
 	public static CoNLLPart getGoldPart(CoNLLPart part, String stage) {
 		String documentID = "/users/yzcchen/chen3/CoNLL/conll-2012/v4/data/"
 				+ stage + "/data/chinese/annotations/" + part.docName
@@ -691,7 +705,6 @@ public class EMUtil {
 				|| ant.animacy != m.animacy) {
 			return 0;
 		}
-		
 //		if (m.gram == Grammatic.subject) {
 //			double mi1 = EMUtil.calMISubject(m, m);
 //			double mi2 = EMUtil.calMISubject(ant, m);
@@ -747,6 +760,37 @@ public class EMUtil {
 //		}
 	}
 
+	public static String getModifiers(Mention em, CoNLLPart part) {
+		List<String> removeW = Arrays.asList(new String[] { "这个", "这", "那个", "全", "此", "本",
+				"那", "自己", "的", "该", "公司", "这些", "那些", "'s" });
+		ArrayList<String> removeWords = new ArrayList<String>();
+		removeWords.addAll(removeW);
+		for (int i = em.start; i < em.headID; i++) {
+			if (part.getWord(i).posTag.equalsIgnoreCase("DT")
+					&& i < em.end
+					&& part.getWord(i + 1).posTag.equalsIgnoreCase("M")) {
+				removeWords.add(part.getWord(i).word);
+				removeWords.add(part.getWord(i + 1).word);
+			}
+			if(part.getWord(i).posTag.equals("PU")) {
+				removeWords.add(part.getWord(i).word);
+			}
+		}
+		StringBuilder sb = new StringBuilder();
+		for(int i=em.start;i<em.headID;i++) {
+			String w = part.getWord(i).word;
+			if(removeWords.contains(w)) {
+				continue;
+			}
+			sb.append(w);
+		}
+		if(sb.toString().isEmpty()) {
+			return "nulllll";
+		} else {
+			return sb.toString();
+		}
+	}
+	
 	public static void setMentionAttri(Mention em, CoNLLPart part) {
 		int startIdx = part.getWord(em.start).indexInSentence;
 		int endIdx = part.getWord(em.end).indexInSentence;

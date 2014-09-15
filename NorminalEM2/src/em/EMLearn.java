@@ -35,6 +35,7 @@ public class EMLearn {
 	static Parameter grammaticP;
 
 	static Parameter animacyP;
+	static Parameter cilin;
 
 	static double word2vecSimi = .9;
 
@@ -58,7 +59,10 @@ public class EMLearn {
 		numberP = new Parameter(1.0 / ((double) EMUtil.Number.values().length));
 		genderP = new Parameter(1.0 / ((double) EMUtil.Gender.values().length));
 		semanticP = new Parameter(1.0/25318.0);
+		
+		
 //		semanticP = new Parameter(1.0/5254.0);
+		cilin = new Parameter(1.0/7089.0);
 		
 		grammaticP = new Parameter(1.0 / 4.0);
 
@@ -143,27 +147,31 @@ public class EMLearn {
 					}
 				}
 
-				ResolveGroup rg = new ResolveGroup(m);
+				ResolveGroup rg = new ResolveGroup(m, part);
 
 				Collections.sort(ants);
 				Collections.reverse(ants);
 
 				// TODO
 				double allP_C = 0;
+				int seq = 0;
 				for (int k = 0; k < ants.size(); k++) {
 					Mention ant = ants.get(k);
 					// add antecedents
 
 					Context context = Context.buildContext(ant, m, part, ants,
-							k);
+							seq);
 					double simi = Context.getSimi(ant.head, m.head);
 
-					Entry entry = new Entry(ant, context);
+					Entry entry = new Entry(ant, context, part);
 					rg.entries.add(entry);
 					count++;
 
 					entry.p_c = EMUtil.getP_C(ant, m, part);
 					
+					if(entry.p_c!=0) {
+						seq += 1;
+					}
 					allP_C += entry.p_c;
 					
 				}
@@ -305,6 +313,7 @@ public class EMLearn {
 						group.gram.name());
 
 				double p_semetic = semanticP.getVal(entry.sem, group.sem);
+				double p_cilin = cilin.getVal(entry.cilin, group.cilin);
 
 				double p_context = .5;
 				Double d = contextVals.get(context.toString());
@@ -323,6 +332,7 @@ public class EMLearn {
 //						* p_gender 
 //						* p_animacy 
 						* p_semetic
+//						* p_cilin
 				// * p_grammatic
 				;
 
@@ -353,6 +363,7 @@ public class EMLearn {
 		contextVals.clear();
 		semanticP.resetCounts();
 		grammaticP.resetCounts();
+		cilin.resetCounts();
 		fracContextCount.clear();
 		for (ResolveGroup group : groups) {
 			for (Entry entry : group.entries) {
@@ -371,6 +382,9 @@ public class EMLearn {
 				grammaticP
 						.addFracCount(entry.gram.name(), group.gram.name(), p);
 
+				cilin
+				.addFracCount(entry.cilin, group.cilin, p);
+				
 				Double d = fracContextCount.get(context.toString());
 				if (d == null) {
 					fracContextCount.put(context.toString(), p);
@@ -384,6 +398,7 @@ public class EMLearn {
 		numberP.setVals();
 		animacyP.setVals();
 		semanticP.setVals();
+		cilin.setVals();
 		grammaticP.setVals();
 		for (String key : fracContextCount.keySet()) {
 			double p_context = (EMUtil.alpha + fracContextCount.get(key))
@@ -425,6 +440,7 @@ public class EMLearn {
 		animacyP.printParameter("animacyP");
 		semanticP.printParameter("semanticP");
 		grammaticP.printParameter("grammaticP");
+		cilin.printParameter("cilinP");
 
 		ObjectOutputStream modelOut = new ObjectOutputStream(
 				new FileOutputStream("EMModel"));
@@ -433,7 +449,7 @@ public class EMLearn {
 		modelOut.writeObject(animacyP);
 		modelOut.writeObject(semanticP);
 		modelOut.writeObject(grammaticP);
-
+		modelOut.writeObject(cilin);
 		modelOut.writeObject(fracContextCount);
 		modelOut.writeObject(contextPrior);
 

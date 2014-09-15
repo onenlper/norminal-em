@@ -106,7 +106,7 @@ public class Context implements Serializable {
 		feas[id++] = headMatch(ant, anaphor, part); // 2
 		feas[id++] = isSamePredicate(ant, anaphor, part);
 		
-		
+//		feas[id++] = sameProperHeadLastWord(ant, anaphor, part);
 //		feas[id++] = isIWithI(ant, anaphor, part); // 2
 //		feas[id++] = nested(ant, anaphor, part);
 //		feas[id++] = headMatch2(ant, anaphor, part); // 
@@ -139,7 +139,7 @@ public class Context implements Serializable {
 //		feas[id++] = headSieve3(ant, anaphor, part);
 //		feas[id++] = sieve4Rule(ant, anaphor, part);
 		
-//		feas[id++] = sameProperHeadLastWord(ant, anaphor, part);
+//		
 //		feas[id++] = chHaveDifferentLocation(ant, anaphor, part);
 //		feas[id++] = numberInLaterMention(ant, anaphor, part);
 		 
