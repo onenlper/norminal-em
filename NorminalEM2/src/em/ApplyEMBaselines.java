@@ -168,14 +168,22 @@ public class ApplyEMBaselines {
 
 				HashSet<String> goldPNs = EMUtil.getGoldPNs(goldPart);
 				HashSet<String> goldNEs = EMUtil.getGoldNEs(goldPart);
-				for(Mention m : anaphors) {
-					if (goldPNs.contains(m.toName()) || goldNEs.contains(m.toName()) || m.antecedent==null) {
+				for (Mention m : anaphors) {
+					if (goldPNs.contains(m.toName())
+							|| goldNEs.contains(m.toName())
+							|| goldNEs.contains(m.end + "," + m.end)
+							|| m.antecedent == null) {
 						continue;
 					}
 					for(Mention i : m.innerMs) {
+						if (goldPNs.contains(i.toName())
+								|| goldNEs.contains(i.toName())
+								|| goldNEs.contains(i.end + "," + i.end)
+								) {
+							continue;
+						}
 						i.antecedent = m.antecedent;
 						corefResult.add(i);
-						Common.pause("");
 					}
 					corefResult.add(m);
 				}
@@ -227,15 +235,15 @@ public class ApplyEMBaselines {
 
 				if (cand.end != anaphor.end && 
 //						(Context.exactMatchSieve1(cand, anaphor, part)==1
-						(Context.sieve4Rule(cand, anaphor, part)==1 || 
-						Context.headSieve1(cand, anaphor, part)==1 ||
-						Context.headSieve2(cand, anaphor, part)==1 ||
-						Context.headSieve3(cand, anaphor, part)==1 || 
-						Context.exactMatchSieve1(cand, anaphor, part)==1)
+//						(Context.sieve4Rule(cand, anaphor, part)==1 || 
+//						Context.headSieve1(cand, anaphor, part)==1 ||
+//						Context.headSieve2(cand, anaphor, part)==1 ||
+//						Context.headSieve3(cand, anaphor, part)==1 || 
+//						Context.exactMatchSieve1(cand, anaphor, part)==1)
 //						cand.extent.equals(anaphor.extent)
-//						cand.head.equals(anaphor.head)
+						cand.head.contains(anaphor.head)
 //						&& cand.extent.equals(anaphor.extent)
-//						&& Context.wordInclusion(cand, anaphor, part)==1
+						&& Context.wordInclusion(cand, anaphor, part)==1
 						) {
 					// if (cand.extent.equals(anaphor.extent)) {
 					antecedent = cand;

@@ -22,6 +22,9 @@ public class Mention implements Comparable<Mention>, Serializable {
 	
 	public ArrayList<Mention> innerMs = new ArrayList<Mention>();
 	
+
+	public boolean nested = false;
+	
 	double th = 0.0;
 	
 	public HashMap<String, ArrayList<String>> moreModifiers = new HashMap<String, ArrayList<String>>();

@@ -717,16 +717,15 @@ public class EMUtil {
 		}
 		
 		if (ant.head.contains(m.head)) {
-//		if(characterContain(ant.head, m.head)) {
 			return 1;
 		}
 		
-		if(ant.end!=ant.start && part.getWord(ant.end-1).word.equals(m.head) && 
-				(ant.NE.equals("PERSON") || ant.NE.equals("LOC") || ant.NE.equals("GPE"))
-				&& part.getWord(m.end).posTag.equals("NN")
-				) {
-//			return 1;
-		}
+//		if(ant.end!=ant.start && part.getWord(ant.end-1).word.equals(m.head) && 
+//				(ant.NE.equals("PERSON") || ant.NE.equals("LOC") || ant.NE.equals("GPE") || part.getWord(ant.end).posTag.equals("NR"))
+//				&& part.getWord(m.end).posTag.equals("NN")
+//				) {
+//			return 2;
+//		}
 		
 		return ret;
 		
@@ -852,6 +851,10 @@ public class EMUtil {
 					break;
 				}
 			}
+		}
+		
+		if(haveNPAncestor) {
+			em.nested = true;
 		}
 
 		if (haveNPAncestor) {
