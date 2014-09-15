@@ -16,10 +16,26 @@ public class EvaluateBaseline {
 		HashMap<String, HashMap<String, String>> allSys = EMUtil.extractSysKeys(path);
 		HashMap<String, HashMap<String, HashSet<String>>> allKeys = EMUtil.extractGoldKeys();
 		
+		eva(allSys, allKeys, "all");
+		eva(allSys, allKeys, "nw");
+		eva(allSys, allKeys, "mz");
+		eva(allSys, allKeys, "wb");
+		eva(allSys, allKeys, "bn");
+		eva(allSys, allKeys, "bc");
+		eva(allSys, allKeys, "tc");
+	}
+
+	private static void eva(HashMap<String, HashMap<String, String>> allSys,
+			HashMap<String, HashMap<String, HashSet<String>>> allKeys, String source) {
 		double allG = 0;
 		double allS = 0;
 		double hit = 0;
 		for(String p : allKeys.keySet()) {
+			if(source.equals("all")) {
+				
+			} else if(!p.startsWith(source)) {
+				continue;
+			}
 			HashMap<String, HashSet<String>> keys = allKeys.get(p);
 			HashMap<String, String> sys = allSys.get(p);
 			allG += keys.size();
@@ -33,6 +49,7 @@ public class EvaluateBaseline {
 		double r = hit/allG;
 		double p = hit/allS;
 		double f = 2*r*p/(r+p);
+		System.out.println("Source: " + source);
 		System.out.println("hit: " + hit);
 		System.out.println("Gol: " + allG);
 		System.out.println("Sys: " + allS);
@@ -40,6 +57,7 @@ public class EvaluateBaseline {
 		System.out.println("Recall: " + r * 100);
 		System.out.println("Precis: " + p * 100);
 		System.out.println("F-scor: " + f * 100);
+		System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
 	}
 
 }
