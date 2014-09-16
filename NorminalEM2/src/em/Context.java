@@ -32,7 +32,7 @@ public class Context implements Serializable {
 
 	public static HashMap<String, Context> contextCache = new HashMap<String, Context>();
 
-	public static Context getContext(short[] feas) {
+	public static Context getContext(int[] feas) {
 		// long feaL = 0;
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < feas.length; i++) {
@@ -94,18 +94,23 @@ public class Context implements Serializable {
 	
 	public static Context buildContext(Mention ant, Mention anaphor,
 			CoNLLPart part, ArrayList<Mention> allCands, int mentionDis) {
-		
-		// exact match
 		int id = 0;
-		short[] feas = new short[10];
+		int[] feas = new int[10];
+		feas[id++] = getMentionDiss(mentionDis);
+		if(ant.isFake) {
+//			feas[id++] = -anaphor.head.hashCode();
+//			return getContext(feas);
+		}
+		// exact match
 
 		// feas[id++] = getIsFake(ant, anaphor, part);
 		// feas[id++] = getHasSameHead(allCands, anaphor, part);
+
 		feas[id++] = getDistance(ant, anaphor, part); //
 		feas[id++] = isExactMatch(ant, anaphor, part); // 2
 		feas[id++] = headMatch(ant, anaphor, part); // 2
 		feas[id++] = isSamePredicate(ant, anaphor, part);
-		
+		 
 //		feas[id++] = sameProperHeadLastWord(ant, anaphor, part);
 //		feas[id++] = isIWithI(ant, anaphor, part); // 2
 //		feas[id++] = nested(ant, anaphor, part);
@@ -116,7 +121,6 @@ public class Context implements Serializable {
 //		feas[id++] = haveIncompatibleModify(ant, anaphor, part); // 3
 //		feas[id++] = (short)((ant.end!=ant.start && part.getWord(ant.end-1).word.equals(anaphor.head))?1:0);
 //		feas[id++] = head6(ant, anaphor, part);
-		
 //		feas[id++] = (short)(EMUtil.characterContain(ant.head, anaphor.head)?1:0);
 		
 		if(feas[0]==1 && feas[4]==0) {
@@ -143,7 +147,6 @@ public class Context implements Serializable {
 //		feas[id++] = chHaveDifferentLocation(ant, anaphor, part);
 //		feas[id++] = numberInLaterMention(ant, anaphor, part);
 		 
-		// feas[id++] = getMentionDiss(mentionDis);
 		// feas[id++] = modifierMatch(ant, anaphor, part);
 		// feas[id++] = isSemanticSame(ant, anaphor, part);
 		
@@ -344,7 +347,12 @@ public class Context implements Serializable {
 	}
 
 	private static short getMentionDiss(int diss) {
-		return (short) (Math.log(diss) / Math.log(4));
+		if(diss==0) {
+			return 1;
+		} else {
+			return 0;
+		}
+//		return (short) diss;
 	}
 
 	private static short isSamePredicate(Mention ant, Mention anaphor,

@@ -58,9 +58,10 @@ public class EMLearn {
 		// Double>();
 		numberP = new Parameter(1.0 / ((double) EMUtil.Number.values().length));
 		genderP = new Parameter(1.0 / ((double) EMUtil.Gender.values().length));
-//		semanticP = new Parameter(1.0/25318.0);
+		semanticP = new Parameter(1.0/25318.0);
 		
-		semanticP = new Parameter(1.0/5254.0);
+//		semanticP = new Parameter(1.0/5254.0);
+		
 		cilin = new Parameter(1.0/7089.0);
 		
 		grammaticP = new Parameter(1.0 / 4.0);
@@ -153,18 +154,38 @@ public class EMLearn {
 
 				Mention fake = new Mention();
 				fake.extent = "fakkkkke";
+				fake.head = "fakkkkke";
 				fake.isFake = true;
-//				ants.add(fake);
+				
 				
 				// TODO
 				double allP_C = 0;
 				int seq = 0;
+				
+				ArrayList<Mention> goodEntries = new ArrayList<Mention>();
+				ArrayList<Mention> badEntries = new ArrayList<Mention>();
+				for(int k=0;k<ants.size();k++) {
+					Mention ant = ants.get(k);
+					if(ant.head.contains(m.head)) {
+						goodEntries.add(ant);
+					} else {
+						badEntries.add(ant);
+					}
+				}
+				ArrayList<Mention> allEntries = new ArrayList<Mention>();
+				allEntries.addAll(goodEntries);
+				allEntries.add(fake);
+				allEntries.addAll(badEntries);
+				for(int k=0;k<allEntries.size();k++) {
+					allEntries.get(k).seq = k;
+				}
+				ants.add(fake);
 				for (int k = 0; k < ants.size(); k++) {
 					Mention ant = ants.get(k);
 					// add antecedents
-
 					Context context = Context.buildContext(ant, m, part, ants,
-							seq);
+							ant.seq);
+					
 					double simi = Context.getSimi(ant.head, m.head);
 
 					Entry entry = new Entry(ant, context, part);
@@ -195,6 +216,7 @@ public class EMLearn {
 							entry.p_c = 1/(Entry.p_fake_decay + seq);
 						}
 					}
+					
 					groups.add(rg);
 //				}
 			}
@@ -202,7 +224,7 @@ public class EMLearn {
 		return groups;
 	}
 
-	static int percent = 1;
+	static int percent = 10;
 
 	private static void extractCoNLL(ArrayList<ResolveGroup> groups) {
 		// CoNLLDocument d = new CoNLLDocument("train_auto_conll");
@@ -334,7 +356,10 @@ public class EMLearn {
 					// }
 				}
 
-				entry.p = p_context * entry.p_c;
+				entry.p = 
+						p_context *  
+						entry.p_c
+						;
 				entry.p *= 1 
 //						* p_number 
 //						* p_gender 
@@ -481,12 +506,12 @@ public class EMLearn {
 
 		ApplyEM.run("all");
 
-		// ApplyEM.run("nw");
-		// ApplyEM.run("mz");
-		// ApplyEM.run("wb");
-		// ApplyEM.run("bn");
-		// ApplyEM.run("bc");
-		// ApplyEM.run("tc");
+		 ApplyEM.run("nw");
+		 ApplyEM.run("mz");
+		 ApplyEM.run("wb");
+		 ApplyEM.run("bn");
+		 ApplyEM.run("bc");
+		 ApplyEM.run("tc");
 	}
 
 }
