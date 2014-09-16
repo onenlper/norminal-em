@@ -241,17 +241,37 @@ public class ApplyEM {
 
 			Mention fake = new Mention();
 			fake.extent = "fakkkkke";
+			fake.head = "fakkkkke";
 			fake.isFake = true;
-//			cands.add(fake);
 			
-			double probs[] = new double[cands.size()];
+			
 			int seq = 0;
 			double norm = 0;
 			ArrayList<Entry> entries = new ArrayList<Entry>();
+			ArrayList<Mention> goodEntries = new ArrayList<Mention>();
+			ArrayList<Mention> badEntries = new ArrayList<Mention>();
+			for(int i=0;i<cands.size();i++) {
+				Mention cand = cands.get(i);
+				if(cand.head.contains(anaphor.head)) {
+					goodEntries.add(cand);
+				} else {
+					badEntries.add(cand);
+				}
+			}
+			ArrayList<Mention> allMentions = new ArrayList<Mention>();
+			allMentions.addAll(goodEntries);
+			allMentions.add(fake);
+			allMentions.addAll(badEntries);
+			for(int i=0;i<allMentions.size();i++) {
+				allMentions.get(i).seq = i;
+			}
+			cands.add(fake);
+			
+			double probs[] = new double[cands.size()];
 			for(int i=0;i<cands.size();i++) {
 				Mention cand = cands.get(i);
 				Context context = Context.buildContext(cand, anaphor, part,
-						cands, seq);
+						cands, cand.seq);
 				double simi = Context.getSimi(cand.head, anaphor.head);
 				cand.msg = Context.message;
 				Entry entry = new Entry(cand, context, part);
@@ -320,7 +340,10 @@ public class ApplyEM {
 					p_context = 1.0 / 2;
 				}
 
-				double p2nd = p_context * entry.p_c;
+				double p2nd = 
+						p_context	* 
+						entry.p_c
+						;
 				p2nd *= 1 * 
 //						p_number * 
 //						p_gender * 
@@ -337,32 +360,6 @@ public class ApplyEM {
 					maxP = p;
 				}
 			}
-			double uniform[] = new double[seq];
-			double norm_probs[] = new double[seq];
-			int id=0;
-			double minP = 1; 
-			for(int i=0;i<probs.length;i++) {
-				if(probs[i]==0) {
-					continue;
-				}
-				minP = Math.min(probs[i], minP);
-				norm_probs[id] = probs[i]/norm;
-				uniform[id] = 1.0/seq;
-				id++;
-			}
-//			double kl = EMUtil.klDivergence(norm_probs, uniform);
-//			System.out.println(seq + ":" + kl);
-//			if(kl>=6) {
-//				antecedent = null;
-//			}
-//			double scale = maxP/minP;
-//			System.out.println(scale);
-//			if(scale<50) {
-//				antecedent = null;
-//			}
-			
-//			antecedent = anaphor.antecedent;
-			
 			if (antecedent != null && !antecedent.isFake) {
 				anaphor.antecedent = antecedent;
 				
@@ -550,7 +547,7 @@ public class ApplyEM {
 		EMUtil.train = false;
 		ApplyEM test = new ApplyEM(folder);
 		test.test();
-		
+		System.out.println("RUNN: " + folder);
 		Common.outputHashSet(Context.todo, "todo.word2vec");
 		if(Context.todo.size()!=0) {
 			System.out.println("!!!!! TODO WORD2VEC!!!!");

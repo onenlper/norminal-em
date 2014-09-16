@@ -706,25 +706,25 @@ public class EMUtil {
 				|| ant.animacy != m.animacy) {
 			return 0;
 		}
-		// if (m.gram == Grammatic.subject) {
-		// double mi1 = EMUtil.calMISubject(m, m);
-		// double mi2 = EMUtil.calMISubject(ant, m);
-		// if (mi2 < 0 && mi2 < mi1) {
-		// return 0;
-		// }
-		// }
-		// if (m.gram == Grammatic.object) {
-		// double mi1 = EMUtil.calMIObject(m, m);
-		// double mi2 = EMUtil.calMIObject(ant, m);
-		// if (mi2 < 0 && mi2 < mi1) {
-		// return 0;
-		// }
-		// }
+		 if (m.gram == Grammatic.subject) {
+		 double mi1 = EMUtil.calMISubject(m, m);
+		 double mi2 = EMUtil.calMISubject(ant, m);
+		 if (mi2 < 0 && mi2 < mi1) {
+		 return 0;
+		 }
+		 }
+		 if (m.gram == Grammatic.object) {
+		 double mi1 = EMUtil.calMIObject(m, m);
+		 double mi2 = EMUtil.calMIObject(ant, m);
+		 if (mi2 < 0 && mi2 < mi1) {
+		 return 0;
+		 }
+		 }
 
 		if (ant.head.equalsIgnoreCase(m.head)
 				&& part.getWord(ant.headID).posTag.equals("NR")
 				&& part.getWord(m.headID).posTag.equals("NR")) {
-			return 1;
+//			return 1;
 		}
 
 		if (Context.wordInclusion(ant, m, part) == 0) {
@@ -736,7 +736,7 @@ public class EMUtil {
 		}
 
 		int sDiss = m.s.getSentenceIdx() - ant.s.getSentenceIdx();
-		if (ant.head.contains(m.head) || sDiss < 0) {
+		if (ant.head.contains(m.head) || sDiss < 0 || true) {
 			return 1;
 		}
 

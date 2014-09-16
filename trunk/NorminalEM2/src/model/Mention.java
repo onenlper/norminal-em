@@ -22,7 +22,8 @@ public class Mention implements Comparable<Mention>, Serializable {
 	
 	public ArrayList<Mention> innerMs = new ArrayList<Mention>();
 	
-
+	public int seq = 0;
+	
 	public boolean nested = false;
 	
 	double th = 0.0;

@@ -19,6 +19,7 @@ import model.CoNLL.CoNLLWord;
 import model.syntaxTree.MyTreeNode;
 import util.Common;
 import edu.stanford.nlp.classify.LinearClassifier;
+import em.EMUtil.Grammatic;
 
 public class ApplyEMBaselines {
 
@@ -55,6 +56,7 @@ public class ApplyEMBaselines {
 			genderP = (Parameter) modelInput.readObject();
 			animacyP = (Parameter) modelInput.readObject();
 			personP = (Parameter) modelInput.readObject();
+			 personQP = (Parameter) modelInput.readObject();
 			 personQP = (Parameter) modelInput.readObject();
 			fracContextCount = (HashMap<String, Double>) modelInput
 					.readObject();
@@ -233,7 +235,9 @@ public class ApplyEMBaselines {
 			for (int i = 0; i < cands.size(); i++) {
 				Mention cand = cands.get(i);
 
-				if (cand.end != anaphor.end && 
+				if (cand.end != anaphor.end 
+						&& cand.head.equals(anaphor.head)
+						&& cand.gram == Grammatic.subject
 //						(Context.exactMatchSieve1(cand, anaphor, part)==1
 //						(Context.sieve4Rule(cand, anaphor, part)==1 || 
 //						Context.headSieve1(cand, anaphor, part)==1 ||
@@ -241,7 +245,7 @@ public class ApplyEMBaselines {
 //						Context.headSieve3(cand, anaphor, part)==1 || 
 //						Context.exactMatchSieve1(cand, anaphor, part)==1)
 //						cand.extent.equals(anaphor.extent)
-						EMUtil.getP_C(cand, anaphor, part) != 0
+//						EMUtil.getP_C(cand, anaphor, part) != 0
 //						&& cand.extent.equals(anaphor.extent)
 //						&& Context.wordInclusion(cand, anaphor, part)==1
 						) {
