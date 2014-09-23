@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import mentionDetect.ParseTreeMention;
 import model.Element;
 import model.Entity;
 import model.GraphNode;
@@ -19,6 +20,9 @@ import model.CoNLL.CoNLLWord;
 import model.syntaxTree.MyTree;
 import model.syntaxTree.MyTreeNode;
 import util.Common;
+import align.DocumentMap;
+import align.DocumentMap.SentForAlign;
+import align.DocumentMap.Unit;
 import dict.ChDictionary;
 //import edu.stanford.nlp.ling.BasicDatum;
 //import edu.stanford.nlp.ling.Datum;
@@ -706,25 +710,25 @@ public class EMUtil {
 				|| ant.animacy != m.animacy) {
 			return 0;
 		}
-		 if (m.gram == Grammatic.subject) {
-		 double mi1 = EMUtil.calMISubject(m, m);
-		 double mi2 = EMUtil.calMISubject(ant, m);
-		 if (mi2 < 0 && mi2 < mi1) {
-		 return 0;
-		 }
-		 }
-		 if (m.gram == Grammatic.object) {
-		 double mi1 = EMUtil.calMIObject(m, m);
-		 double mi2 = EMUtil.calMIObject(ant, m);
-		 if (mi2 < 0 && mi2 < mi1) {
-		 return 0;
-		 }
-		 }
+		if (m.gram == Grammatic.subject) {
+			double mi1 = EMUtil.calMISubject(m, m);
+			double mi2 = EMUtil.calMISubject(ant, m);
+			if (mi2 < 0 && mi2 < mi1) {
+				return 0;
+			}
+		}
+		if (m.gram == Grammatic.object) {
+			double mi1 = EMUtil.calMIObject(m, m);
+			double mi2 = EMUtil.calMIObject(ant, m);
+			if (mi2 < 0 && mi2 < mi1) {
+				return 0;
+			}
+		}
 
 		if (ant.head.equalsIgnoreCase(m.head)
 				&& part.getWord(ant.headID).posTag.equals("NR")
 				&& part.getWord(m.headID).posTag.equals("NR")) {
-//			return 1;
+			// return 1;
 		}
 
 		if (Context.wordInclusion(ant, m, part) == 0) {
@@ -765,8 +769,9 @@ public class EMUtil {
 		// return 1;
 		// }
 	}
+
 	public static final double log2 = Math.log(2);
-	
+
 	public static double klDivergence(double[] p1, double[] p2) {
 		double klDiv = 0.0;
 		for (int i = 0; i < p1.length; ++i) {
@@ -2664,6 +2669,140 @@ public class EMUtil {
 			return map.get(key);
 		} else {
 			return 0.00000001;
+		}
+	}
+
+	public static HashMap<String, ArrayList<SentForAlign[]>> alignMap = new HashMap<String, ArrayList<SentForAlign[]>>();
+	static HashMap<String, ArrayList<CoNLLSentence>> engSMap = new HashMap<String, ArrayList<CoNLLSentence>>();
+	
+	public static void loadAlign() {
+		DocumentMap.loadRealBAAlignResult("/users/yzcchen/chen3/ijcnlp2013/parallelMTMix/chi_MT/align");
+		
+
+		System.out.println("Done1.");
+		CoNLLPart.processDiscourse = false;
+		CoNLLDocument engDoc = new CoNLLDocument("MT.chiCoNLL.all");
+		CoNLLPart.processDiscourse = true;
+		for (CoNLLSentence s : engDoc.getParts().get(0).getCoNLLSentences()) {
+			String engS = s.getText();
+			ArrayList<CoNLLSentence> lst = engSMap.get(engS);
+			if (lst == null) {
+				lst = new ArrayList<CoNLLSentence>();
+				engSMap.put(engS, lst);
+			}
+			lst.add(s);
+		}
+		System.out.println("Done2.");
+	}
+	
+	
+	private void alignMentions(CoNLLSentence chiS, ArrayList<CoNLLWord> segWords,
+			ArrayList<Mention> chiNPs) {
+		int chiSegStart = segWords.get(0).index; 
+		HashMap<Integer, Integer> offsetMap = new HashMap<Integer, Integer>();
+		int offset = 0;
+		for (CoNLLWord w : segWords) {
+			if (w.isZeroWord) {
+				offset++;
+			} else {
+				offsetMap.put(w.index, offset);
+			}
+		}
+		
+		String chiStr = EMUtil.listToString(segWords);
+		SentForAlign[] align = alignMap.get(chiStr).get(0);
+		String engStr = align[1].getText();
+		CoNLLSentence engCoNLLS = engSMap.get(engStr).get(0);
+
+		// construct mention map between two s
+		for (Mention cm : chiNPs) {
+			cm.units.clear();
+			Mention.chiSpanMaps.remove(cm.getReadName());
+		}
+		for (Mention em : chiNPs) {
+			int from = em.start - chiSegStart
+					+ offsetMap.get(em.start);
+			int to = from;
+			if (em.end != -1) {
+				to = em.end - chiSegStart + offsetMap.get(em.end);
+			} else {
+				from--;
+				to = from;
+			}
+			StringBuilder sb = new StringBuilder();
+			for (int g = from; g <= to; g++) {
+				Unit unit = align[0].units.get(g);
+				unit.sentence = chiS;
+				unit.addMention(em);
+				em.units.add(unit);
+				sb.append(unit.getToken()).append(" ");
+			}
+			if(!sb.toString().trim().equalsIgnoreCase(em.extent)) {
+//								System.out.println("#" + sb.toString().trim()
+//										+ "#" + em.extent.trim() + "#");
+//								System.out.println(em.start + "," + em.end);
+//								Common.pause("");
+			} else if(em.end==-1){
+//								System.out.println("#" + sb.toString().trim()
+//										+ "#" + em.extent.trim() + "#");
+//								System.out.println(em.start + "," + em.end);
+//								Common.pause("");
+			}
+		}
+		ParseTreeMention ptm = new ParseTreeMention();
+		ArrayList<Mention> engMentions = ptm
+				.getMentions(engCoNLLS);
+		int engStart = engCoNLLS.getWords().get(0).index;
+		for (Mention em : engMentions) {
+			StringBuilder sb = new StringBuilder();
+			for (int g = em.start - engStart; g <= em.end
+					- engStart; g++) {
+				Unit unit = align[1].units.get(g);
+				unit.sentence = engCoNLLS;
+				unit.addMention(em);
+				em.units.add(unit);
+				sb.append(unit.getToken()).append(" ");
+			}
+			if (!em.extent.trim().equalsIgnoreCase(
+					sb.toString().trim())) {
+				System.out.println("#" + sb.toString().trim()
+						+ "#" + em.extent.trim() + "#");
+				Common.bangErrorPOS("");
+			}
+		}
+
+		for (int g = 1; g <= 4; g++) {
+			Mention.assignMode = g;
+//							for (Mention m : engMentions) {
+//								m.getXSpan();
+//							}
+			for (Mention m : chiNPs) {
+				m.getXSpan();
+			}
+		}
+		
+		for (Mention m : chiNPs) {
+			Mention xm = m.getXSpan();
+//			if (xm != null 
+//					&& xm.extent.isEmpty()
+//					) {
+//				System.out.println(m.extent + "#" + xm.extent);
+//				System.out.println(m.start + "," + m.end + "#" + xm.start + "," + xm.end);
+//				System.out.println(EMUtil.listToString(words));
+//				System.out.println(xm.s.getText());
+//				System.out.println(m.xSpanType);
+//				Common.pause("GOOD!!!");
+//			}
+			if(xm!=null && m.end!=-1) {
+//				System.out.println(m.extent + "#" + xm.extent);
+//				System.out.println(m.start + "," + m.end + "#" + xm.start + "," + xm.end);
+//				Common.pause("");
+			}
+//			if(xm!=null) {
+//			
+//				alignn++;
+//			}
+//			all++;
 		}
 	}
 
