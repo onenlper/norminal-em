@@ -111,6 +111,15 @@ public class Context implements Serializable {
 		feas[id++] = headMatch(ant, anaphor, part); // 2
 		feas[id++] = isSamePredicate(ant, anaphor, part);
 		 
+		
+		System.out.println(ant.extent);
+		System.out.println(ant.getXSpan()==null?"null":ant.getXSpan().extent);
+		System.out.println("----------");
+		
+		System.out.println(anaphor.extent);
+		System.out.println(anaphor.getXSpan()==null?"null":anaphor.getXSpan().extent);
+		System.out.println("----------");
+		
 //		feas[id++] = sameProperHeadLastWord(ant, anaphor, part);
 //		feas[id++] = isIWithI(ant, anaphor, part); // 2
 //		feas[id++] = nested(ant, anaphor, part);
