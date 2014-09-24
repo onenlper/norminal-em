@@ -122,6 +122,14 @@ public class ApplyEM {
 			CoNLLDocument document = new CoNLLDocument(file
 			// .replace("auto_conll", "gold_conll")
 			);
+			
+			
+			document.language = "chinese";
+			int a = file.indexOf("annotations");
+			a += "annotations/".length();
+			int b = file.lastIndexOf(".");
+			String docName = file.substring(a, b);
+			
 			for (int k = 0; k < document.getParts().size(); k++) {
 				CoNLLPart part = document.getParts().get(k);
 				part.setNameEntities(EMUtil.predictNEs.get(part.getDocument()
@@ -141,6 +149,13 @@ public class ApplyEM {
 
 				ArrayList<Mention> goldBoundaryNPMentions = EMUtil
 						.extractMention(part);
+				
+				for(Mention m : goldBoundaryNPMentions) {
+					ArrayList<Mention> ms = new ArrayList<Mention>();
+					ms.add(m);
+					EMUtil.alignMentions(m.s, ms, docName);
+				}
+				
 				Collections.sort(goldBoundaryNPMentions);
 
 				ArrayList<Mention> candidates = new ArrayList<Mention>();
@@ -407,79 +422,79 @@ public class ApplyEM {
 		// System.out.println("========");
 	}
 
-	public void addEmptyCategoryNode(Mention zero) {
-		MyTreeNode V = zero.V;
-		MyTreeNode newNP = new MyTreeNode();
-		newNP.value = "NP";
-		int VIdx = V.childIndex;
-		V.parent.addChild(VIdx, newNP);
-
-		MyTreeNode empty = new MyTreeNode();
-		empty.value = "-NONE-";
-		newNP.addChild(empty);
-
-		MyTreeNode child = new MyTreeNode();
-		child.value = zero.extent;
-		empty.addChild(child);
-		child.emptyCategory = true;
-		zero.NP = newNP;
-	}
+//	public void addEmptyCategoryNode(Mention zero) {
+//		MyTreeNode V = zero.V;
+//		MyTreeNode newNP = new MyTreeNode();
+//		newNP.value = "NP";
+//		int VIdx = V.childIndex;
+//		V.parent.addChild(VIdx, newNP);
+//
+//		MyTreeNode empty = new MyTreeNode();
+//		empty.value = "-NONE-";
+//		newNP.addChild(empty);
+//
+//		MyTreeNode child = new MyTreeNode();
+//		child.value = zero.extent;
+//		empty.addChild(child);
+//		child.emptyCategory = true;
+//		zero.NP = newNP;
+//	}
 
 	static String prefix = "/shared/mlrdir1/disk1/mlr/corpora/CoNLL-2012/conll-2012-train-v0/data/files/data/chinese/annotations/";
 	static String anno = "annotations/";
 	static String suffix = ".coref";
 
-	private static ArrayList<Mention> getGoldNouns(ArrayList<Entity> entities,
-			CoNLLPart goldPart) {
-		ArrayList<Mention> goldAnaphors = new ArrayList<Mention>();
-		for (Entity e : entities) {
-			Collections.sort(e.mentions);
-			for (int i = 1; i < e.mentions.size(); i++) {
-				Mention m1 = e.mentions.get(i);
-				String pos1 = goldPart.getWord(m1.end).posTag;
-				if (pos1.equals("PN") || pos1.equals("NR") || pos1.equals("NT")) {
-					continue;
-				}
-				goldAnaphors.add(m1);
-			}
-		}
-		Collections.sort(goldAnaphors);
-		for (Mention m : goldAnaphors) {
-			EMUtil.setMentionAttri(m, goldPart);
-		}
-		return goldAnaphors;
-	}
-
-	private static ArrayList<Mention> getGoldAnaphorNouns(
-			ArrayList<Entity> entities, CoNLLPart goldPart) {
-		ArrayList<Mention> goldAnaphors = new ArrayList<Mention>();
-		for (Entity e : entities) {
-			Collections.sort(e.mentions);
-			for (int i = 1; i < e.mentions.size(); i++) {
-				Mention m1 = e.mentions.get(i);
-				String pos1 = goldPart.getWord(m1.end).posTag;
-				if (pos1.equals("PN") || pos1.equals("NR") || pos1.equals("NT")) {
-					continue;
-				}
-				HashSet<String> ants = new HashSet<String>();
-				for (int j = i - 1; j >= 0; j--) {
-					Mention m2 = e.mentions.get(j);
-					String pos2 = goldPart.getWord(m2.end).posTag;
-					if (!pos2.equals("PN") && m1.end != m2.end) {
-						ants.add(m2.toName());
-					}
-				}
-				if (ants.size() != 0) {
-					goldAnaphors.add(m1);
-				}
-			}
-		}
-		Collections.sort(goldAnaphors);
-		for (Mention m : goldAnaphors) {
-			EMUtil.setMentionAttri(m, goldPart);
-		}
-		return goldAnaphors;
-	}
+//	private static ArrayList<Mention> getGoldNouns(ArrayList<Entity> entities,
+//			CoNLLPart goldPart) {
+//		ArrayList<Mention> goldAnaphors = new ArrayList<Mention>();
+//		for (Entity e : entities) {
+//			Collections.sort(e.mentions);
+//			for (int i = 1; i < e.mentions.size(); i++) {
+//				Mention m1 = e.mentions.get(i);
+//				String pos1 = goldPart.getWord(m1.end).posTag;
+//				if (pos1.equals("PN") || pos1.equals("NR") || pos1.equals("NT")) {
+//					continue;
+//				}
+//				goldAnaphors.add(m1);
+//			}
+//		}
+//		Collections.sort(goldAnaphors);
+//		for (Mention m : goldAnaphors) {
+//			EMUtil.setMentionAttri(m, goldPart);
+//		}
+//		return goldAnaphors;
+//	}
+//
+//	private static ArrayList<Mention> getGoldAnaphorNouns(
+//			ArrayList<Entity> entities, CoNLLPart goldPart) {
+//		ArrayList<Mention> goldAnaphors = new ArrayList<Mention>();
+//		for (Entity e : entities) {
+//			Collections.sort(e.mentions);
+//			for (int i = 1; i < e.mentions.size(); i++) {
+//				Mention m1 = e.mentions.get(i);
+//				String pos1 = goldPart.getWord(m1.end).posTag;
+//				if (pos1.equals("PN") || pos1.equals("NR") || pos1.equals("NT")) {
+//					continue;
+//				}
+//				HashSet<String> ants = new HashSet<String>();
+//				for (int j = i - 1; j >= 0; j--) {
+//					Mention m2 = e.mentions.get(j);
+//					String pos2 = goldPart.getWord(m2.end).posTag;
+//					if (!pos2.equals("PN") && m1.end != m2.end) {
+//						ants.add(m2.toName());
+//					}
+//				}
+//				if (ants.size() != 0) {
+//					goldAnaphors.add(m1);
+//				}
+//			}
+//		}
+//		Collections.sort(goldAnaphors);
+//		for (Mention m : goldAnaphors) {
+//			EMUtil.setMentionAttri(m, goldPart);
+//		}
+//		return goldAnaphors;
+//	}
 
 	public static void evaluate(HashMap<String, ArrayList<Mention>> anaphorses,
 			HashMap<String, HashMap<String, HashSet<String>>> goldKeyses) {
@@ -522,7 +537,7 @@ public class ApplyEM {
 			System.err.println("java ~ folder");
 			System.exit(1);
 		}
-
+		EMUtil.loadAlign();
 		ArrayList<String> allMs = Common.getLines("allMs");
 		ArrayList<String> preds = Common
 				.getLines("/users/yzcchen/tool/svmlight/svm.anaphor.pred");

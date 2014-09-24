@@ -2675,7 +2675,12 @@ public class EMUtil {
 	public static HashMap<String, ArrayList<SentForAlign[]>> alignMap;
 	static HashMap<String, ArrayList<CoNLLSentence>> engSMap;
 
+	public static boolean isLoadAlign = false;
+	
 	public static void loadAlign() {
+		if(isLoadAlign) {
+			return;
+		}
 		alignMap = DocumentMap
 				.loadRealBAAlignResult("/users/yzcchen/chen3/ijcnlp2013/googleMTALL/chi_MT/align/");
 		System.out.println("Done1.");
@@ -2699,6 +2704,7 @@ public class EMUtil {
 			}
 		}
 		System.out.println("Done2.");
+		isLoadAlign = true;
 	}
 
 	public static void alignMentions(CoNLLSentence chiS,
@@ -2713,7 +2719,7 @@ public class EMUtil {
 		CoNLLSentence engCoNLLS = engSMap.get(docName).get(chiS.idInDoc);
 		if(!engStr.equalsIgnoreCase(engCoNLLS.getText()) || !chiStr.equalsIgnoreCase(align[0].getText()) ) {
 //			System.out.println(chiStr + "@");
-//			System.out.println(engStr);			
+//			System.out.println(engStr);
 //			System.out.println(engCoNLLS.getText());
 //			System.out.println("---------");
 //			Common.pause("");

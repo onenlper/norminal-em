@@ -291,7 +291,7 @@ public class Mention implements Comparable<Mention>, Serializable {
 	private Mention assignXSpan() {
 		Mention xSpan = null;
 		if (assignMode == 1) {
-			xSpan = this.getExactMatchXSpan();
+//			xSpan = this.getExactMatchXSpan();
 			if (xSpan != null) {
 				// xSpan.xSpanType = 1;
 				this.xSpanType = xSpan.xSpanType;
@@ -325,13 +325,14 @@ public class Mention implements Comparable<Mention>, Serializable {
 
 		if (xSpan != null) {
 			boolean put = false;
-//			System.out.println(this.s.part.getDocument().language);
-//			System.out.println("TTT: " + this.s.part.getDocument().language.startsWith("chi"));
-//			Mention mm = engSpanMaps.get(xSpan.getReadName());
-//			if(mm!=null) {
-//				System.out.println("XMS: " + mm.extent + "#");
-//			}
-			
+			// System.out.println(this.s.part.getDocument().language);
+			// System.out.println("TTT: " +
+			// this.s.part.getDocument().language.startsWith("chi"));
+			// Mention mm = engSpanMaps.get(xSpan.getReadName());
+			// if(mm!=null) {
+			// System.out.println("XMS: " + mm.extent + "#");
+			// }
+
 			if (this.s.part.getDocument().language.startsWith("eng")
 					&& (chiSpanMaps.get(xSpan.getReadName()) == null || chiSpanMaps
 							.get(xSpan.getReadName()).getReadName()
@@ -407,53 +408,26 @@ public class Mention implements Comparable<Mention>, Serializable {
 
 	public Mention getCreatedSpan() {
 		Mention xSpan = null;
-		// int hdID = this.s.ids[this.hd];
-
-		int leftID = this.start;
-		int rightID = this.end;
-
-		Unit xStartU = null;
-		// System.out.println(this.s);
-		// System.out.println(this.s.part);
-		// System.out.println(this.s.part.itself);
-		Unit leftUnit = this.units.get(0);
-		ArrayList<Unit> xUnits = leftUnit.getMapUnit();
-		for (int i = 0; i < xUnits.size(); i++) {
-			Unit xUnit = xUnits.get(i);
-			if (xUnit.sentence == null) {
-				continue;
-			}
-			double prob = leftUnit.getMapProb().get(i);
-			if (prob < th) {
-				continue;
-			}
-			xStartU = xUnit;
-			break;
-		}
-//		System.out.println("xStartU:" + (xStartU==null?"null":(xStartU.getToken() + ":" + xStartU.indexInSentence)));
-		if (xStartU != null) {
-			Unit rightUnit = this.units.get(this.units.size() - 1);
-			xUnits = rightUnit.getMapUnit();
+		int leftID = Integer.MAX_VALUE;
+		int rightID = -1;
+		double probAlign = 1;
+		CoNLLSentence xS = null;
+		for (Unit u : this.units) {
+			ArrayList<Unit> xUnits = u.getMapUnit();
 			for (int i = 0; i < xUnits.size(); i++) {
-				Unit xUnit = xUnits.get(i);
-//				System.out.println("xEndU:" + xUnit.getToken() + ":" + xUnit.indexInSentence);
-//				System.out.println(xUnit.sentence);
-//				System.out.println(xUnit.sentence!=xStartU.sentence);
-				if (xUnit.sentence == null
-						|| xUnit.sentence != xStartU.sentence) {
-					continue;
+				Unit xU = xUnits.get(i);
+				double prob = u.getMapProb().get(i);
+				if (prob >= th) {
+					probAlign = Math.min(probAlign, prob);
+					leftID = Math.min(leftID, xU.indexInSentence);
+					rightID = Math.max(rightID, xU.indexInSentence);
+					xS = xU.sentence;
 				}
-				double prob = rightUnit.getMapProb().get(i);
-				if (prob < th) {
-					continue;
-				}
-				xSpan = xUnit.sentence.getSpan(xStartU.indexInSentence,
-						xUnit.indexInSentence);
-				xSpan.alignProb = prob;
-				System.out.println(xSpan.extent);
-				break;
 			}
-//			System.out.println(xUnits.size() + ":XUNITSIZE");
+		}
+		if (rightID != -1) {
+			xSpan = xS.getSpan(leftID, rightID);
+			xSpan.alignProb = probAlign;
 		}
 		return xSpan;
 	}

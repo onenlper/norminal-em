@@ -58,12 +58,12 @@ public class EMLearn {
 		// Double>();
 		numberP = new Parameter(1.0 / ((double) EMUtil.Number.values().length));
 		genderP = new Parameter(1.0 / ((double) EMUtil.Gender.values().length));
-		semanticP = new Parameter(1.0/25318.0);
-		
-//		semanticP = new Parameter(1.0/5254.0);
-		
-		cilin = new Parameter(1.0/7089.0);
-		
+		semanticP = new Parameter(1.0 / 25318.0);
+
+		// semanticP = new Parameter(1.0/5254.0);
+
+		cilin = new Parameter(1.0 / 7089.0);
+
 		grammaticP = new Parameter(1.0 / 4.0);
 
 		animacyP = new Parameter(
@@ -99,7 +99,8 @@ public class EMLearn {
 		return goldPart.getNameEntities();
 	}
 
-	public static ArrayList<ResolveGroup> extractGroups(CoNLLPart part) {
+	@SuppressWarnings("unused")
+	public static ArrayList<ResolveGroup> extractGroups(CoNLLPart part, String docName) {
 
 		// CoNLLPart goldPart = EMUtil.getGoldPart(part, "train");
 		CoNLLPart goldPart = part;
@@ -110,7 +111,9 @@ public class EMLearn {
 		for (int i = 0; i < part.getCoNLLSentences().size(); i++) {
 			CoNLLSentence s = part.getCoNLLSentences().get(i);
 			s.mentions = EMUtil.extractMention(s);
-
+			
+			EMUtil.alignMentions(s, s.mentions, docName);
+			
 			EMUtil.assignNE(s.mentions, part.getNameEntities());
 
 			ArrayList<Mention> precedMs = new ArrayList<Mention>();
@@ -156,17 +159,16 @@ public class EMLearn {
 				fake.extent = "fakkkkke";
 				fake.head = "fakkkkke";
 				fake.isFake = true;
-				
-				
+
 				// TODO
 				double allP_C = 0;
 				int seq = 0;
-				
+
 				ArrayList<Mention> goodEntries = new ArrayList<Mention>();
 				ArrayList<Mention> badEntries = new ArrayList<Mention>();
-				for(int k=0;k<ants.size();k++) {
+				for (int k = 0; k < ants.size(); k++) {
 					Mention ant = ants.get(k);
-					if(ant.head.contains(m.head)) {
+					if (ant.head.contains(m.head)) {
 						goodEntries.add(ant);
 					} else {
 						badEntries.add(ant);
@@ -176,7 +178,7 @@ public class EMLearn {
 				allEntries.addAll(goodEntries);
 				allEntries.add(fake);
 				allEntries.addAll(badEntries);
-				for(int k=0;k<allEntries.size();k++) {
+				for (int k = 0; k < allEntries.size(); k++) {
 					allEntries.get(k).seq = k;
 				}
 				ants.add(fake);
@@ -185,7 +187,7 @@ public class EMLearn {
 					// add antecedents
 					Context context = Context.buildContext(ant, m, part, ants,
 							ant.seq);
-					
+
 					double simi = Context.getSimi(ant.head, m.head);
 
 					Entry entry = new Entry(ant, context, part);
@@ -193,32 +195,33 @@ public class EMLearn {
 					count++;
 
 					entry.p_c = EMUtil.getP_C(ant, m, part);
-					
-					if(entry.p_c!=0) {
+
+					if (entry.p_c != 0) {
 						seq += 1;
 					}
 					allP_C += entry.p_c;
 				}
-				
-//				if(allP_C!=0) {
-					for(Entry entry : rg.entries) {
-						Context context = entry.context;
-						Double d = contextPrior.get(context.toString());
-						if (d == null) {
-							contextPrior.put(context.toString(), 1.0);
-						} else {
-							contextPrior.put(context.toString(),
-									1.0 + d.doubleValue());
-						}
-						if(entry.isFake) {
-							entry.p_c = Entry.p_fake_decay/(Entry.p_fake_decay + seq);
-						} else if(entry.p_c!=0) {
-							entry.p_c = 1/(Entry.p_fake_decay + seq);
-						}
+
+				// if(allP_C!=0) {
+				for (Entry entry : rg.entries) {
+					Context context = entry.context;
+					Double d = contextPrior.get(context.toString());
+					if (d == null) {
+						contextPrior.put(context.toString(), 1.0);
+					} else {
+						contextPrior.put(context.toString(),
+								1.0 + d.doubleValue());
 					}
-					
-					groups.add(rg);
-//				}
+					if (entry.isFake) {
+						entry.p_c = Entry.p_fake_decay
+								/ (Entry.p_fake_decay + seq);
+					} else if (entry.p_c != 0) {
+						entry.p_c = 1 / (Entry.p_fake_decay + seq);
+					}
+				}
+
+				groups.add(rg);
+				// }
 			}
 		}
 		return groups;
@@ -228,9 +231,7 @@ public class EMLearn {
 
 	private static void extractCoNLL(ArrayList<ResolveGroup> groups) {
 		// CoNLLDocument d = new CoNLLDocument("train_auto_conll");
-
 		ArrayList<String> lines = Common.getLines("chinese_list_all_train");
-
 		lines.addAll(Common.getLines("chinese_list_all_development"));
 
 		int docNo = 0;
@@ -239,10 +240,17 @@ public class EMLearn {
 				CoNLLDocument d = new CoNLLDocument(line
 				// .replace("gold_conll", "auto_conll")
 						.replace("auto_conll", "gold_conll"));
+
+				d.language = "chinese";
+				int a = line.indexOf("annotations");
+				a += "annotations/".length();
+				int b = line.lastIndexOf(".");
+				String docName = line.substring(a, b);
+
 				for (CoNLLPart part : d.getParts()) {
 					// System.out.println(part.docName + " " +
 					// part.getPartID());
-					groups.addAll(extractGroups(part));
+					groups.addAll(extractGroups(part, docName));
 				}
 				// System.out.println(i--);
 			}
@@ -250,80 +258,80 @@ public class EMLearn {
 		}
 	}
 
-	private static void extractGigaword(ArrayList<ResolveGroup> groups)
-			throws Exception {
-
-		String folder = "/users/yzcchen/chen3/zeroEM/parser/";
-		int j = 0;
-		ArrayList<String> fns = new ArrayList<String>();
-		for (File subFolder : (new File(folder)).listFiles()) {
-			if (subFolder.isDirectory()
-			// && !subFolder.getName().contains("cna")
-			) {
-				for (File file : subFolder.listFiles()) {
-					if (file.getName().endsWith(".text")) {
-						String filename = file.getAbsolutePath();
-						fns.add(filename);
-					}
-				}
-			}
-		}
-
-		for (String filename : fns) {
-			System.out.println(filename + " " + (j++));
-			System.out.println(groups.size());
-			BufferedReader br = new BufferedReader(new FileReader(filename));
-			CoNLLPart part = new CoNLLPart();
-			int wID = 0;
-			String line = "";
-			while ((line = br.readLine()) != null) {
-				if (line.trim().isEmpty()) {
-					// part.setDocument(doc);
-					// doc.getParts().add(part);
-					part.wordCount = wID;
-					part.processDocDiscourse();
-
-					// for(CoNLLSentence s : part.getCoNLLSentences()) {
-					// for(CoNLLWord w : s.getWords()) {
-					// if(!w.speaker.equals("-") &&
-					// !w.speaker.startsWith("PER")) {
-					// System.out.println(w.speaker);
-					// }
-					// }
-					// }
-					groups.addAll(extractGroups(part));
-					part = new CoNLLPart();
-					wID = 0;
-					continue;
-				}
-				MyTree tree = Common.constructTree(line);
-				CoNLLSentence s = new CoNLLSentence();
-				part.addSentence(s);
-				s.setStartWordIdx(wID);
-				s.syntaxTree = tree;
-				ArrayList<MyTreeNode> leaves = tree.leaves;
-				for (int i = 0; i < leaves.size(); i++) {
-					MyTreeNode leaf = leaves.get(i);
-					CoNLLWord word = new CoNLLWord();
-					word.orig = leaf.value;
-					word.word = leaf.value;
-					word.sentence = s;
-					word.indexInSentence = i;
-					word.index = wID++;
-					word.posTag = leaf.parent.value;
-
-					// find speaker
-					word.speaker = "-";
-
-					s.addWord(word);
-				}
-				s.setEndWordIdx(wID - 1);
-			}
-			part.processDocDiscourse();
-			groups.addAll(extractGroups(part));
-			br.close();
-		}
-	}
+//	private static void extractGigaword(ArrayList<ResolveGroup> groups)
+//			throws Exception {
+//
+//		String folder = "/users/yzcchen/chen3/zeroEM/parser/";
+//		int j = 0;
+//		ArrayList<String> fns = new ArrayList<String>();
+//		for (File subFolder : (new File(folder)).listFiles()) {
+//			if (subFolder.isDirectory()
+//			// && !subFolder.getName().contains("cna")
+//			) {
+//				for (File file : subFolder.listFiles()) {
+//					if (file.getName().endsWith(".text")) {
+//						String filename = file.getAbsolutePath();
+//						fns.add(filename);
+//					}
+//				}
+//			}
+//		}
+//
+//		for (String filename : fns) {
+//			System.out.println(filename + " " + (j++));
+//			System.out.println(groups.size());
+//			BufferedReader br = new BufferedReader(new FileReader(filename));
+//			CoNLLPart part = new CoNLLPart();
+//			int wID = 0;
+//			String line = "";
+//			while ((line = br.readLine()) != null) {
+//				if (line.trim().isEmpty()) {
+//					// part.setDocument(doc);
+//					// doc.getParts().add(part);
+//					part.wordCount = wID;
+//					part.processDocDiscourse();
+//
+//					// for(CoNLLSentence s : part.getCoNLLSentences()) {
+//					// for(CoNLLWord w : s.getWords()) {
+//					// if(!w.speaker.equals("-") &&
+//					// !w.speaker.startsWith("PER")) {
+//					// System.out.println(w.speaker);
+//					// }
+//					// }
+//					// }
+//					groups.addAll(extractGroups(part));
+//					part = new CoNLLPart();
+//					wID = 0;
+//					continue;
+//				}
+//				MyTree tree = Common.constructTree(line);
+//				CoNLLSentence s = new CoNLLSentence();
+//				part.addSentence(s);
+//				s.setStartWordIdx(wID);
+//				s.syntaxTree = tree;
+//				ArrayList<MyTreeNode> leaves = tree.leaves;
+//				for (int i = 0; i < leaves.size(); i++) {
+//					MyTreeNode leaf = leaves.get(i);
+//					CoNLLWord word = new CoNLLWord();
+//					word.orig = leaf.value;
+//					word.word = leaf.value;
+//					word.sentence = s;
+//					word.indexInSentence = i;
+//					word.index = wID++;
+//					word.posTag = leaf.parent.value;
+//
+//					// find speaker
+//					word.speaker = "-";
+//
+//					s.addWord(word);
+//				}
+//				s.setEndWordIdx(wID - 1);
+//			}
+//			part.processDocDiscourse();
+//			groups.addAll(extractGroups(part));
+//			br.close();
+//		}
+//	}
 
 	public static void estep(ArrayList<ResolveGroup> groups) {
 		System.out.println("estep starts:");
@@ -356,16 +364,13 @@ public class EMLearn {
 					// }
 				}
 
-				entry.p = 
-						p_context *  
-						entry.p_c
-						;
-				entry.p *= 1 
-//						* p_number 
-//						* p_gender 
-//						* p_animacy 
-						* p_semetic
-//						* p_cilin
+				entry.p = p_context * entry.p_c;
+				entry.p *= 1
+				// * p_number
+				// * p_gender
+				// * p_animacy
+				* p_semetic
+				// * p_cilin
 				// * p_grammatic
 				;
 
@@ -381,7 +386,7 @@ public class EMLearn {
 					}
 				}
 			} else {
-//				Common.bangErrorPOS("!");
+				// Common.bangErrorPOS("!");
 			}
 		}
 		System.out.println(System.currentTimeMillis() - t1);
@@ -415,9 +420,8 @@ public class EMLearn {
 				grammaticP
 						.addFracCount(entry.gram.name(), group.gram.name(), p);
 
-				cilin
-				.addFracCount(entry.cilin, group.cilin, p);
-				
+				cilin.addFracCount(entry.cilin, group.cilin, p);
+
 				Double d = fracContextCount.get(context.toString());
 				if (d == null) {
 					fracContextCount.put(context.toString(), p);
@@ -442,6 +446,7 @@ public class EMLearn {
 	}
 
 	public static void main(String args[]) throws Exception {
+		EMUtil.loadAlign();
 		run();
 		// System.out.println(match/XallX);
 		// Common.outputLines(svmRanks, "svmRank.train");
@@ -458,7 +463,7 @@ public class EMLearn {
 		extractCoNLL(groups);
 		// extractGigaword(groups);
 		// Common.pause("count:  " + count);
-//		Common.pause(groups.size());
+		// Common.pause(groups.size());
 
 		int it = 0;
 		while (it < 20) {
@@ -506,12 +511,12 @@ public class EMLearn {
 
 		ApplyEM.run("all");
 
-		 ApplyEM.run("nw");
-		 ApplyEM.run("mz");
-		 ApplyEM.run("wb");
-		 ApplyEM.run("bn");
-		 ApplyEM.run("bc");
-		 ApplyEM.run("tc");
+		ApplyEM.run("nw");
+		ApplyEM.run("mz");
+		ApplyEM.run("wb");
+		ApplyEM.run("bn");
+		ApplyEM.run("bc");
+		ApplyEM.run("tc");
 	}
 
 }
