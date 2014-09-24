@@ -2672,13 +2672,13 @@ public class EMUtil {
 		}
 	}
 
-	public static HashMap<String, ArrayList<SentForAlign[]>> alignMap = new HashMap<String, ArrayList<SentForAlign[]>>();
+	public static HashMap<String, SentForAlign[]> alignMap = new HashMap<String, SentForAlign[]>();
 	static HashMap<String, ArrayList<CoNLLSentence>> engSMap = new HashMap<String, ArrayList<CoNLLSentence>>();
 	
 	public static void loadAlign() {
-		DocumentMap.loadRealBAAlignResult("/users/yzcchen/chen3/ijcnlp2013/parallelMTMix/chi_MT/align");
-		
-
+		if(alignMap==null) {
+			alignMap = DocumentMap.loadRealBAAlignResult("/users/yzcchen/chen3/ijcnlp2013/parallelMTMix/chi_MT/align");	
+		}
 		System.out.println("Done1.");
 		CoNLLPart.processDiscourse = false;
 		CoNLLDocument engDoc = new CoNLLDocument("MT.chiCoNLL.all");
@@ -2699,18 +2699,10 @@ public class EMUtil {
 	private void alignMentions(CoNLLSentence chiS, ArrayList<CoNLLWord> segWords,
 			ArrayList<Mention> chiNPs) {
 		int chiSegStart = segWords.get(0).index; 
-		HashMap<Integer, Integer> offsetMap = new HashMap<Integer, Integer>();
-		int offset = 0;
-		for (CoNLLWord w : segWords) {
-			if (w.isZeroWord) {
-				offset++;
-			} else {
-				offsetMap.put(w.index, offset);
-			}
-		}
+		
 		
 		String chiStr = EMUtil.listToString(segWords);
-		SentForAlign[] align = alignMap.get(chiStr).get(0);
+		SentForAlign[] align = alignMap.get(chiStr);
 		String engStr = align[1].getText();
 		CoNLLSentence engCoNLLS = engSMap.get(engStr).get(0);
 
@@ -2720,15 +2712,9 @@ public class EMUtil {
 			Mention.chiSpanMaps.remove(cm.getReadName());
 		}
 		for (Mention em : chiNPs) {
-			int from = em.start - chiSegStart
-					+ offsetMap.get(em.start);
-			int to = from;
-			if (em.end != -1) {
-				to = em.end - chiSegStart + offsetMap.get(em.end);
-			} else {
-				from--;
-				to = from;
-			}
+			int from = em.start;
+			int to = em.end - chiSegStart;
+
 			StringBuilder sb = new StringBuilder();
 			for (int g = from; g <= to; g++) {
 				Unit unit = align[0].units.get(g);
@@ -2742,12 +2728,7 @@ public class EMUtil {
 //										+ "#" + em.extent.trim() + "#");
 //								System.out.println(em.start + "," + em.end);
 //								Common.pause("");
-			} else if(em.end==-1){
-//								System.out.println("#" + sb.toString().trim()
-//										+ "#" + em.extent.trim() + "#");
-//								System.out.println(em.start + "," + em.end);
-//								Common.pause("");
-			}
+			} 
 		}
 		ParseTreeMention ptm = new ParseTreeMention();
 		ArrayList<Mention> engMentions = ptm
@@ -2773,9 +2754,6 @@ public class EMUtil {
 
 		for (int g = 1; g <= 4; g++) {
 			Mention.assignMode = g;
-//							for (Mention m : engMentions) {
-//								m.getXSpan();
-//							}
 			for (Mention m : chiNPs) {
 				m.getXSpan();
 			}
