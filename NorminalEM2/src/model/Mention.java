@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import util.Common;
+
 import model.CoNLL.CoNLLPart;
 import model.CoNLL.CoNLLSentence;
 import model.syntaxTree.MyTreeNode;
@@ -27,7 +29,7 @@ public class Mention implements Comparable<Mention>, Serializable {
 
 	public boolean nested = false;
 
-	double th = 0.0;
+	double th = 0.5;
 
 	public HashMap<String, ArrayList<String>> moreModifiers = new HashMap<String, ArrayList<String>>();
 
@@ -269,7 +271,7 @@ public class Mention implements Comparable<Mention>, Serializable {
 	public static HashMap<String, HashSet<String>> headMaps = new HashMap<String, HashSet<String>>();
 
 	private Mention getXSpanFromCache() {
-		if (this.s.part.lang.equals("chi")) {
+		if (this.s.part.getDocument().language.startsWith("chi")) {
 			Mention xSpan = chiSpanMaps.get(this.getReadName());
 			if (xSpan != null) {
 				this.xSpanType = xSpan.xSpanType;
@@ -322,21 +324,20 @@ public class Mention implements Comparable<Mention>, Serializable {
 		}
 
 		if (xSpan != null) {
-			if (this.s.part.lang.equalsIgnoreCase("chi")) {
-				// System.out.println(this.getText() + "#" + xSpan.getText() +
-				// "#");
-				// System.out.println(this.s.toString());
-				// System.out.println(xSpan.s.toString());
-				// System.out.println("==" + (a++) +"==");
-			}
-
 			boolean put = false;
-			if (this.s.part.lang.equals("eng")
+//			System.out.println(this.s.part.getDocument().language);
+//			System.out.println("TTT: " + this.s.part.getDocument().language.startsWith("chi"));
+//			Mention mm = engSpanMaps.get(xSpan.getReadName());
+//			if(mm!=null) {
+//				System.out.println("XMS: " + mm.extent + "#");
+//			}
+			
+			if (this.s.part.getDocument().language.startsWith("eng")
 					&& (chiSpanMaps.get(xSpan.getReadName()) == null || chiSpanMaps
 							.get(xSpan.getReadName()).getReadName()
 							.equals(this.getReadName()))) {
 				put = true;
-			} else if (this.s.part.lang.equals("chi")
+			} else if (this.s.part.getDocument().language.startsWith("chi")
 					&& (engSpanMaps.get(xSpan.getReadName()) == null || engSpanMaps
 							.get(xSpan.getReadName()).getReadName()
 							.equals(this.getReadName()))) {
@@ -429,12 +430,15 @@ public class Mention implements Comparable<Mention>, Serializable {
 			xStartU = xUnit;
 			break;
 		}
-
+//		System.out.println("xStartU:" + (xStartU==null?"null":(xStartU.getToken() + ":" + xStartU.indexInSentence)));
 		if (xStartU != null) {
 			Unit rightUnit = this.units.get(this.units.size() - 1);
 			xUnits = rightUnit.getMapUnit();
 			for (int i = 0; i < xUnits.size(); i++) {
 				Unit xUnit = xUnits.get(i);
+//				System.out.println("xEndU:" + xUnit.getToken() + ":" + xUnit.indexInSentence);
+//				System.out.println(xUnit.sentence);
+//				System.out.println(xUnit.sentence!=xStartU.sentence);
 				if (xUnit.sentence == null
 						|| xUnit.sentence != xStartU.sentence) {
 					continue;
@@ -446,8 +450,10 @@ public class Mention implements Comparable<Mention>, Serializable {
 				xSpan = xUnit.sentence.getSpan(xStartU.indexInSentence,
 						xUnit.indexInSentence);
 				xSpan.alignProb = prob;
+				System.out.println(xSpan.extent);
 				break;
 			}
+//			System.out.println(xUnits.size() + ":XUNITSIZE");
 		}
 		return xSpan;
 	}

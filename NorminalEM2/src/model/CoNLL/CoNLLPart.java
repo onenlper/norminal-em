@@ -23,6 +23,8 @@ public class CoNLLPart {
 
 	private int partID;
 	
+	public String documentID;
+	
 	public String docName;
 
 	private CoNLLDocument document;

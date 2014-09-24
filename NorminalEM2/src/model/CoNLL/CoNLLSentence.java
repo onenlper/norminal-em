@@ -17,6 +17,8 @@ public class CoNLLSentence implements Serializable{
 	 */
 	private static final long serialVersionUID = 1L;
 
+	public int idInDoc = 0;
+	
 	public ArrayList<SemanticRole> roles = new ArrayList<SemanticRole>();
 	
 	public CoNLLPart part;
@@ -159,7 +161,11 @@ public class CoNLLSentence implements Serializable{
 		this.syntaxTree = Common.constructTree(syntaxStr);
 	}
 
-	public Mention getSpan(int startInS, int endInS) {
+	public Mention getSpan(int start, int end) {
+		int startInS = Math.min(start, end);
+		int endInS = Math.max(start, end);
+		
+		
 		Mention m = new Mention();
 		m.startInS = startInS;
 		m.endInS = endInS;
@@ -190,6 +196,11 @@ public class CoNLLSentence implements Serializable{
 		m.head = node.getHeadLeaf().value;
 		m.headInS = node.getHeadLeaf().leafIdx;
 		
+		StringBuilder sb = new StringBuilder();
+		for(int i=m.startInS;i<=m.endInS;i++) {
+			sb.append(this.getWords().get(i).word).append(" ");
+		}
+		m.extent = sb.toString().trim();
 //		ParseTreeMention.calEnAttribute(m, part);
 		
 		return m;

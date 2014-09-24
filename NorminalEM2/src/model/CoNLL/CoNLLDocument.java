@@ -115,6 +115,7 @@ public class CoNLLDocument {
 		StringBuilder sentenceStr = null;
 		int wordIdx = 0;
 		String previousSpeaker = "";
+		int sidInDoc = 0;
 		for (String line : rawLines) {
 			// System.out.println(line);
 			if (line.startsWith("#end document")) {
@@ -151,6 +152,8 @@ public class CoNLLDocument {
 			}
 			if (sentence == null) {
 				sentence = new CoNLLSentence();
+				sentence.idInDoc = sidInDoc;
+				sidInDoc += 1;
 				parseBits = new StringBuilder();
 				sentenceStr = new StringBuilder();
 			}
@@ -165,6 +168,7 @@ public class CoNLLDocument {
 				part.folder = tokens[0].substring(0, a);
 			}
 			this.documentID = tokens[0];
+			part.documentID = tokens[0];
 			// 2 Part number
 			part.setPartID(Integer.valueOf(tokens[1]));
 			part.setPartName(part.getDocument().getDocumentID()
