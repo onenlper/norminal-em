@@ -2672,47 +2672,67 @@ public class EMUtil {
 		}
 	}
 
-	public static HashMap<String, SentForAlign[]> alignMap = new HashMap<String, SentForAlign[]>();
-	static HashMap<String, ArrayList<CoNLLSentence>> engSMap = new HashMap<String, ArrayList<CoNLLSentence>>();
-	
+	public static HashMap<String, ArrayList<SentForAlign[]>> alignMap;
+	static HashMap<String, ArrayList<CoNLLSentence>> engSMap;
+
 	public static void loadAlign() {
-		if(alignMap==null) {
-			alignMap = DocumentMap.loadRealBAAlignResult("/users/yzcchen/chen3/ijcnlp2013/parallelMTMix/chi_MT/align");	
-		}
+		alignMap = DocumentMap
+				.loadRealBAAlignResult("/users/yzcchen/chen3/ijcnlp2013/googleMTALL/chi_MT/align/");
 		System.out.println("Done1.");
 		CoNLLPart.processDiscourse = false;
 		CoNLLDocument engDoc = new CoNLLDocument("MT.chiCoNLL.all");
+		engDoc.language = "english";
 		CoNLLPart.processDiscourse = true;
-		for (CoNLLSentence s : engDoc.getParts().get(0).getCoNLLSentences()) {
-			String engS = s.getText();
-			ArrayList<CoNLLSentence> lst = engSMap.get(engS);
+		engSMap = new HashMap<String, ArrayList<CoNLLSentence>>();
+		for (CoNLLPart part : engDoc.getParts()) {
+//			Common.pause(part.getPartName());
+//			Common.pause(part.getPartID());
+			String key = part.documentID;
+//			Common.pause(part.getCoNLLSentences().get(0).
+			ArrayList<CoNLLSentence> lst = engSMap.get(key);
 			if (lst == null) {
 				lst = new ArrayList<CoNLLSentence>();
-				engSMap.put(engS, lst);
+				engSMap.put(key, lst);
 			}
-			lst.add(s);
+			for (CoNLLSentence s : part.getCoNLLSentences()) {
+				lst.add(s);
+			}
 		}
 		System.out.println("Done2.");
 	}
-	
-	
-	private void alignMentions(CoNLLSentence chiS, ArrayList<CoNLLWord> segWords,
-			ArrayList<Mention> chiNPs) {
-		int chiSegStart = segWords.get(0).index; 
-		
-		
-		String chiStr = EMUtil.listToString(segWords);
-		SentForAlign[] align = alignMap.get(chiStr);
-		String engStr = align[1].getText();
-		CoNLLSentence engCoNLLS = engSMap.get(engStr).get(0);
 
+	public static void alignMentions(CoNLLSentence chiS,
+			ArrayList<Mention> chiNPs, String docName) {
+		ArrayList<CoNLLWord> segWords = chiS.words;
+		int chiSegStart = segWords.get(0).index;
+
+		String chiStr = EMUtil.listToString(segWords);
+		ArrayList<SentForAlign[]> aligns = alignMap.get(docName);
+		SentForAlign[] align = aligns.get(chiS.idInDoc);
+		String engStr = align[1].getText();
+		CoNLLSentence engCoNLLS = engSMap.get(docName).get(chiS.idInDoc);
+		if(!engStr.equalsIgnoreCase(engCoNLLS.getText()) || !chiStr.equalsIgnoreCase(align[0].getText()) ) {
+//			System.out.println(chiStr + "@");
+//			System.out.println(engStr);			
+//			System.out.println(engCoNLLS.getText());
+//			System.out.println("---------");
+//			Common.pause("");
+		}
 		// construct mention map between two s
 		for (Mention cm : chiNPs) {
 			cm.units.clear();
 			Mention.chiSpanMaps.remove(cm.getReadName());
 		}
+		
+		for(int i=0;i<align[0].units.size();i++) {
+			align[0].units.get(i).sentence = chiS;
+		}
+		for(int i=0;i<align[1].units.size();i++) {
+			align[1].units.get(i).sentence = engCoNLLS;
+		}
+		
 		for (Mention em : chiNPs) {
-			int from = em.start;
+			int from = em.start - chiSegStart;
 			int to = em.end - chiSegStart;
 
 			StringBuilder sb = new StringBuilder();
@@ -2723,64 +2743,37 @@ public class EMUtil {
 				em.units.add(unit);
 				sb.append(unit.getToken()).append(" ");
 			}
-			if(!sb.toString().trim().equalsIgnoreCase(em.extent)) {
-//								System.out.println("#" + sb.toString().trim()
-//										+ "#" + em.extent.trim() + "#");
-//								System.out.println(em.start + "," + em.end);
-//								Common.pause("");
-			} 
+			if (!sb.toString().trim().equalsIgnoreCase(em.extent)) {
+//				 System.out.println("#" + sb.toString().trim()
+//				 + "#" + em.extent.trim() + "#");
+//				 System.out.println(em.start + "," + em.end);
+//				 Common.pause("");
+			}
 		}
 		ParseTreeMention ptm = new ParseTreeMention();
-		ArrayList<Mention> engMentions = ptm
-				.getMentions(engCoNLLS);
+		ArrayList<Mention> engMentions = ptm.getMentions(engCoNLLS);
 		int engStart = engCoNLLS.getWords().get(0).index;
 		for (Mention em : engMentions) {
 			StringBuilder sb = new StringBuilder();
-			for (int g = em.start - engStart; g <= em.end
-					- engStart; g++) {
+			for (int g = em.start - engStart; g <= em.end - engStart; g++) {
 				Unit unit = align[1].units.get(g);
 				unit.sentence = engCoNLLS;
 				unit.addMention(em);
 				em.units.add(unit);
 				sb.append(unit.getToken()).append(" ");
 			}
-			if (!em.extent.trim().equalsIgnoreCase(
-					sb.toString().trim())) {
-				System.out.println("#" + sb.toString().trim()
-						+ "#" + em.extent.trim() + "#");
-				Common.bangErrorPOS("");
+			if (!em.extent.trim().equalsIgnoreCase(sb.toString().trim())) {
+//				System.out.println(sb.toString().trim());
+//				System.out.println(em.extent.trim());
+//				System.out.println("English mention not equal");
+//				Common.pause("");
 			}
 		}
-
 		for (int g = 1; g <= 4; g++) {
 			Mention.assignMode = g;
 			for (Mention m : chiNPs) {
 				m.getXSpan();
 			}
-		}
-		
-		for (Mention m : chiNPs) {
-			Mention xm = m.getXSpan();
-//			if (xm != null 
-//					&& xm.extent.isEmpty()
-//					) {
-//				System.out.println(m.extent + "#" + xm.extent);
-//				System.out.println(m.start + "," + m.end + "#" + xm.start + "," + xm.end);
-//				System.out.println(EMUtil.listToString(words));
-//				System.out.println(xm.s.getText());
-//				System.out.println(m.xSpanType);
-//				Common.pause("GOOD!!!");
-//			}
-			if(xm!=null && m.end!=-1) {
-//				System.out.println(m.extent + "#" + xm.extent);
-//				System.out.println(m.start + "," + m.end + "#" + xm.start + "," + xm.end);
-//				Common.pause("");
-			}
-//			if(xm!=null) {
-//			
-//				alignn++;
-//			}
-//			all++;
 		}
 	}
 
