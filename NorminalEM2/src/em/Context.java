@@ -94,6 +94,12 @@ public class Context implements Serializable {
 	
 	public static Context buildContext(Mention ant, Mention anaphor,
 			CoNLLPart part, ArrayList<Mention> allCands, int mentionDis) {
+		
+		if(!ant.isFake) {
+			ant.s = part.getWord(ant.end).sentence;
+		}
+		anaphor.s = part.getWord(anaphor.end).sentence;
+		
 		int id = 0;
 		int[] feas = new int[10];
 		feas[id++] = getMentionDiss(mentionDis);
@@ -111,14 +117,14 @@ public class Context implements Serializable {
 		feas[id++] = headMatch(ant, anaphor, part); // 2
 		feas[id++] = isSamePredicate(ant, anaphor, part);
 		 
-		
-		System.out.println(ant.extent);
-		System.out.println(ant.getXSpan()==null?"null":ant.getXSpan().extent);
-		System.out.println("----------");
-		
-		System.out.println(anaphor.extent);
-		System.out.println(anaphor.getXSpan()==null?"null":anaphor.getXSpan().extent);
-		System.out.println("----------");
+//		if(!ant.isFake) {
+//			System.out.println(ant.extent);
+//			System.out.println(ant.getXSpan()==null?"null":ant.getXSpan().extent);
+//			System.out.println("----------");
+//		}
+//		System.out.println(anaphor.extent);
+//		System.out.println(anaphor.getXSpan()==null?"null":anaphor.getXSpan().extent);
+//		System.out.println("----------");
 		
 //		feas[id++] = sameProperHeadLastWord(ant, anaphor, part);
 //		feas[id++] = isIWithI(ant, anaphor, part); // 2
