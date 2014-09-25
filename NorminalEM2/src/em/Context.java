@@ -1,5 +1,9 @@
 package em;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -9,12 +13,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import dict.ChDictionary;
-
 import model.Mention;
 import model.CoNLL.CoNLLPart;
 import model.syntaxTree.MyTreeNode;
 import util.Common;
+import dict.ChDictionary;
 
 public class Context implements Serializable {
 
@@ -92,6 +95,39 @@ public class Context implements Serializable {
 		}
 	}
 	
+	private static HashSet<String> yago;
+	
+	public static HashSet<String> getYago() {
+		if(yago!=null) {
+			return yago;
+		}
+		yago = new HashSet<String>();
+		try {
+			BufferedReader br = new BufferedReader(new FileReader("yagoTypes"));
+			String line;
+			while((line=br.readLine())!=null) {
+				String tks[] = line.split("###");
+				String t1 = tks[0];
+				String t2 = tks[1];
+				String key = "";
+				if(t1.compareTo(t2)<0) {
+					key = t1 + "###" + t2;
+				} else {
+					key = t2 + "###" + t1;
+				}
+				yago.add(key.toLowerCase());
+			}
+			br.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return yago;
+	}
+	
 	public static Context buildContext(Mention ant, Mention anaphor,
 			CoNLLPart part, ArrayList<Mention> allCands, int mentionDis) {
 		
@@ -117,6 +153,24 @@ public class Context implements Serializable {
 		feas[id++] = headMatch(ant, anaphor, part); // 2
 		feas[id++] = isSamePredicate(ant, anaphor, part);
 		 
+//		if(!ant.isFake && ant.getXSpan()!=null && anaphor.getXSpan()!=null) {
+//			String t1 = ant.getXSpan().getExtent();
+//			String t2 = anaphor.getXSpan().getExtent();
+//			String key = "";
+//			if(t1.compareTo(t2)<0) {
+//				key = t1 + "###" + t2;
+//			} else {
+//				key = t2 + "###" + t1;
+//			}
+//			if(getYago().contains(key)) {
+//				feas[id++] = 1;
+//			} else {
+//				feas[id++] = 0;
+//			}
+//		} else {
+//			feas[id++] = 0;
+//		}
+		
 //		if(!ant.isFake) {
 //			System.out.println(ant.extent);
 //			System.out.println(ant.getXSpan()==null?"null":ant.getXSpan().extent);
