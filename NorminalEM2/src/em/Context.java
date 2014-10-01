@@ -35,6 +35,11 @@ public class Context implements Serializable {
 
 	public static HashMap<String, Context> contextCache = new HashMap<String, Context>();
 
+	public static boolean coref = false;
+	
+	public static boolean gM1 = false;
+	public static boolean gM2 = false;
+	
 	public static Context getContext(int[] feas) {
 		// long feaL = 0;
 		StringBuilder sb = new StringBuilder();
@@ -96,6 +101,19 @@ public class Context implements Serializable {
 	}
 	
 	private static HashSet<String> yago;
+	static HashSet<String> preps = Common.readFile2Set("yago/prep");
+	
+	private static String findHead(String text) {
+		String tks[] = text.split("\\s+");
+		String head = tks[tks.length-1];
+		
+		for(int i=tks.length-1;i>=0;i--) {
+			if(preps.contains(tks[i]) && i!=0) {
+				head = tks[i-1];
+			}
+		}
+		return head;
+	}
 	
 	public static HashSet<String> getYago() {
 		if(yago!=null) {
@@ -107,15 +125,21 @@ public class Context implements Serializable {
 			String line;
 			while((line=br.readLine())!=null) {
 				String tks[] = line.split("###");
-				String t1 = tks[0];
-				String t2 = tks[1];
-				String key = "";
-				if(t1.compareTo(t2)<0) {
-					key = t1 + "###" + t2;
-				} else {
-					key = t2 + "###" + t1;
+				String t1 = tks[0].trim();
+				String t2 = tks[1].trim();
+				String key1 = t1 + "###" + t2;
+				
+				if(t2.endsWith("economy")) {
+					continue;
 				}
-				yago.add(key.toLowerCase());
+				
+//				yago.add(key1.toLowerCase().trim());
+//				
+//				String key2 = t1 + "###" + findHead(t2);
+//				yago.add(key2.toLowerCase().trim());
+				
+				String key3= t1 + "###" + EMUtil.getPorterStem(findHead(t2));
+				yago.add(key3.toLowerCase().trim());
 			}
 			br.close();
 		} catch (FileNotFoundException e) {
@@ -125,12 +149,55 @@ public class Context implements Serializable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		Common.outputHashSet(yago, "yagoSet");
 		return yago;
+	}
+	
+//	public static String getStrConcat(String t1, String t2) {
+//		String key = "";
+//		if(t1.compareTo(t2)<0) {
+//			key = t1 + "###" + t2;
+//		} else {
+//			key = t2 + "###" + t1;
+//		}
+//		return key;
+//	}
+	
+	public static boolean doit = false;
+	
+	private static HashMap<String, HashSet<String>> ch_eng_dic;
+	
+	public static HashSet<String> getSimpleTrans(String ch) {
+		if(ch_eng_dic==null) {
+			ch_eng_dic = new HashMap<String, HashSet<String>>();
+			ArrayList<String> lines = Common.getLines("chi_eng.trans2");
+			lines.addAll(Common.getLines("chi_eng.trans"));
+			
+			for(String line : lines) {
+				String tks[] = line.split("#####");
+				if(tks.length!=2) {
+					System.out.println(line);
+					continue;
+				}
+				String chn = tks[0];
+				String eng = tks[1];
+				if(!ch_eng_dic.containsKey(chn))	{
+					HashSet<String> set = new HashSet<String>();
+					ch_eng_dic.put(chn, set);
+				}
+				ch_eng_dic.get(chn).add(eng);
+			}
+		}
+		if(ch_eng_dic.containsKey(ch)) {
+			return ch_eng_dic.get(ch);
+		} else {
+			return new HashSet<String>();
+		}
 	}
 	
 	public static Context buildContext(Mention ant, Mention anaphor,
 			CoNLLPart part, ArrayList<Mention> allCands, int mentionDis) {
-		
+		doit = false;
 		if(!ant.isFake) {
 			ant.s = part.getWord(ant.end).sentence;
 		}
@@ -152,23 +219,79 @@ public class Context implements Serializable {
 		feas[id++] = isExactMatch(ant, anaphor, part); // 2
 		feas[id++] = headMatch(ant, anaphor, part); // 2
 		feas[id++] = isSamePredicate(ant, anaphor, part);
-		 
-//		if(!ant.isFake && ant.getXSpan()!=null && anaphor.getXSpan()!=null) {
-//			String t1 = ant.getXSpan().getExtent();
-//			String t2 = anaphor.getXSpan().getExtent();
-//			String key = "";
-//			if(t1.compareTo(t2)<0) {
-//				key = t1 + "###" + t2;
-//			} else {
-//				key = t2 + "###" + t1;
-//			}
-//			if(getYago().contains(key)) {
-//				feas[id++] = 1;
-//			} else {
-//				feas[id++] = 0;
-//			}
+		
+		String subtype1 = EMUtil.getSemanticType(ant);
+		String subtype2 = EMUtil.getSemanticType(anaphor);
+
+//		if(subtype1!=null && subtype2!=null && subtype1.equals(subtype2)) {
+////			System.out.println(subtype1 + " # " + subtype2);
+////			System.out.println(ant.head + " # " + m.head);
+////			System.out.println("==========================");
+//			feas[id++] = 1;
 //		} else {
 //			feas[id++] = 0;
+//		}
+		
+//		HashSet<String> antExtentX = getSimpleTrans(ant.extent.replaceAll("\\s+", ""));
+//		HashSet<String> antHeadX = getSimpleTrans(ant.head);
+//		
+//		HashSet<String> anaphorExtentX = getSimpleTrans(anaphor.extent.replaceAll("\\s+", ""));
+//		HashSet<String> anaphorHeadX = getSimpleTrans(anaphor.head);
+//		
+//		HashSet<String> antX = new HashSet<String>(antExtentX);
+//		antX.addAll(antHeadX);
+//		
+//		HashSet<String> anaphorX = new HashSet<String>(anaphorExtentX);
+//		anaphorX.addAll(anaphorHeadX);
+//		
+//		out: for(String x1 : antX) {
+//			for(String x2 : anaphorX) {
+//				String key = x1 + "###" + x2;
+//				String key2 = x1 + "###" + EMUtil.getPorterStem(findHead(x2));
+//				if(getYago().contains(key.toLowerCase()) || getYago().contains(key2.toLowerCase())) {
+//					if(coref) {
+//						doit = true;
+//						break out;
+//					}
+//				}
+//			}
+//			
+//		}
+//		if(!ant.isFake && ant.getXSpan()!=null && anaphor.getXSpan()!=null 
+////				&& !ant.NE.equals("OTHER")
+//				) {
+//			String t1 = ant.getXSpan().getExtent();
+//			String t2 = anaphor.getXSpan().getExtent();
+//			
+//			if(t1.equals(t2)) {
+////				feas[2] = 1;
+//				if(coref)
+//					doit = true;
+//			}
+//			
+//			String key = t1 + "###" + t2;
+//			String tks[] = anaphor.getXSpan().extent.split("\\s+");
+//			String key2 = t1 + "###" + findHead(t2);
+//			
+//			String key3= t1 + "###" + EMUtil.getPorterStem(findHead(t2));
+//			
+////			System.out.println(key);
+//			if(getYago().contains(key.toLowerCase())
+//					|| getYago().contains(key2.toLowerCase())
+//					|| getYago().contains(key3.toLowerCase())
+//					) {
+//				System.out.println(t1 + "###" + t2 + " # " + gM1 + ":" + gM2 + ":" + coref);
+//				System.out.println(key3);
+////				System.out.println(part.getDocument().getFilePath());
+////				System.out.println("----------");
+////				feas[id++] = 1;
+////				if(coref)
+////				doit = true;
+//			} else {
+////				feas[id++] = 0;
+//			}
+//		} else {
+////			feas[id++] = 0;
 //		}
 		
 //		if(!ant.isFake) {

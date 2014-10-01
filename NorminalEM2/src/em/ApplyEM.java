@@ -153,7 +153,7 @@ public class ApplyEM {
 				for(Mention m : goldBoundaryNPMentions) {
 					ArrayList<Mention> ms = new ArrayList<Mention>();
 					ms.add(m);
-					EMUtil.alignMentions(m.s, ms, docName);
+//					EMUtil.alignMentions(m.s, ms, docName);
 				}
 				
 				Collections.sort(goldBoundaryNPMentions);
@@ -176,6 +176,13 @@ public class ApplyEM {
 							&& part.getWord(m.end).posTag.equals("PN")) {
 						continue;
 					}
+					
+					if (goldPNs.contains(m.toName())
+							|| goldNEs.contains(m.toName())
+							|| goldNEs.contains(m.end + "," + m.end)) {
+						continue;
+					}
+					
 					anaphors.add(m);
 				}
 
@@ -216,12 +223,19 @@ public class ApplyEM {
 		System.out.println(all2 + "@@@");
 
 		System.out.println(ApplyEM.allL);
+		System.out.println(zeroAnt + "/" + allAnt + ":" + zeroAnt/allAnt);
+		System.out.println("Bad_P_C:" + badP_C);
 	}
 
 	static double min_amongMax = 1;
 
 	static ArrayList<String> goodAnas = new ArrayList<String>();
 
+	static double allAnt = 0;
+	static double zeroAnt = 0;
+	
+	static double badP_C = 0;
+	
 	private void findAntecedent(String file, CoNLLPart part,
 			HashMap<String, Integer> chainMap, ArrayList<Mention> anaphors,
 			ArrayList<Mention> allCandidates, HashSet<String> goldNEs,
@@ -264,17 +278,26 @@ public class ApplyEM {
 			double norm = 0;
 			ArrayList<Entry> entries = new ArrayList<Entry>();
 			ArrayList<Mention> goodEntries = new ArrayList<Mention>();
+			ArrayList<Mention> neturalEntries = new ArrayList<Mention>();
 			ArrayList<Mention> badEntries = new ArrayList<Mention>();
+			
 			for(int i=0;i<cands.size();i++) {
 				Mention cand = cands.get(i);
+				
+				String subtype1 = EMUtil.getSemanticType(cand);
+				String subtype2 = EMUtil.getSemanticType(anaphor);
+
 				if(cand.head.contains(anaphor.head)) {
 					goodEntries.add(cand);
+//				} else if(subtype1.equals(subtype2)) {
+//					neturalEntries.add(cand);
 				} else {
 					badEntries.add(cand);
 				}
 			}
 			ArrayList<Mention> allMentions = new ArrayList<Mention>();
 			allMentions.addAll(goodEntries);
+			allMentions.addAll(neturalEntries);
 			allMentions.add(fake);
 			allMentions.addAll(badEntries);
 			for(int i=0;i<allMentions.size();i++) {
@@ -285,13 +308,34 @@ public class ApplyEM {
 			double probs[] = new double[cands.size()];
 			for(int i=0;i<cands.size();i++) {
 				Mention cand = cands.get(i);
+				
+				boolean coref = chainMap.containsKey(anaphor.toName())
+						&& chainMap.containsKey(cand.toName())
+						&& chainMap.get(anaphor.toName()).intValue() == chainMap
+								.get(cand.toName()).intValue();
+				Context.coref = coref;
+				Context.gM1 = chainMap.containsKey(cand.toName());
+				Context.gM2 = chainMap.containsKey(anaphor.toName());
 				Context context = Context.buildContext(cand, anaphor, part,
 						cands, cand.seq);
+				if(Context.doit) {
+					anaphor.antecedent = cand;
+					break;
+				}
 				double simi = Context.getSimi(cand.head, anaphor.head);
 				cand.msg = Context.message;
 				Entry entry = new Entry(cand, context, part);
 
 				entry.p_c = EMUtil.getP_C(cand, anaphor, part);
+				
+				allAnt ++;
+				if(entry.p_c==0) {
+					if(coref) {
+						badP_C++;
+					}
+					
+					zeroAnt ++;
+				}
 				
 				if(entry.p_c!=0) {
 					seq += 1;
@@ -299,9 +343,11 @@ public class ApplyEM {
 				entries.add(entry);
 			}
 			
+			if(anaphor.antecedent==null)
 			for (int i = 0; i < cands.size(); i++) {
 				Mention cand = cands.get(i);
 				Entry entry = entries.get(i);
+				
 				Context context = entry.context;
 				
 				if(entry.isFake) {
@@ -314,10 +360,6 @@ public class ApplyEM {
 //					entry.p_c = 1.0/(seq+1);
 //				}
 				
-				boolean coref = chainMap.containsKey(anaphor.toName())
-						&& chainMap.containsKey(cand.toName())
-						&& chainMap.get(anaphor.toName()).intValue() == chainMap
-								.get(cand.toName()).intValue();
 				// calculate P(overt-pronoun|ant-context)
 				// TODO
 				
@@ -375,7 +417,7 @@ public class ApplyEM {
 					maxP = p;
 				}
 			}
-			if (antecedent != null && !antecedent.isFake) {
+			if (antecedent != null && !antecedent.isFake && anaphor.antecedent==null) {
 				anaphor.antecedent = antecedent;
 				
 				boolean coref = chainMap.containsKey(anaphor.toName())
@@ -537,7 +579,7 @@ public class ApplyEM {
 			System.err.println("java ~ folder");
 			System.exit(1);
 		}
-		EMUtil.loadAlign();
+//		EMUtil.loadAlign();
 		ArrayList<String> allMs = Common.getLines("allMs");
 		ArrayList<String> preds = Common
 				.getLines("/users/yzcchen/tool/svmlight/svm.anaphor.pred");

@@ -19,6 +19,9 @@ import model.CoNLL.CoNLLSentence;
 import model.CoNLL.CoNLLWord;
 import model.syntaxTree.MyTree;
 import model.syntaxTree.MyTreeNode;
+
+import org.tartarus.martin.Stemmer;
+
 import util.Common;
 import align.DocumentMap;
 import align.DocumentMap.SentForAlign;
@@ -701,6 +704,32 @@ public class EMUtil {
 		return c1.containsAll(c2);
 	}
 
+	public static String getPorterStem(String w) {
+		Stemmer stemmer = new Stemmer();
+		for (int i = 0; i < w.length(); i++) {
+			stemmer.add(w.charAt(i));
+		}
+		stemmer.stem();
+		String s = stemmer.toString();
+		return s;
+	}
+	
+	public static HashMap<String, String> semanticMap = Common.readFile2Map2("semanticTypes.all");
+	public static HashMap<String, String> subTypeMap = Common.readFile2Map2("subTypes.all");
+	
+	public static String getSemanticType(Mention m) {
+		String subtype = semanticMap.get(m.head.replaceAll("\\s+", ""));
+		if(subtype==null) {
+			if(m.NE.equals("PERSON")) {
+				subtype = "per";
+			} else {
+				subtype = "OTHER";
+			}
+//			return null;
+		}
+		return subtype;
+	}
+	
 	public static double getP_C(Mention ant, Mention m, CoNLLPart part) {
 		if (ant.isFake) {
 			return 0;
@@ -710,6 +739,23 @@ public class EMUtil {
 				|| ant.animacy != m.animacy) {
 			return 0;
 		}
+		
+		String subtype1 = getSemanticType(ant);
+		String subtype2 = getSemanticType(m);
+
+		if(subtype1!=null && subtype2!=null && !subtype1.equals(subtype2)) {
+			if(!ant.head.contains(m.head) && !m.head.contains(ant.head)) {
+				if(Context.coref) {
+					System.out.println(subtype1 + " # " + subtype2);
+					System.out.println(ant.head + " # " + m.head);
+					System.out.println("==========================");				
+				}
+				return 0;
+			}
+			
+//			return 0;
+		}
+		
 		if (m.gram == Grammatic.subject) {
 			double mi1 = EMUtil.calMISubject(m, m);
 			double mi2 = EMUtil.calMISubject(ant, m);
@@ -2495,6 +2541,15 @@ public class EMUtil {
 		return EMUtil.pronounList.get(win);
 	}
 
+	public static HashMap<String, String> getGoldNEs2(CoNLLPart goldPart) {
+		HashMap<String, String> goldNEs = new HashMap<String, String>();
+		for (Element ne : goldPart.getNameEntities()) {
+			goldNEs.put(ne.start + "," + ne.end, ne.content);
+			goldNEs.put(ne.end + "," + ne.end, ne.content);
+		}
+		return goldNEs;
+	}
+	
 	public static HashSet<String> getGoldNEs(CoNLLPart goldPart) {
 		HashSet<String> goldNEs = new HashSet<String>();
 		for (Element ne : goldPart.getNameEntities()) {
