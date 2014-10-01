@@ -1,10 +1,7 @@
 package em;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
@@ -17,9 +14,6 @@ import model.Mention;
 import model.CoNLL.CoNLLDocument;
 import model.CoNLL.CoNLLPart;
 import model.CoNLL.CoNLLSentence;
-import model.CoNLL.CoNLLWord;
-import model.syntaxTree.MyTree;
-import model.syntaxTree.MyTreeNode;
 import util.Common;
 import em.ResolveGroup.Entry;
 
@@ -112,7 +106,7 @@ public class EMLearn {
 			CoNLLSentence s = part.getCoNLLSentences().get(i);
 			s.mentions = EMUtil.extractMention(s);
 			
-			EMUtil.alignMentions(s, s.mentions, docName);
+//			EMUtil.alignMentions(s, s.mentions, docName);
 			
 			EMUtil.assignNE(s.mentions, part.getNameEntities());
 
@@ -446,7 +440,7 @@ public class EMLearn {
 	}
 
 	public static void main(String args[]) throws Exception {
-		EMUtil.loadAlign();
+//		EMUtil.loadAlign();
 		run();
 		// System.out.println(match/XallX);
 		// Common.outputLines(svmRanks, "svmRank.train");

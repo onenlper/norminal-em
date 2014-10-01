@@ -21,6 +21,10 @@ public class Mention implements Comparable<Mention>, Serializable {
          *
          */
 
+	public String semClass;
+	
+	public String subType;
+	
 	public ArrayList<Mention> innerMs = new ArrayList<Mention>();
 
 	public int seq = 0;
