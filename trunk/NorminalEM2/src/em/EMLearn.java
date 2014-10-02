@@ -40,6 +40,7 @@ public class EMLearn {
 	static HashMap<String, Double> contextVals;
 
 	static int maxDistance = 50000;
+//	static int maxDistance = 75;
 
 	static int maxDisFeaValue = 10;
 	// static int contextSize = 2 * 2 * 2 * 3 * 2 * (maxDisFeaValue + 1);

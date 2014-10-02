@@ -589,6 +589,55 @@ public class Common {
 		}
 		return map;
 	}
+	
+	public static HashMap<String, String> readMostFrequent2Map(String filename) {
+		HashMap<String, String> map = new HashMap<String, String>();
+		try {
+			
+			HashMap<String, HashMap<String, Integer>> tmpMap = new HashMap<String, HashMap<String, Integer>>();
+			BufferedReader br = new BufferedReader(new FileReader(filename));
+			String line;
+			while ((line = br.readLine()) != null) {
+				int pos = line.lastIndexOf(' ');
+				String str = line.substring(0, pos);
+				String value = line.substring(pos + 1, line.length());
+
+				HashMap<String, Integer> tmp = tmpMap.get(str);
+				if(tmp==null) {
+					tmp = new HashMap<String, Integer>();
+					tmpMap.put(str, tmp);
+				}
+				Integer i = tmp.get(value);
+				if(i==null) {
+					tmp.put(value, 1);
+				} else {
+					tmp.put(value, i.intValue() + 1);
+				}
+			}
+			br.close();
+			for(String key : tmpMap.keySet()) {
+				HashMap<String, Integer> tmp = tmpMap.get(key);
+				int max = 0;
+				String value = "";
+				for(String tmpVal : tmp.keySet()) {
+					if(tmp.get(tmpVal) > max) {
+						max = tmp.get(tmpVal);
+						value = tmpVal;
+					}
+				}
+				map.put(key, value);
+			}
+			
+			
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return map;
+	}
 
 	public static HashMap<String, Integer> combineHashMap(
 			HashMap<String, Integer> total, HashMap<String, Integer> map) {

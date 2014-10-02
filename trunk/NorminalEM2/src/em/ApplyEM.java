@@ -247,7 +247,7 @@ public class ApplyEM {
 			anaphor.s = part.getWord(anaphor.start).sentence;
 
 			Mention antecedent = null;
-			double maxP = -1;
+			double maxP = 0;
 			Collections.sort(allCandidates);
 
 			ArrayList<Mention> cands = new ArrayList<Mention>();
@@ -280,12 +280,11 @@ public class ApplyEM {
 			ArrayList<Mention> goodEntries = new ArrayList<Mention>();
 			ArrayList<Mention> neturalEntries = new ArrayList<Mention>();
 			ArrayList<Mention> badEntries = new ArrayList<Mention>();
-			
+			String subtype2 = EMUtil.getSemanticType(anaphor);
 			for(int i=0;i<cands.size();i++) {
 				Mention cand = cands.get(i);
 				
 				String subtype1 = EMUtil.getSemanticType(cand);
-				String subtype2 = EMUtil.getSemanticType(anaphor);
 
 				if(cand.head.contains(anaphor.head)) {
 					goodEntries.add(cand);
@@ -333,7 +332,6 @@ public class ApplyEM {
 					if(coref) {
 						badP_C++;
 					}
-					
 					zeroAnt ++;
 				}
 				
@@ -342,6 +340,7 @@ public class ApplyEM {
 				}
 				entries.add(entry);
 			}
+			System.out.println(seq + ":" + cands.size() + " # " + subtype2);
 			
 			if(anaphor.antecedent==null)
 			for (int i = 0; i < cands.size(); i++) {
