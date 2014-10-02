@@ -722,8 +722,16 @@ public class EMUtil {
 		if(subtype==null) {
 			if(m.NE.equals("PERSON")) {
 				subtype = "per";
+			} else if(!m.NE.equals("OTHER")){
+				subtype = m.NE.toLowerCase();
 			} else {
-				subtype = "OTHER";
+				String sems[] = Common.getSemantic(m.head);
+				String sem = "unknown";
+				if (sems != null) {
+					sem = sems[0];
+				}
+				return sem.substring(0, 4);
+//				return "OTHER";
 			}
 //			return null;
 		}
@@ -743,8 +751,9 @@ public class EMUtil {
 		String subtype1 = getSemanticType(ant);
 		String subtype2 = getSemanticType(m);
 
-		if(subtype1!=null && subtype2!=null && !subtype1.equals(subtype2)) {
-			if(!ant.head.contains(m.head) && !m.head.contains(ant.head)) {
+		if((subtype1!=null && subtype2!=null && !subtype1.equals(subtype2))) {
+//			if(!ant.head.contains(m.head) && !m.head.contains(ant.head)) {
+			if(!ant.head.equals(m.head)) {
 				if(Context.coref) {
 					System.out.println(subtype1 + " # " + subtype2);
 					System.out.println(ant.head + " # " + m.head);
@@ -752,10 +761,12 @@ public class EMUtil {
 				}
 				return 0;
 			}
-			
 //			return 0;
 		}
 		
+		if(!ant.head.contains(m.head) && m.s.getSentenceIdx()-ant.s.getSentenceIdx()>-1 ) {
+			return 0;
+		}
 		if (m.gram == Grammatic.subject) {
 			double mi1 = EMUtil.calMISubject(m, m);
 			double mi2 = EMUtil.calMISubject(ant, m);
