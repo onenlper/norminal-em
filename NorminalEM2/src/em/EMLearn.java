@@ -158,19 +158,29 @@ public class EMLearn {
 				// TODO
 				double allP_C = 0;
 				int seq = 0;
-
+				
+				String subtype2 = EMUtil.getSemanticType(m);
+				
 				ArrayList<Mention> goodEntries = new ArrayList<Mention>();
+				ArrayList<Mention> neturalEntries = new ArrayList<Mention>();
 				ArrayList<Mention> badEntries = new ArrayList<Mention>();
 				for (int k = 0; k < ants.size(); k++) {
 					Mention ant = ants.get(k);
+					String subtype1 = EMUtil.getSemanticType(ant);
+					
+					double p_c = EMUtil.getP_C(ant, m, part);
+					
 					if (ant.head.contains(m.head)) {
 						goodEntries.add(ant);
+//					} else if(subtype1.equals(subtype2) && p_c!=0) {
+//						neturalEntries.add(ant);
 					} else {
 						badEntries.add(ant);
 					}
 				}
 				ArrayList<Mention> allEntries = new ArrayList<Mention>();
 				allEntries.addAll(goodEntries);
+				allEntries.addAll(neturalEntries);
 				allEntries.add(fake);
 				allEntries.addAll(badEntries);
 				for (int k = 0; k < allEntries.size(); k++) {
@@ -222,7 +232,7 @@ public class EMLearn {
 		return groups;
 	}
 
-	static int percent = 10;
+	static int percent = 1;
 
 	private static void extractCoNLL(ArrayList<ResolveGroup> groups) {
 		// CoNLLDocument d = new CoNLLDocument("train_auto_conll");
