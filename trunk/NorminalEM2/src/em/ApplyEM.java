@@ -285,10 +285,12 @@ public class ApplyEM {
 				Mention cand = cands.get(i);
 				
 				String subtype1 = EMUtil.getSemanticType(cand);
-
+				
+				double p_c = EMUtil.getP_C(cand, anaphor, part);
+				
 				if(cand.head.contains(anaphor.head)) {
 					goodEntries.add(cand);
-//				} else if(subtype1.equals(subtype2)) {
+//				} else if(subtype1.equals(subtype2) && p_c!=0) {
 //					neturalEntries.add(cand);
 				} else {
 					badEntries.add(cand);
