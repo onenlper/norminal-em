@@ -159,21 +159,23 @@ public class EMLearn {
 				double allP_C = 0;
 				int seq = 0;
 				
-				String subtype2 = EMUtil.getSemanticType(m);
+				String subtype2 = EMUtil.getSemanticType(m, part);
 				
 				ArrayList<Mention> goodEntries = new ArrayList<Mention>();
 				ArrayList<Mention> neturalEntries = new ArrayList<Mention>();
 				ArrayList<Mention> badEntries = new ArrayList<Mention>();
 				for (int k = 0; k < ants.size(); k++) {
 					Mention ant = ants.get(k);
-					String subtype1 = EMUtil.getSemanticType(ant);
+					String subtype1 = EMUtil.getSemanticType(ant, part);
 					
 					double p_c = EMUtil.getP_C(ant, m, part);
 					
 					if (ant.head.contains(m.head)) {
 						goodEntries.add(ant);
-//					} else if(subtype1.equals(subtype2) && p_c!=0) {
-//						neturalEntries.add(ant);
+					} else if(subtype1.equals(subtype2) && p_c!=0
+							&& Context.wordInclusion2(ant, m, part)
+							) {
+						neturalEntries.add(ant);
 					} else {
 						badEntries.add(ant);
 					}
