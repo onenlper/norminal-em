@@ -717,9 +717,11 @@ public class EMUtil {
 	public static HashMap<String, String> semanticMap = Common.readFile2Map2("semanticTypes.all");
 	public static HashMap<String, String> subTypeMap = Common.readFile2Map2("subTypes.all");
 	
-	public static String getSemanticType(Mention m) {
-		String subtype = semanticMap.get(m.head.replaceAll("\\s+", ""));
-		if(subtype==null) {
+	public static String getSemanticType(Mention m, CoNLLPart part) {
+		String instance = EMUtil.getSemanticInstance(m, part);
+		String subtype = EMUtil.getACEType(instance);
+//		String subtype = semanticMap.get(m.head.replaceAll("\\s+", ""));
+		if(subtype==null || subtype.equalsIgnoreCase("other")) {
 			if(m.NE.equals("PERSON")) {
 				subtype = "per";
 			} else if(!m.NE.equals("OTHER")){
@@ -731,9 +733,7 @@ public class EMUtil {
 					sem = sems[0];
 				}
 				return sem.substring(0, 4);
-//				return "OTHER";
 			}
-//			return null;
 		}
 		return subtype;
 	}
@@ -748,19 +748,22 @@ public class EMUtil {
 			return 0;
 		}
 		
-		String subtype1 = getSemanticType(ant);
-		String subtype2 = getSemanticType(m);
+		String subtype1 = getSemanticType(ant, part);
+		String subtype2 = getSemanticType(m, part);
 
-		if((subtype1!=null && subtype2!=null && !subtype1.equals(subtype2))) {
+		if( subtype1.equals("unkn") || subtype2.equals("unkn") || (subtype1!=null && subtype2!=null && !subtype1.equals(subtype2))) {
 //			if(!ant.head.contains(m.head) && !m.head.contains(ant.head)) {
 			if(!ant.head.equals(m.head)) {
-				if(Context.coref) {
-					System.out.println(subtype1 + " # " + subtype2);
-					System.out.println(ant.head + " # " + m.head);
-					System.out.println("==========================");				
-				}
+//				if(Context.coref) {
+//					System.out.println(subtype1 + " # " + subtype2);
+//					System.out.println(ant.head + " # " + m.head);
+//					System.out.println("==========================");				
+//				}
 				return 0;
 			}
+		}
+		
+		if(!ant.head.contains(m.head)) {
 //			return 0;
 		}
 		
@@ -2846,6 +2849,117 @@ public class EMUtil {
 		}
 	}
 
+//	static HashSet<String> semanticInstances = new HashSet<String>();
+	
+	static HashMap<String, String> ACESubTypeMap;
+	static HashMap<String, String> ACETypeMap;
+	
+	public static String types[] = { "wea", "veh", "per", "fac", "gpe", "loc",
+	"org", "other"};
+	
+	static String subTypes[] = { "f-airport", "f-building-grounds", "f-path",
+		"f-plant", "f-subarea-facility", "g-continent",
+		"g-county-or-district", "g-gpe-cluster", "g-nation",
+		"g-population-center", "g-special", "g-state-or-province",
+		"l-address", "l-boundary", "l-celestial", "l-land-region-natural",
+		"l-region-general", "l-region-international", "l-water-body",
+		"o-commercial", "o-educational", "o-entertainment", "o-government",
+		"o-media", "o-medical-science", "o-non-governmental",
+		"o-religious", "o-sports", "p-group", "p-indeterminate",
+		"p-individual", "v-air", "v-land", "v-subarea-vehicle",
+		"v-underspecified", "v-water", "w-biological", "w-blunt",
+		"w-chemical", "w-exploding", "w-nuclear", "w-projectile",
+		"w-sharp", "w-shooting", "w-underspecified", "o-other", "other"};
+	
+	public static void loadACESemantic() {
+		ACETypeMap = new HashMap<String, String>();
+		ACESubTypeMap = new HashMap<String, String>();
+		
+		ArrayList<String> instanceLines = Common.getLines("semanticInstance");
+		ArrayList<String> typePreds = Common.getLines("svmTypePred");
+		ArrayList<String> subTypePreds = Common.getLines("svmSubTypePred");
+		for(int i=0;i<instanceLines.size();i++) {
+			String instance = instanceLines.get(i);
+			String typePred = types[Integer.parseInt(typePreds.get(i).split("\\s+")[0])-1];
+			String subtypePred = subTypes[Integer.parseInt(subTypePreds.get(i).split("\\s+")[0])-1];
+			ACETypeMap.put(instance, typePred);
+			ACESubTypeMap.put(instance, subtypePred);
+		}
+	}
+	
+	public static String getACEType(String instance) {
+		if(ACETypeMap==null) {
+			loadACESemantic();
+		}
+		return ACETypeMap.get(instance);
+	}
+	
+	public static String getACESubType(String instance) {
+		if(ACESubTypeMap==null) {
+			loadACESemantic();
+		}
+		return ACESubTypeMap.get(instance);
+	}
+	
+	public static String getSemanticInstance(Mention m, CoNLLPart part) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(part.getPartName()).append("!@#$%");
+		sb.append(m.head).append("!@#$%");
+		sb.append(m.NE).append("!@#$%");
+		int headID = m.headID;
+		
+		String cL2 = null;
+		String cL1 = null;
+		String cR1 = null;
+		String cR2 = null;
+
+		String wL2 = null;
+		String wL1 = null;
+		String wR1 = null;
+		String wR2 = null;
+		
+		if(headID>0) {
+			wL1 = part.getWord(headID-1).word;  
+		}
+		if(headID>1) {
+			wL2 = part.getWord(headID-2).word;
+		}
+		if(headID+1<part.getWordCount()) {
+			wR1 = part.getWord(headID+1).word;
+		}
+		if(headID+2<part.getWordCount()) {
+			wR2 = part.getWord(headID+2).word;
+		}
+		
+		if(wL1!=null) {
+			cL1 = wL1.substring(wL1.length()-1);
+		}
+		if(wL1!=null && wL1.length()>1) {
+			cL2 = wL1.substring(wL1.length()-2, wL1.length()-1);
+		} else if(wL1!=null && wL1.length()==1 && wL2!=null) {
+			cL2 = wL2.substring(wL2.length()-1);
+		}
+		
+		if(wR1!=null) {
+			cR1 = wR1.substring(0, 1);
+		}
+		if(wR1!=null && wR1.length()>1) {
+			cR2 = wR1.substring(1, 2);
+		} else if(wR1!=null && wR1.length()==1 && wR2!=null) {
+			cR2 = wR2.substring(0, 1);
+		}
+		sb.append(cL2).append("!@#$%");
+		sb.append(cL1).append("!@#$%");
+		sb.append(cR1).append("!@#$%");
+		sb.append(cR2).append("!@#$%");
+		
+		String instance = sb.toString().trim();
+		
+//		semanticInstances.add(instance);
+		
+		return instance;
+	}
+	
 	public static void main(String args[]) {
 		// loadMeassure();
 		System.out.println(measures.size());

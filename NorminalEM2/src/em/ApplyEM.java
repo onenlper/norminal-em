@@ -280,18 +280,20 @@ public class ApplyEM {
 			ArrayList<Mention> goodEntries = new ArrayList<Mention>();
 			ArrayList<Mention> neturalEntries = new ArrayList<Mention>();
 			ArrayList<Mention> badEntries = new ArrayList<Mention>();
-			String subtype2 = EMUtil.getSemanticType(anaphor);
+			String subtype2 = EMUtil.getSemanticType(anaphor, part);
 			for(int i=0;i<cands.size();i++) {
 				Mention cand = cands.get(i);
 				
-				String subtype1 = EMUtil.getSemanticType(cand);
+				String subtype1 = EMUtil.getSemanticType(cand, part);
 				
 				double p_c = EMUtil.getP_C(cand, anaphor, part);
 				
 				if(cand.head.contains(anaphor.head)) {
 					goodEntries.add(cand);
-//				} else if(subtype1.equals(subtype2) && p_c!=0) {
-//					neturalEntries.add(cand);
+				} else if(subtype1.equals(subtype2) && p_c!=0 
+						&& Context.wordInclusion2(cand, anaphor, part)
+						) {
+					neturalEntries.add(cand);
 				} else {
 					badEntries.add(cand);
 				}
@@ -341,8 +343,12 @@ public class ApplyEM {
 					seq += 1;
 				}
 				entries.add(entry);
+				
+				if(coref && entry.p_c!=0) {
+					anaphor.antecedent = cand;
+				}
 			}
-			System.out.println(seq + ":" + cands.size() + " # " + subtype2);
+//			System.out.println(seq + ":" + cands.size() + " # " + subtype2);
 			
 			if(anaphor.antecedent==null)
 			for (int i = 0; i < cands.size(); i++) {
@@ -402,11 +408,11 @@ public class ApplyEM {
 						p_context	* 
 						entry.p_c
 						;
-				p2nd *= 1 * 
+				p2nd *= 1
 //						p_number * 
 //						p_gender * 
 //						p_animacy * 
-						p_sem
+						* p_sem
 //						* p_cilin
 				// * p_gram
 				;
@@ -425,7 +431,12 @@ public class ApplyEM {
 						&& chainMap.containsKey(antecedent.toName())
 						&& chainMap.get(anaphor.toName()).intValue() == chainMap
 								.get(antecedent.toName()).intValue();
-				
+				if(!antecedent.head.contains(anaphor.head)) {
+//				if(!antecedent.head.equals(anaphor.head)) {
+					System.out.println(antecedent.extent + "-->" + anaphor.extent + " # " + coref);
+					System.out.println(EMUtil.getSemanticType(antecedent, part) + "-->" + EMUtil.getSemanticType(anaphor, part) + " # " + coref);
+					System.out.println("====================");
+				}
 				if(!coref) {
 //					print(antecedent, anaphor, part, chainMap);
 				}
@@ -612,6 +623,9 @@ public class ApplyEM {
 			System.out.println("check file: todo.word2vec " + Context.todo.size());
 		}
 		// Common.outputLines(goodAnas, "goodAnaphors");
+		
+//		Common.outputHashSet(EMUtil.semanticInstances, "semanticInstance");
+		
 		Common.pause("!!#");
 	}
 }

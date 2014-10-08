@@ -197,6 +197,15 @@ public class Context implements Serializable {
 	
 	public static Context buildContext(Mention ant, Mention anaphor,
 			CoNLLPart part, ArrayList<Mention> allCands, int mentionDis) {
+		
+		String antInstance = EMUtil.getSemanticInstance(ant, part);
+		String anaphorInstance = EMUtil.getSemanticInstance(anaphor, part);
+		
+		String antACEType = EMUtil.getACEType(antInstance);
+		String antACESubType = EMUtil.getACESubType(antInstance);
+		
+//		System.out.println(ant.extent + " " + antACEType + " " + antACESubType);
+		
 		doit = false;
 		if(!ant.isFake) {
 			ant.s = part.getWord(ant.end).sentence;
@@ -220,8 +229,8 @@ public class Context implements Serializable {
 		feas[id++] = headMatch(ant, anaphor, part); // 2
 		feas[id++] = isSamePredicate(ant, anaphor, part);
 		
-		String subtype1 = EMUtil.getSemanticType(ant);
-		String subtype2 = EMUtil.getSemanticType(anaphor);
+		String subtype1 = EMUtil.getSemanticType(ant, part);
+		String subtype2 = EMUtil.getSemanticType(anaphor, part);
 
 //		if(subtype1!=null && subtype2!=null && subtype1.equals(subtype2)) {
 ////			System.out.println(subtype1 + " # " + subtype2);
@@ -452,6 +461,60 @@ public class Context implements Serializable {
 		return 0;
 	}
 	
+	public static boolean wordInclusion2(Mention ant, Mention anaphor,
+			CoNLLPart part) {
+		List<String> removeW = Arrays.asList(new String[] { "这个", "这", "那个", "全", "此", "本",
+				"那", "自己", "的", "该", "公司", "这些", "那些", "'s" });
+		ArrayList<String> removeWords = new ArrayList<String>();
+		removeWords.addAll(removeW);
+		HashSet<String> mentionClusterStrs = new HashSet<String>();
+		for (int i = anaphor.start; i <= anaphor.end; i++) {
+			mentionClusterStrs.add(part.getWord(i).orig.toLowerCase());
+			if (part.getWord(i).posTag.equalsIgnoreCase("DT")
+					&& i < anaphor.end
+					&& part.getWord(i + 1).posTag.equalsIgnoreCase("M")) {
+				removeWords.add(part.getWord(i).word);
+				removeWords.add(part.getWord(i + 1).word);
+			}
+			
+			if(part.getWord(i).posTag.equals("PU")) {
+				removeWords.add(part.getWord(i).word);
+			}
+		}
+		mentionClusterStrs.removeAll(removeWords);
+
+		mentionClusterStrs.remove(anaphor.head.toLowerCase());
+		HashSet<String> candidateClusterStrs = new HashSet<String>();
+		for (int i = ant.start; i <= ant.end; i++) {
+			candidateClusterStrs.add(part.getWord(i).word.toLowerCase());
+		}
+		candidateClusterStrs.remove(ant.head.toLowerCase());
+		
+		HashSet<Character> s1 = new HashSet<Character>();
+		for(String k : candidateClusterStrs) {
+			for(int i=0;i<k.length();i++) {
+				Character c = k.charAt(i);
+				s1.add(c);
+			}
+		}
+		
+		HashSet<Character> s2 = new HashSet<Character>();
+		for(String k : mentionClusterStrs) {
+			for(int i=0;i<k.length();i++) {
+				Character c = k.charAt(i);
+				s2.add(c);
+			}
+		}
+		
+		if(s1.containsAll(s2) && s2.size()!=0 && s2.containsAll(s1)) { 
+			return true;
+		}
+		return false;
+//		if (candidateClusterStrs.containsAll(mentionClusterStrs))
+//			return 1;
+//		else
+//			return 0;
+	}
 
 	public static short wordInclusion(Mention ant, Mention anaphor,
 			CoNLLPart part) {
@@ -624,12 +687,12 @@ public class Context implements Serializable {
 			diss = (short) (part.getWord(anaphor.end).sentence.getSentenceIdx() - part
 					.getWord(ant.end).sentence.getSentenceIdx());
 		}
-		 if(diss>10) {
-		 return 10;
-		 } else {
-		 return (short) diss;
-		 }
-//		return (short) (Math.log(diss) / Math.log(2));
+//		if(diss>10) {
+//		 return 10;
+//		 } else {
+//		 return (short) diss;
+//		}
+		return (short) (Math.log(diss) / Math.log(2));
 	}
 
 	private static short isExactMatch(Mention ant, Mention anaphor,
