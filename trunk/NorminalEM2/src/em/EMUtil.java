@@ -787,20 +787,20 @@ public class EMUtil {
 //////			return 0;
 ////		}
 //		
-//		if (m.gram == Grammatic.subject) {
-//			double mi1 = EMUtil.calMISubject(m, m);
-//			double mi2 = EMUtil.calMISubject(ant, m);
-//			if (mi2 < 0 && mi2 < mi1) {
-//				return 0;
-//			}
-//		}
-//		if (m.gram == Grammatic.object) {
-//			double mi1 = EMUtil.calMIObject(m, m);
-//			double mi2 = EMUtil.calMIObject(ant, m);
-//			if (mi2 < 0 && mi2 < mi1) {
-//				return 0;
-//			}
-//		}
+		if (m.gram == Grammatic.subject) {
+			double mi1 = EMUtil.calMISubject(m, m);
+			double mi2 = EMUtil.calMISubject(ant, m);
+			if (mi2 < 0 && mi2 < mi1) {
+				return 0;
+			}
+		}
+		if (m.gram == Grammatic.object) {
+			double mi1 = EMUtil.calMIObject(m, m);
+			double mi2 = EMUtil.calMIObject(ant, m);
+			if (mi2 < 0 && mi2 < mi1) {
+				return 0;
+			}
+		}
 
 		if (ant.head.equalsIgnoreCase(m.head)
 				&& part.getWord(ant.headID).posTag.equals("NR")
