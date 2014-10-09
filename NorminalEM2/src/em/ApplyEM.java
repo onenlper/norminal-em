@@ -280,20 +280,16 @@ public class ApplyEM {
 			ArrayList<Mention> goodEntries = new ArrayList<Mention>();
 			ArrayList<Mention> neturalEntries = new ArrayList<Mention>();
 			ArrayList<Mention> badEntries = new ArrayList<Mention>();
-			String subtype2 = EMUtil.getSemanticType(anaphor, part);
 			for(int i=0;i<cands.size();i++) {
 				Mention cand = cands.get(i);
-				
-				String subtype1 = EMUtil.getSemanticType(cand, part);
 				
 				double p_c = EMUtil.getP_C(cand, anaphor, part);
 				
 				if(cand.head.contains(anaphor.head)) {
 					goodEntries.add(cand);
-				} else if(subtype1.equals(subtype2) && p_c!=0 
-						&& Context.wordInclusion2(cand, anaphor, part)
-						) {
-					neturalEntries.add(cand);
+//				} else if(cand.ACEType.equals(anaphor.ACEType) 
+//						) {
+//					neturalEntries.add(cand);
 				} else {
 					badEntries.add(cand);
 				}
@@ -344,9 +340,9 @@ public class ApplyEM {
 				}
 				entries.add(entry);
 				
-				if(coref && entry.p_c!=0) {
-					anaphor.antecedent = cand;
-				}
+//				if(coref && entry.p_c!=0) {
+//					anaphor.antecedent = cand;
+//				}
 			}
 //			System.out.println(seq + ":" + cands.size() + " # " + subtype2);
 			
@@ -434,7 +430,7 @@ public class ApplyEM {
 				if(!antecedent.head.contains(anaphor.head)) {
 //				if(!antecedent.head.equals(anaphor.head)) {
 					System.out.println(antecedent.extent + "-->" + anaphor.extent + " # " + coref);
-					System.out.println(EMUtil.getSemanticType(antecedent, part) + "-->" + EMUtil.getSemanticType(anaphor, part) + " # " + coref);
+					System.out.println(antecedent.ACEType + "-->" + anaphor.ACEType + " # " + coref);
 					System.out.println("====================");
 				}
 				if(!coref) {
