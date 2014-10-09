@@ -717,7 +717,31 @@ public class EMUtil {
 	public static HashMap<String, String> semanticMap = Common.readFile2Map2("semanticTypes.all");
 	public static HashMap<String, String> subTypeMap = Common.readFile2Map2("subTypes.all");
 	
-	public static String getSemanticType(Mention m, CoNLLPart part) {
+	public static String getACESubType(Mention m, CoNLLPart part) {
+		String instance = EMUtil.getSemanticInstance(m, part);
+		String subtype = EMUtil.getACESubType(instance);
+		if(subtype==null || subtype.equalsIgnoreCase("other")) {
+			if(m.NE.equals("PERSON")) {
+				if(m.number==Number.single) {
+					subtype = "p-individual";
+				} else{
+					subtype = "p-group";
+				}
+			} else if(!m.NE.equals("OTHER")){
+				subtype = m.NE.toLowerCase();
+			} else {
+				String sems[] = Common.getSemantic(m.head);
+				String sem = "unknown";
+				if (sems != null) {
+					sem = sems[0];
+				}
+				return sem.substring(0, 4);
+			}
+		}
+		return subtype;
+	}
+	
+	private static String getACEType(Mention m, CoNLLPart part) {
 		String instance = EMUtil.getSemanticInstance(m, part);
 		String subtype = EMUtil.getACEType(instance);
 //		String subtype = semanticMap.get(m.head.replaceAll("\\s+", ""));
@@ -742,31 +766,27 @@ public class EMUtil {
 		if (ant.isFake) {
 			return 0;
 		}
+		
 		double ret = 0;
+		
 		if (ant.gender != m.gender || ant.number != m.number
 				|| ant.animacy != m.animacy) {
 			return 0;
 		}
 		
-		String subtype1 = getSemanticType(ant, part);
-		String subtype2 = getSemanticType(m, part);
-
-		if( subtype1.equals("unkn") || subtype2.equals("unkn") || (subtype1!=null && subtype2!=null && !subtype1.equals(subtype2))) {
-//			if(!ant.head.contains(m.head) && !m.head.contains(ant.head)) {
+		String subtype1 = ant.ACEType;
+		String subtype2 = m.ACEType;
+		
+		if( subtype1.equals("unkn") || subtype2.equals("unkn") || !subtype1.equals(subtype2)) {
 			if(!ant.head.equals(m.head)) {
-//				if(Context.coref) {
-//					System.out.println(subtype1 + " # " + subtype2);
-//					System.out.println(ant.head + " # " + m.head);
-//					System.out.println("==========================");				
-//				}
 				return 0;
 			}
 		}
 		
-		if(!ant.head.contains(m.head)) {
-//			return 0;
-		}
-		
+////		if(!ant.head.contains(m.head)) {
+//////			return 0;
+////		}
+//		
 //		if (m.gram == Grammatic.subject) {
 //			double mi1 = EMUtil.calMISubject(m, m);
 //			double mi2 = EMUtil.calMISubject(ant, m);
@@ -873,14 +893,14 @@ public class EMUtil {
 		}
 	}
 
-	public static void setMentionAttri(Mention em, CoNLLPart part) {
-		int startIdx = part.getWord(em.start).indexInSentence;
-		int endIdx = part.getWord(em.end).indexInSentence;
-		CoNLLSentence sentence = part.getWord(em.start).sentence;
-		em.startInS = startIdx;
-		em.endInS = endIdx;
-		em.sentenceID = sentence.getSentenceIdx();
-		em.s = sentence;
+	public static void setMentionAttri(Mention m, CoNLLPart part) {
+		int startIdx = part.getWord(m.start).indexInSentence;
+		int endIdx = part.getWord(m.end).indexInSentence;
+		CoNLLSentence sentence = part.getWord(m.start).sentence;
+		m.startInS = startIdx;
+		m.endInS = endIdx;
+		m.sentenceID = sentence.getSentenceIdx();
+		m.s = sentence;
 
 		// System.out.println(sentence.getSyntaxTree().leaves.size() + "#" +
 		// sentence.getWords().size());
@@ -929,10 +949,10 @@ public class EMUtil {
 		// System.out.println(em.extent + " # " + part.getPartName());
 		MyTreeNode head = treeNode.getHeadLeaf();
 		// head = treeNode.getLeaves().get(treeNode.getLeaves().size());
-		em.headID = sentence.getWord(head.leafIdx).index;
-		em.headInS = head.leafIdx;
-		em.head = head.value;
-		em.NP = treeNode;
+		m.headID = sentence.getWord(head.leafIdx).index;
+		m.headInS = head.leafIdx;
+		m.head = head.value;
+		m.NP = treeNode;
 
 		MyTreeNode maxTree = getMaxNPTreeNode(rightLeaf);
 		MyTreeNode minTree = getMinNPTreeNode(rightLeaf);
@@ -940,29 +960,29 @@ public class EMUtil {
 		int end = minTree.getLeaves().get(0).leafIdx;
 
 		for (int i = begin; i < end; i++) {
-			em.modifyList.add(sentence.getWord(i).word);
+			m.modifyList.add(sentence.getWord(i).word);
 		}
 
 		// em.headInS = em.endInS;
 		// em.head = sentence.getWord(em.headInS).word;
 
-		if (em.head.equals(",")) {
+		if (m.head.equals(",")) {
 			sentence.syntaxTree.root.setAllMark(true);
 			// Common.bangErrorPOS(sentence.syntaxTree.root.getPlainText(true));
 		}
 
 		if (head.parent.value.equals("NR") || head.parent.value.equals("NNP")
 				|| head.parent.value.equals("NNPS")) {
-			em.mType = EMUtil.MentionType.proper;
+			m.mType = EMUtil.MentionType.proper;
 		} else if (head.parent.value.equals("PN")
 				|| head.parent.value.equals("PRP")
 				|| head.parent.value.equals("PRP$")) {
-			em.mType = EMUtil.MentionType.pronoun;
+			m.mType = EMUtil.MentionType.pronoun;
 		} else if (head.parent.value.equals("NN")
 				|| head.parent.value.equals("NNS")) {
-			em.mType = EMUtil.MentionType.common;
+			m.mType = EMUtil.MentionType.common;
 		} else {
-			em.mType = EMUtil.MentionType.tmporal;
+			m.mType = EMUtil.MentionType.tmporal;
 		}
 		// check subject or object
 		boolean subject = false;
@@ -980,25 +1000,25 @@ public class EMUtil {
 		}
 
 		if (haveNPAncestor) {
-			em.nested = true;
+			m.nested = true;
 		}
 
 		if (haveNPAncestor) {
-			em.gram = Grammatic.modifier;
+			m.gram = Grammatic.modifier;
 		} else if (treeNode.parent == null) {
-			em.gram = EMUtil.Grammatic.other;
+			m.gram = EMUtil.Grammatic.other;
 		} else {
 			for (int i = treeNode.childIndex + 1; i < treeNode.parent.children
 					.size(); i++) {
 				MyTreeNode sibling = treeNode.parent.children.get(i);
 				if (sibling.value.equals("VP")) {
 					subject = true;
-					em.V = sibling;
+					m.V = sibling;
 					break;
 				}
 			}
 			if (subject) {
-				em.gram = EMUtil.Grammatic.subject;
+				m.gram = EMUtil.Grammatic.subject;
 			} else {
 				boolean object = false;
 				if (treeNode.parent.value.equals("VP")) {
@@ -1006,20 +1026,20 @@ public class EMUtil {
 						MyTreeNode sibling = treeNode.parent.children.get(i);
 						if (sibling.value.startsWith("V")) {
 							object = true;
-							em.V = sibling;
+							m.V = sibling;
 							break;
 						}
 					}
 				}
 				if (object) {
-					em.gram = EMUtil.Grammatic.object;
+					m.gram = EMUtil.Grammatic.object;
 				}
 			}
 		}
-		em.animacy = EMUtil.getAntAnimacy(em);
-		em.gender = EMUtil.getAntGender(em);
-		em.number = EMUtil.getAntNumber(em);
-		em.semantic = EMUtil.getSemantic(em);
+		m.animacy = EMUtil.getAntAnimacy(m);
+		m.gender = EMUtil.getAntGender(m);
+		m.number = EMUtil.getAntNumber(m);
+		m.semantic = EMUtil.getSemantic(m);
 
 		MyTreeNode ip = head.getAncestors().get(0);
 		for (int i = head.getAncestors().size() - 1; i >= 0; i--) {
@@ -1031,27 +1051,27 @@ public class EMUtil {
 		}
 		for (MyTreeNode l : ip.getLeaves()) {
 			if (l.parent.value.equals("NT")) {
-				ArrayList<String> nts = em.moreModifiers.get("NT");
+				ArrayList<String> nts = m.moreModifiers.get("NT");
 				if (nts == null) {
 					nts = new ArrayList<String>();
-					em.moreModifiers.put("NT", nts);
+					m.moreModifiers.put("NT", nts);
 				}
 				nts.add(l.value);
 			}
 			if (l.parent.value.equals("CD")) {
-				ArrayList<String> cds = em.moreModifiers.get("CD");
+				ArrayList<String> cds = m.moreModifiers.get("CD");
 				if (cds == null) {
 					cds = new ArrayList<String>();
-					em.moreModifiers.put("CD", cds);
+					m.moreModifiers.put("CD", cds);
 				}
 				cds.add(l.value);
 			}
 		}
 
-		for (int i = em.start; i <= em.end; i++) {
+		for (int i = m.start; i <= m.end; i++) {
 			if (part.getWord(i).posTag.equals("CC")
 					|| part.getWord(i).word.equals("、")) {
-				em.isCC = true;
+				m.isCC = true;
 			}
 		}
 	}
@@ -1220,6 +1240,10 @@ public class EMUtil {
 		removeDuplicateMentions(nounPhrases);
 		Collections.sort(nounPhrases);
 
+		for(Mention m : nounPhrases) {
+			m.ACEType = getACEType(m, part);
+			m.ACESubtype = getACESubType(m, part);
+		}
 		return nounPhrases;
 	}
 
@@ -2887,14 +2911,14 @@ public class EMUtil {
 		}
 	}
 	
-	public static String getACEType(String instance) {
+	private static String getACEType(String instance) {
 		if(ACETypeMap==null) {
 			loadACESemantic();
 		}
 		return ACETypeMap.get(instance);
 	}
 	
-	public static String getACESubType(String instance) {
+	private static String getACESubType(String instance) {
 		if(ACESubTypeMap==null) {
 			loadACESemantic();
 		}

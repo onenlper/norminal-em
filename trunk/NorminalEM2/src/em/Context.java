@@ -197,15 +197,6 @@ public class Context implements Serializable {
 	
 	public static Context buildContext(Mention ant, Mention anaphor,
 			CoNLLPart part, ArrayList<Mention> allCands, int mentionDis) {
-		
-		String antInstance = EMUtil.getSemanticInstance(ant, part);
-		String anaphorInstance = EMUtil.getSemanticInstance(anaphor, part);
-		
-		String antACEType = EMUtil.getACEType(antInstance);
-		String antACESubType = EMUtil.getACESubType(antInstance);
-		
-//		System.out.println(ant.extent + " " + antACEType + " " + antACESubType);
-		
 		doit = false;
 		if(!ant.isFake) {
 			ant.s = part.getWord(ant.end).sentence;
@@ -229,9 +220,6 @@ public class Context implements Serializable {
 		feas[id++] = headMatch(ant, anaphor, part); // 2
 		feas[id++] = isSamePredicate(ant, anaphor, part);
 		
-		String subtype1 = EMUtil.getSemanticType(ant, part);
-		String subtype2 = EMUtil.getSemanticType(anaphor, part);
-
 //		if(subtype1!=null && subtype2!=null && subtype1.equals(subtype2)) {
 ////			System.out.println(subtype1 + " # " + subtype2);
 ////			System.out.println(ant.head + " # " + m.head);

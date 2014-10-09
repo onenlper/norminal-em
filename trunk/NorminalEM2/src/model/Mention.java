@@ -21,6 +21,10 @@ public class Mention implements Comparable<Mention>, Serializable {
          *
          */
 
+	public String ACEType;
+	
+	public String ACESubtype;
+	
 	public String semClass;
 	
 	public String subType;
