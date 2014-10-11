@@ -285,10 +285,15 @@ public class ApplyEM {
 				
 				double p_c = EMUtil.getP_C(cand, anaphor, part);
 				
-				if(cand.head.contains(anaphor.head)) {
+				if(cand.head.contains(anaphor.head)
+//						|| anaphor.head.contains(cand.head)
+//						|| (cand.ACESubtype.equals(anaphor.ACESubtype) 
+//								&& !cand.NE.equalsIgnoreCase("other") && anaphor.NE.equalsIgnoreCase("other")
+//								)
+						) {
 					goodEntries.add(cand);
-//				} else if(cand.ACEType.equals(anaphor.ACEType) 
-//						) {
+//				} else if(cand.ACESubtype.equals(anaphor.ACESubtype) && !cand.NE.equalsIgnoreCase("other") && anaphor.NE.equalsIgnoreCase("other")  
+//						&& anaphor.s.getSentenceIdx() - cand.s.getSentenceIdx()<=0) {
 //					neturalEntries.add(cand);
 				} else {
 					badEntries.add(cand);
@@ -305,6 +310,9 @@ public class ApplyEM {
 			cands.add(fake);
 			
 			double probs[] = new double[cands.size()];
+			
+			ArrayList<Mention> goldCorefs = new ArrayList<Mention>();
+			
 			for(int i=0;i<cands.size();i++) {
 				Mention cand = cands.get(i);
 				
@@ -340,9 +348,9 @@ public class ApplyEM {
 				}
 				entries.add(entry);
 				
-//				if(coref && entry.p_c!=0) {
-//					anaphor.antecedent = cand;
-//				}
+				if(coref && entry.p_c!=0) {
+					goldCorefs.add(cand);
+				}
 			}
 //			System.out.println(seq + ":" + cands.size() + " # " + subtype2);
 			
@@ -420,6 +428,20 @@ public class ApplyEM {
 					maxP = p;
 				}
 			}
+			
+			if(antecedent.isFake) {
+				if(goldCorefs.size()!=0) {
+//					anaphor.antecedent= goldCorefs.get(0);
+					System.out.println("Anaphor: " + anaphor.extent + " " + anaphor.ACEType + " # " + anaphor.ACESubtype + " # " + chainMap.containsKey(anaphor.toName()));
+					System.out.println("Selected: " + antecedent.extent + " " + antecedent.ACEType + " # " + antecedent.ACESubtype + " # " + chainMap.containsKey(antecedent.toName()));
+					System.out.println("True Ante: ");
+					for(Mention m : goldCorefs) {
+						System.out.println(m.extent + " " + m.ACEType + " # " + m.ACESubtype);
+					}
+					System.out.println("---------------------------");
+				}
+			}
+			
 			if (antecedent != null && !antecedent.isFake && anaphor.antecedent==null) {
 				anaphor.antecedent = antecedent;
 				
@@ -427,13 +449,32 @@ public class ApplyEM {
 						&& chainMap.containsKey(antecedent.toName())
 						&& chainMap.get(anaphor.toName()).intValue() == chainMap
 								.get(antecedent.toName()).intValue();
-				if(!antecedent.head.contains(anaphor.head)) {
-//				if(!antecedent.head.equals(anaphor.head)) {
-					System.out.println(antecedent.extent + "-->" + anaphor.extent + " # " + coref);
-					System.out.println(antecedent.ACEType + "-->" + anaphor.ACEType + " # " + coref);
-					System.out.println("====================");
+				
+//				if(!antecedent.head.contains(anaphor.head)) {
+////				if(!antecedent.head.equals(anaphor.head)) {
+//					System.out.println(antecedent.extent + "-->" + anaphor.extent + " # " + coref);
+//					System.out.println(antecedent.ACEType + "-->" + anaphor.ACEType + " # " + coref);
+//					System.out.println("====================");
+//				}
+
+				if(!coref&& goldCorefs.size()!=0) {
+//					anaphor.antecedent= goldCorefs.get(0);
+					System.out.println("Anaphor: " + anaphor.extent + " " + anaphor.ACEType + " # " + anaphor.ACESubtype + " # " + chainMap.containsKey(anaphor.toName()));
+					System.out.println("Selected: " + antecedent.extent + " " + antecedent.ACEType + " # " + antecedent.ACESubtype + " # " + chainMap.containsKey(antecedent.toName()));
+					System.out.println("True Ante: ");
+					for(Mention m : goldCorefs) {
+						System.out.println(m.extent + " " + m.ACEType + " # " + m.ACESubtype);
+					}
+					System.out.println("---------------------------");
+//					print(antecedent, anaphor, part, chainMap);
 				}
-				if(!coref) {
+				
+				if(!coref && goldCorefs.size()==0) {
+//					anaphor.antecedent= null;
+					System.out.println("Anaphor: " + anaphor.extent + " " + anaphor.ACEType + " # " + anaphor.ACESubtype + " # " + chainMap.containsKey(anaphor.toName()));
+					System.out.println("Selected: " + antecedent.extent + " " + antecedent.ACEType + " # " + antecedent.ACESubtype + " # " + chainMap.containsKey(antecedent.toName()));
+					System.out.println("True Ante: EMPTY");
+					System.out.println("---------------------------");
 //					print(antecedent, anaphor, part, chainMap);
 				}
 				

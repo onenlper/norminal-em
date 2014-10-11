@@ -706,9 +706,22 @@ public class Context implements Serializable {
 			return 2;
 		} else if(ant.head.endsWith(anaphor.head)) {
 			return 3;
+//		} else if (ant.head.contains(anaphor.head)){
+//			return 4;
 		} else {
 			return 0;
 		}
+//		if(ant.head.equals(anaphor.head)) {
+//			return 1;
+//		} else if (ant.head.contains(anaphor.head)) {
+//			return 2;
+//		} else if(anaphor.head.contains(ant.head)) {
+//			return 3;
+//		} else if(anaphor.ACESubtype.equals(ant.ACESubtype)){
+//			return 4;
+//		} else {
+//			return 5;
+//		}
 	}
 	
 	public static short headMatch2(Mention ant, Mention anaphor, CoNLLPart part) {

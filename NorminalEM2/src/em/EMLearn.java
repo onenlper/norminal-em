@@ -167,10 +167,15 @@ public class EMLearn {
 					
 					double p_c = EMUtil.getP_C(ant, m, part);
 					
-					if (ant.head.contains(m.head)) {
+					if (ant.head.contains(m.head) 
+//							|| m.head.contains(ant.head)
+//							|| (ant.ACESubtype.equals(m.ACESubtype)
+//									&& !ant.NE.equalsIgnoreCase("other") && m.NE.equalsIgnoreCase("other")
+//									)
+							) {
 						goodEntries.add(ant);
-//					} else if(ant.ACESubtype.equals(m.ACESubtype)
-//							) {
+//					} else if(ant.ACESubtype.equals(m.ACESubtype) && !ant.NE.equalsIgnoreCase("other") && m.NE.equalsIgnoreCase("other")
+//							&& m.s.getSentenceIdx() - ant.s.getSentenceIdx()<=0) {
 //						neturalEntries.add(ant);
 					} else {
 						badEntries.add(ant);
