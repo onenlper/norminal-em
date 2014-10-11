@@ -587,6 +587,10 @@ public class EMUtil {
 		if (str.endsWith("们")) {
 			plura = true;
 		}
+		
+		if (str.contains("每")) {
+			plura = true;
+		}
 
 		if (plura) {
 			return Number.plural;
@@ -609,6 +613,9 @@ public class EMUtil {
 				plura = true;
 			}
 			if (leaf.value.contains("些")) {
+				plura = true;
+			}
+			if (leaf.value.contains("每")) {
 				plura = true;
 			}
 			if (leaf.value.contains("多")) {
@@ -713,21 +720,23 @@ public class EMUtil {
 		String s = stemmer.toString();
 		return s;
 	}
-	
-	public static HashMap<String, String> semanticMap = Common.readFile2Map2("semanticTypes.all");
-	public static HashMap<String, String> subTypeMap = Common.readFile2Map2("subTypes.all");
-	
+
+	public static HashMap<String, String> semanticMap = Common
+			.readFile2Map2("semanticTypes.all");
+	public static HashMap<String, String> subTypeMap = Common
+			.readFile2Map2("subTypes.all");
+
 	public static String getACESubType(Mention m, CoNLLPart part) {
 		String instance = EMUtil.getSemanticInstance(m, part);
 		String subtype = EMUtil.getACESubType(instance);
-		if(subtype==null || subtype.equalsIgnoreCase("other")) {
-			if(m.NE.equals("PERSON")) {
-				if(m.number==Number.single) {
+		if (subtype == null || subtype.equalsIgnoreCase("other")) {
+			if (m.NE.equals("PERSON")) {
+				if (m.number == Number.single) {
 					subtype = "p-individual";
-				} else{
+				} else {
 					subtype = "p-group";
 				}
-			} else if(!m.NE.equals("OTHER")){
+			} else if (!m.NE.equals("OTHER")) {
 				subtype = m.NE.toLowerCase();
 			} else {
 				String sems[] = Common.getSemantic(m.head);
@@ -740,15 +749,37 @@ public class EMUtil {
 		}
 		return subtype;
 	}
-	
+
+//	private static String getACEType(Mention m, CoNLLPart part) {
+//		String instance = EMUtil.getSemanticInstance(m, part);
+//		String subtype = "";
+//		if (m.NE.equals("PERSON")) {
+//			subtype = "per";
+//		} else if (!m.NE.equals("OTHER")) {
+//			subtype = m.NE.toLowerCase();
+//		} else {
+//			subtype = EMUtil.getACEType(instance);
+//			if (subtype == null || subtype.equalsIgnoreCase("other")) {
+//				String sems[] = Common.getSemantic(m.head);
+//				String sem = "unknown";
+//				if (sems != null) {
+//					sem = sems[0];
+//				}
+//				subtype = sem.substring(0, 4);
+//			}
+//		}
+//		
+//		return subtype;
+//	}
+
 	private static String getACEType(Mention m, CoNLLPart part) {
 		String instance = EMUtil.getSemanticInstance(m, part);
 		String subtype = EMUtil.getACEType(instance);
-//		String subtype = semanticMap.get(m.head.replaceAll("\\s+", ""));
-		if(subtype==null || subtype.equalsIgnoreCase("other")) {
-			if(m.NE.equals("PERSON")) {
+		// String subtype = semanticMap.get(m.head.replaceAll("\\s+", ""));
+		if (subtype == null || subtype.equalsIgnoreCase("other")) {
+			if (m.NE.equals("PERSON")) {
 				subtype = "per";
-			} else if(!m.NE.equals("OTHER")){
+			} else if (!m.NE.equals("OTHER")) {
 				subtype = m.NE.toLowerCase();
 			} else {
 				String sems[] = Common.getSemantic(m.head);
@@ -761,52 +792,47 @@ public class EMUtil {
 		}
 		return subtype;
 	}
-	
+
 	public static double getP_C(Mention ant, Mention m, CoNLLPart part) {
 		if (ant.isFake) {
 			return 0;
 		}
-		
+
 		double ret = 0;
-		
+
 		if (ant.gender != m.gender || ant.number != m.number
 				|| ant.animacy != m.animacy) {
 			return 0;
 		}
-		
+
 		String subtype1 = ant.ACEType;
 		String subtype2 = m.ACEType;
-		
-		if( subtype1.equals("unkn") || subtype2.equals("unkn") || !subtype1.equals(subtype2)) {
-			if(!ant.head.equals(m.head)) {
-				return 0;
-			}
-		}
-		
-////		if(!ant.head.contains(m.head)) {
-//////			return 0;
-////		}
-//		
-		if (m.gram == Grammatic.subject) {
-			double mi1 = EMUtil.calMISubject(m, m);
-			double mi2 = EMUtil.calMISubject(ant, m);
-			if (mi2 < 0 && mi2 < mi1) {
-				return 0;
-			}
-		}
-		if (m.gram == Grammatic.object) {
-			double mi1 = EMUtil.calMIObject(m, m);
-			double mi2 = EMUtil.calMIObject(ant, m);
-			if (mi2 < 0 && mi2 < mi1) {
+
+		if (subtype1.equals("unkn") || subtype2.equals("unkn")
+				|| !subtype1.equals(subtype2)) {
+			if (!ant.head.equals(m.head)) {
 				return 0;
 			}
 		}
 
-		if (ant.head.equalsIgnoreCase(m.head)
-				&& part.getWord(ant.headID).posTag.equals("NR")
-				&& part.getWord(m.headID).posTag.equals("NR")) {
-			// return 1;
-		}
+		// // if(!ant.head.contains(m.head)) {
+		// //// return 0;
+		// // }
+		//
+		// if (m.gram == Grammatic.subject) {
+		// double mi1 = EMUtil.calMISubject(m, m);
+		// double mi2 = EMUtil.calMISubject(ant, m);
+		// if (mi2 < 0 && mi2 < mi1) {
+		// return 0;
+		// }
+		// }
+		// if (m.gram == Grammatic.object) {
+		// double mi1 = EMUtil.calMIObject(m, m);
+		// double mi2 = EMUtil.calMIObject(ant, m);
+		// if (mi2 < 0 && mi2 < mi1) {
+		// return 0;
+		// }
+		// }
 
 		if (Context.wordInclusion(ant, m, part) == 0) {
 			return 0;
@@ -1240,9 +1266,15 @@ public class EMUtil {
 		removeDuplicateMentions(nounPhrases);
 		Collections.sort(nounPhrases);
 
-		for(Mention m : nounPhrases) {
+		for (Mention m : nounPhrases) {
 			m.ACEType = getACEType(m, part);
 			m.ACESubtype = getACESubType(m, part);
+
+			// if(m.ACESubtype.equals("p-individual")) {
+			// m.number = Number.single;
+			// if(m.ACESubtype.equals("p-group")) {
+			// m.number = Number.plural;
+			// }
 		}
 		return nounPhrases;
 	}
@@ -2584,7 +2616,7 @@ public class EMUtil {
 		}
 		return goldNEs;
 	}
-	
+
 	public static HashSet<String> getGoldNEs(CoNLLPart goldPart) {
 		HashSet<String> goldNEs = new HashSet<String>();
 		for (Element ne : goldPart.getNameEntities()) {
@@ -2766,9 +2798,9 @@ public class EMUtil {
 	static HashMap<String, ArrayList<CoNLLSentence>> engSMap;
 
 	public static boolean isLoadAlign = false;
-	
+
 	public static void loadAlign() {
-		if(isLoadAlign) {
+		if (isLoadAlign) {
 			return;
 		}
 		alignMap = DocumentMap
@@ -2780,10 +2812,10 @@ public class EMUtil {
 		CoNLLPart.processDiscourse = true;
 		engSMap = new HashMap<String, ArrayList<CoNLLSentence>>();
 		for (CoNLLPart part : engDoc.getParts()) {
-//			Common.pause(part.getPartName());
-//			Common.pause(part.getPartID());
+			// Common.pause(part.getPartName());
+			// Common.pause(part.getPartID());
 			String key = part.documentID;
-//			Common.pause(part.getCoNLLSentences().get(0).
+			// Common.pause(part.getCoNLLSentences().get(0).
 			ArrayList<CoNLLSentence> lst = engSMap.get(key);
 			if (lst == null) {
 				lst = new ArrayList<CoNLLSentence>();
@@ -2807,26 +2839,27 @@ public class EMUtil {
 		SentForAlign[] align = aligns.get(chiS.idInDoc);
 		String engStr = align[1].getText();
 		CoNLLSentence engCoNLLS = engSMap.get(docName).get(chiS.idInDoc);
-		if(!engStr.equalsIgnoreCase(engCoNLLS.getText()) || !chiStr.equalsIgnoreCase(align[0].getText()) ) {
-//			System.out.println(chiStr + "@");
-//			System.out.println(engStr);
-//			System.out.println(engCoNLLS.getText());
-//			System.out.println("---------");
-//			Common.pause("");
+		if (!engStr.equalsIgnoreCase(engCoNLLS.getText())
+				|| !chiStr.equalsIgnoreCase(align[0].getText())) {
+			// System.out.println(chiStr + "@");
+			// System.out.println(engStr);
+			// System.out.println(engCoNLLS.getText());
+			// System.out.println("---------");
+			// Common.pause("");
 		}
 		// construct mention map between two s
 		for (Mention cm : chiNPs) {
 			cm.units.clear();
 			Mention.chiSpanMaps.remove(cm.getReadName());
 		}
-		
-		for(int i=0;i<align[0].units.size();i++) {
+
+		for (int i = 0; i < align[0].units.size(); i++) {
 			align[0].units.get(i).sentence = chiS;
 		}
-		for(int i=0;i<align[1].units.size();i++) {
+		for (int i = 0; i < align[1].units.size(); i++) {
 			align[1].units.get(i).sentence = engCoNLLS;
 		}
-		
+
 		for (Mention em : chiNPs) {
 			int from = em.start - chiSegStart;
 			int to = em.end - chiSegStart;
@@ -2840,10 +2873,10 @@ public class EMUtil {
 				sb.append(unit.getToken()).append(" ");
 			}
 			if (!sb.toString().trim().equalsIgnoreCase(em.extent)) {
-//				 System.out.println("#" + sb.toString().trim()
-//				 + "#" + em.extent.trim() + "#");
-//				 System.out.println(em.start + "," + em.end);
-//				 Common.pause("");
+				// System.out.println("#" + sb.toString().trim()
+				// + "#" + em.extent.trim() + "#");
+				// System.out.println(em.start + "," + em.end);
+				// Common.pause("");
 			}
 		}
 		ParseTreeMention ptm = new ParseTreeMention();
@@ -2859,10 +2892,10 @@ public class EMUtil {
 				sb.append(unit.getToken()).append(" ");
 			}
 			if (!em.extent.trim().equalsIgnoreCase(sb.toString().trim())) {
-//				System.out.println(sb.toString().trim());
-//				System.out.println(em.extent.trim());
-//				System.out.println("English mention not equal");
-//				Common.pause("");
+				// System.out.println(sb.toString().trim());
+				// System.out.println(em.extent.trim());
+				// System.out.println("English mention not equal");
+				// Common.pause("");
 			}
 		}
 		for (int g = 1; g <= 4; g++) {
@@ -2873,65 +2906,67 @@ public class EMUtil {
 		}
 	}
 
-//	static HashSet<String> semanticInstances = new HashSet<String>();
-	
+	// static HashSet<String> semanticInstances = new HashSet<String>();
+
 	static HashMap<String, String> ACESubTypeMap;
 	static HashMap<String, String> ACETypeMap;
-	
+
 	public static String types[] = { "wea", "veh", "per", "fac", "gpe", "loc",
-	"org", "other"};
-	
+			"org", "other" };
+
 	static String subTypes[] = { "f-airport", "f-building-grounds", "f-path",
-		"f-plant", "f-subarea-facility", "g-continent",
-		"g-county-or-district", "g-gpe-cluster", "g-nation",
-		"g-population-center", "g-special", "g-state-or-province",
-		"l-address", "l-boundary", "l-celestial", "l-land-region-natural",
-		"l-region-general", "l-region-international", "l-water-body",
-		"o-commercial", "o-educational", "o-entertainment", "o-government",
-		"o-media", "o-medical-science", "o-non-governmental",
-		"o-religious", "o-sports", "p-group", "p-indeterminate",
-		"p-individual", "v-air", "v-land", "v-subarea-vehicle",
-		"v-underspecified", "v-water", "w-biological", "w-blunt",
-		"w-chemical", "w-exploding", "w-nuclear", "w-projectile",
-		"w-sharp", "w-shooting", "w-underspecified", "o-other", "other"};
-	
+			"f-plant", "f-subarea-facility", "g-continent",
+			"g-county-or-district", "g-gpe-cluster", "g-nation",
+			"g-population-center", "g-special", "g-state-or-province",
+			"l-address", "l-boundary", "l-celestial", "l-land-region-natural",
+			"l-region-general", "l-region-international", "l-water-body",
+			"o-commercial", "o-educational", "o-entertainment", "o-government",
+			"o-media", "o-medical-science", "o-non-governmental",
+			"o-religious", "o-sports", "p-group", "p-indeterminate",
+			"p-individual", "v-air", "v-land", "v-subarea-vehicle",
+			"v-underspecified", "v-water", "w-biological", "w-blunt",
+			"w-chemical", "w-exploding", "w-nuclear", "w-projectile",
+			"w-sharp", "w-shooting", "w-underspecified", "o-other", "other" };
+
 	public static void loadACESemantic() {
 		ACETypeMap = new HashMap<String, String>();
 		ACESubTypeMap = new HashMap<String, String>();
-		
+
 		ArrayList<String> instanceLines = Common.getLines("semanticInstance");
 		ArrayList<String> typePreds = Common.getLines("svmTypePred");
 		ArrayList<String> subTypePreds = Common.getLines("svmSubTypePred");
-		for(int i=0;i<instanceLines.size();i++) {
+		for (int i = 0; i < instanceLines.size(); i++) {
 			String instance = instanceLines.get(i);
-			String typePred = types[Integer.parseInt(typePreds.get(i).split("\\s+")[0])-1];
-			String subtypePred = subTypes[Integer.parseInt(subTypePreds.get(i).split("\\s+")[0])-1];
+			String typePred = types[Integer.parseInt(typePreds.get(i).split(
+					"\\s+")[0]) - 1];
+			String subtypePred = subTypes[Integer.parseInt(subTypePreds.get(i)
+					.split("\\s+")[0]) - 1];
 			ACETypeMap.put(instance, typePred);
 			ACESubTypeMap.put(instance, subtypePred);
 		}
 	}
-	
+
 	private static String getACEType(String instance) {
-		if(ACETypeMap==null) {
+		if (ACETypeMap == null) {
 			loadACESemantic();
 		}
 		return ACETypeMap.get(instance);
 	}
-	
+
 	private static String getACESubType(String instance) {
-		if(ACESubTypeMap==null) {
+		if (ACESubTypeMap == null) {
 			loadACESemantic();
 		}
 		return ACESubTypeMap.get(instance);
 	}
-	
+
 	public static String getSemanticInstance(Mention m, CoNLLPart part) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(part.getPartName()).append("!@#$%");
 		sb.append(m.head).append("!@#$%");
 		sb.append(m.NE).append("!@#$%");
 		int headID = m.headID;
-		
+
 		String cL2 = null;
 		String cL1 = null;
 		String cR1 = null;
@@ -2941,49 +2976,49 @@ public class EMUtil {
 		String wL1 = null;
 		String wR1 = null;
 		String wR2 = null;
-		
-		if(headID>0) {
-			wL1 = part.getWord(headID-1).word;  
+
+		if (headID > 0) {
+			wL1 = part.getWord(headID - 1).word;
 		}
-		if(headID>1) {
-			wL2 = part.getWord(headID-2).word;
+		if (headID > 1) {
+			wL2 = part.getWord(headID - 2).word;
 		}
-		if(headID+1<part.getWordCount()) {
-			wR1 = part.getWord(headID+1).word;
+		if (headID + 1 < part.getWordCount()) {
+			wR1 = part.getWord(headID + 1).word;
 		}
-		if(headID+2<part.getWordCount()) {
-			wR2 = part.getWord(headID+2).word;
+		if (headID + 2 < part.getWordCount()) {
+			wR2 = part.getWord(headID + 2).word;
 		}
-		
-		if(wL1!=null) {
-			cL1 = wL1.substring(wL1.length()-1);
+
+		if (wL1 != null) {
+			cL1 = wL1.substring(wL1.length() - 1);
 		}
-		if(wL1!=null && wL1.length()>1) {
-			cL2 = wL1.substring(wL1.length()-2, wL1.length()-1);
-		} else if(wL1!=null && wL1.length()==1 && wL2!=null) {
-			cL2 = wL2.substring(wL2.length()-1);
+		if (wL1 != null && wL1.length() > 1) {
+			cL2 = wL1.substring(wL1.length() - 2, wL1.length() - 1);
+		} else if (wL1 != null && wL1.length() == 1 && wL2 != null) {
+			cL2 = wL2.substring(wL2.length() - 1);
 		}
-		
-		if(wR1!=null) {
+
+		if (wR1 != null) {
 			cR1 = wR1.substring(0, 1);
 		}
-		if(wR1!=null && wR1.length()>1) {
+		if (wR1 != null && wR1.length() > 1) {
 			cR2 = wR1.substring(1, 2);
-		} else if(wR1!=null && wR1.length()==1 && wR2!=null) {
+		} else if (wR1 != null && wR1.length() == 1 && wR2 != null) {
 			cR2 = wR2.substring(0, 1);
 		}
 		sb.append(cL2).append("!@#$%");
 		sb.append(cL1).append("!@#$%");
 		sb.append(cR1).append("!@#$%");
 		sb.append(cR2).append("!@#$%");
-		
+
 		String instance = sb.toString().trim();
-		
-//		semanticInstances.add(instance);
-		
+
+		// semanticInstances.add(instance);
+
 		return instance;
 	}
-	
+
 	public static void main(String args[]) {
 		// loadMeassure();
 		System.out.println(measures.size());
