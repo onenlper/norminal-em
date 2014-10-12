@@ -30,10 +30,11 @@ public class ResolveGroup implements Serializable {
 	String cilin = "null";
 	ArrayList<Mention> ants;
 	String anaphorName;
-	
+	CoNLLPart part;
 	Mention m;
 	
 	public ResolveGroup(Mention m, CoNLLPart part, ArrayList<Mention> ants) {
+		this.part = part;
 		this.ants = ants;
 		this.m = m;
 		this.head = m.head;
