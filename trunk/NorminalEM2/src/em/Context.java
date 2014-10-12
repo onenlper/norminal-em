@@ -31,7 +31,7 @@ public class Context implements Serializable {
 	// short proPos; //
 	// short antType;// pronoun, proper, common
 
-	String feaL;
+	public String feaL;
 
 	public static HashMap<String, Context> contextCache = new HashMap<String, Context>();
 
@@ -591,10 +591,16 @@ public class Context implements Serializable {
 
 	private static short getMentionDiss(int diss) {
 		if(diss==0) {
-			return 1;
-		} else {
 			return 0;
+		} else {
+			return 1;
 		}
+		
+//		if(diss>5) {
+//			return 5;
+//		} else {
+//			return (short) diss;
+//		}
 //		return (short) diss;
 	}
 
