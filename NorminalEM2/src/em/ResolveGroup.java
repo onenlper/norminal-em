@@ -20,7 +20,7 @@ public class ResolveGroup implements Serializable {
 //	String pronoun;
 	
 	String anaphor;
-	
+	String head;
 	ArrayList<Entry> entries;
 	Animacy animacy;
 	Gender gender;
@@ -28,8 +28,15 @@ public class ResolveGroup implements Serializable {
 	Grammatic gram;
 	String sem = "unknown";
 	String cilin = "null";
+	ArrayList<Mention> ants;
+	String anaphorName;
 	
-	public ResolveGroup(Mention m, CoNLLPart part) {
+	Mention m;
+	
+	public ResolveGroup(Mention m, CoNLLPart part, ArrayList<Mention> ants) {
+		this.ants = ants;
+		this.m = m;
+		this.head = m.head;
 		this.anaphor = m.extent;
 		this.entries = new ArrayList<Entry>();
 		
@@ -39,6 +46,7 @@ public class ResolveGroup implements Serializable {
 		this.sem = EMUtil.getSemantic(m);
 		this.gram = m.gram;
 		this.cilin = EMUtil.getCilin(m);
+		this.anaphorName = part.getPartName() + ":" + m.toName();
 	}
 
 	public static class Entry implements Serializable {
@@ -48,6 +56,9 @@ public class ResolveGroup implements Serializable {
 		private static final long serialVersionUID = 1L;
 		Context context;
 		String head;
+		
+		
+		String antName;
 		
 		Animacy animacy = Animacy.fake;
 		Gender gender = Gender.fake;
@@ -61,10 +72,18 @@ public class ResolveGroup implements Serializable {
 		
 		boolean isFake = false;
 		double p;
-
+		Mention ant;
 		double p_c;
+		int seq;
 		
 		public Entry(Mention ant, Context context, CoNLLPart part) {
+			this.ant = ant;
+			if(ant.isFake) {
+				this.antName = "fake";
+			} else {
+				this.antName = part.getPartName() + ":" + ant.toName();
+			}
+			
 			this.head = ant.head;
 			this.context = context;
 			this.isFake = ant.isFake;

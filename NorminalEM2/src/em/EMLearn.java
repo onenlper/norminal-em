@@ -46,7 +46,7 @@ public class EMLearn {
 	// static int contextSize = 2 * 2 * 2 * 3 * 2 * (maxDisFeaValue + 1);
 	public static int qid = 0;
 
-	static int count = 0;
+//	static int count = 0;
 
 	public static void init() {
 		// static HashMap<Context, Double> p_context_ = new HashMap<Context,
@@ -69,7 +69,6 @@ public class EMLearn {
 		fracContextCount = new HashMap<String, Double>();
 		contextVals = new HashMap<String, Double>();
 		qid = 0;
-		count = 0;
 		Context.contextCache.clear();
 	}
 
@@ -145,69 +144,42 @@ public class EMLearn {
 					}
 				}
 
-				ResolveGroup rg = new ResolveGroup(m, part);
-
-				Collections.sort(ants);
-				Collections.reverse(ants);
-
 				Mention fake = new Mention();
 				fake.extent = "fakkkkke";
 				fake.head = "fakkkkke";
 				fake.isFake = true;
-
-				// TODO
-				double allP_C = 0;
+				ants.add(fake);
+				
+				ResolveGroup rg = new ResolveGroup(m, part, ants);
+				Collections.sort(ants);
+				Collections.reverse(ants);
+				
 				int seq = 0;
 				
-				ArrayList<Mention> goodEntries = new ArrayList<Mention>();
-				ArrayList<Mention> neturalEntries = new ArrayList<Mention>();
-				ArrayList<Mention> badEntries = new ArrayList<Mention>();
-				for (int k = 0; k < ants.size(); k++) {
-					Mention ant = ants.get(k);
-					
-					double p_c = EMUtil.getP_C(ant, m, part);
-					
-					if (ant.head.contains(m.head) 
-//							|| m.head.contains(ant.head)
-//							|| (ant.ACESubtype.equals(m.ACESubtype)
-//									&& !ant.NE.equalsIgnoreCase("other") && m.NE.equalsIgnoreCase("other")
-//									)
-							) {
-						goodEntries.add(ant);
-//					} else if(ant.ACESubtype.equals(m.ACESubtype) && !ant.NE.equalsIgnoreCase("other") && m.NE.equalsIgnoreCase("other")
-//							&& m.s.getSentenceIdx() - ant.s.getSentenceIdx()<=0) {
-//						neturalEntries.add(ant);
-					} else {
-						badEntries.add(ant);
-					}
-				}
-				ArrayList<Mention> allEntries = new ArrayList<Mention>();
-				allEntries.addAll(goodEntries);
-				allEntries.addAll(neturalEntries);
-				allEntries.add(fake);
-				allEntries.addAll(badEntries);
-				for (int k = 0; k < allEntries.size(); k++) {
-					allEntries.get(k).seq = k;
-				}
-				ants.add(fake);
-				for (int k = 0; k < ants.size(); k++) {
-					Mention ant = ants.get(k);
-					// add antecedents
-					Context context = Context.buildContext(ant, m, part, ants,
-							ant.seq);
-
-					double simi = Context.getSimi(ant.head, m.head);
-
-					Entry entry = new Entry(ant, context, part);
+				for(Mention ant : ants) {
+					Entry entry = new Entry(ant, null, part);
 					rg.entries.add(entry);
-					count++;
-
 					entry.p_c = EMUtil.getP_C(ant, m, part);
-
 					if (entry.p_c != 0) {
 						seq += 1;
 					}
-					allP_C += entry.p_c;
+				}
+				for(Entry entry : rg.entries) {
+					if (entry.isFake) {
+						entry.p_c = Entry.p_fake_decay
+								/ (Entry.p_fake_decay + seq);
+					} else if (entry.p_c != 0) {
+						entry.p_c = 1 / (Entry.p_fake_decay + seq);
+					}
+				}
+				sortEntries(rg);
+				for (int k = 0; k < rg.entries.size(); k++) {
+					Entry entry = rg.entries.get(k);
+					Mention ant = rg.entries.get(k).ant;
+					// add antecedents
+					Context context = Context.buildContext(ant, m, part, ants,
+							entry.seq);
+					entry.context = context;
 				}
 
 				// if(allP_C!=0) {
@@ -220,22 +192,47 @@ public class EMLearn {
 						contextPrior.put(context.toString(),
 								1.0 + d.doubleValue());
 					}
-					if (entry.isFake) {
-						entry.p_c = Entry.p_fake_decay
-								/ (Entry.p_fake_decay + seq);
-					} else if (entry.p_c != 0) {
-						entry.p_c = 1 / (Entry.p_fake_decay + seq);
-					}
 				}
-
 				groups.add(rg);
-				// }
 			}
 		}
 		return groups;
 	}
+	
+	private static void sortEntries(ResolveGroup rg) {
+		ArrayList<Entry> goodEntries = new ArrayList<Entry>();
+		ArrayList<Entry> fakeEntries = new ArrayList<Entry>();
+		ArrayList<Entry> badEntries = new ArrayList<Entry>();
+		for (int k = 0; k < rg.entries.size(); k++) {
+			Entry entry = rg.entries.get(k);
+			Mention ant = rg.entries.get(k).ant;
+			
+			if (ant.head.contains(rg.m.head) 
+//					|| m.head.contains(ant.head)
+//					|| (ant.ACESubtype.equals(m.ACESubtype)
+//							&& !ant.NE.equalsIgnoreCase("other") && m.NE.equalsIgnoreCase("other")
+//							)
+					) {
+				goodEntries.add(entry);
+			} else if(entry.isFake) {
+				fakeEntries.add(entry);
+//			} else if(ant.ACESubtype.equals(m.ACESubtype) && !ant.NE.equalsIgnoreCase("other") && m.NE.equalsIgnoreCase("other")
+//					&& m.s.getSentenceIdx() - ant.s.getSentenceIdx()<=0) {
+//				neturalEntries.add(ant);
+			} else {
+				badEntries.add(entry);
+			}
+		}
+		ArrayList<Entry> allEntries = new ArrayList<Entry>();
+		allEntries.addAll(goodEntries);
+		allEntries.addAll(fakeEntries);
+		allEntries.addAll(badEntries);
+		for (int k = 0; k < allEntries.size(); k++) {
+			allEntries.get(k).seq = k;
+		}
+	}
 
-	static int percent = 10;
+	static int percent = 1;
 
 	private static void extractCoNLL(ArrayList<ResolveGroup> groups) {
 		// CoNLLDocument d = new CoNLLDocument("train_auto_conll");
@@ -340,13 +337,58 @@ public class EMLearn {
 //			br.close();
 //		}
 //	}
+	public static HashMap<String, HashSet<String>> chainMaps = new HashMap<String, HashSet<String>>();
 
 	public static void estep(ArrayList<ResolveGroup> groups) {
 		System.out.println("estep starts:");
 		long t1 = System.currentTimeMillis();
+		chainMaps.clear();
+		
 		for (ResolveGroup group : groups) {
 			double norm = 0;
+			
+			for(int k=0;k<group.entries.size();k++) {
+				//TODO
+			}
+			
+//			ArrayList<Entry> goodEntries = new ArrayList<Entry>();
+//			ArrayList<Entry> fakeEntries = new ArrayList<Entry>();
+//			ArrayList<Entry> badEntries = new ArrayList<Entry>();
+//			for (int k = 0; k < group.entries.size(); k++) {
+//				Entry e = group.entries.get(k);
+//				
+//				if (e.head.contains(group.head) 
+////						|| m.head.contains(ant.head)
+////						|| (ant.ACESubtype.equals(m.ACESubtype)
+////								&& !ant.NE.equalsIgnoreCase("other") && m.NE.equalsIgnoreCase("other")
+////								)
+//						) {
+//					goodEntries.add(e);
+////				} else if(ant.ACESubtype.equals(m.ACESubtype) && !ant.NE.equalsIgnoreCase("other") && m.NE.equalsIgnoreCase("other")
+////						&& m.s.getSentenceIdx() - ant.s.getSentenceIdx()<=0) {
+////					neturalEntries.add(ant);
+//				} else {
+//					badEntries.add(e);
+//				}
+//			}
+//			ArrayList<Entry> allEntries = new ArrayList<Entry>();
+//			allEntries.addAll(goodEntries);
+//			allEntries.addAll(fakeEntries);
+//			allEntries.addAll(badEntries);
+//			allEntries.get(0).context.feaL = "0" + allEntries.get(0).context.feaL;
+//			for (int k = 1; k < allEntries.size(); k++) {
+//				allEntries.get(k).context.feaL = "1" + allEntries.get(k).context.feaL;
+//			}
+
+			
 			for (Entry entry : group.entries) {
+				
+				if(!chainMaps.containsKey(group.anaphorName) && !entry.isFake) {
+					HashSet<String> set = new HashSet<String>();
+					set.add(entry.antName);
+					chainMaps.put(entry.antName, set);
+				}
+				
 				Context context = entry.context;
 
 				double p_number = numberP.getVal(entry.number.name(),
@@ -386,15 +428,27 @@ public class EMLearn {
 			}
 
 			double max = 0;
+			double maxP = -1;
+			int maxIdx = -1;
+			
+			String antName = "";
+			
 			if (norm != 0) {
 				for (Entry entry : group.entries) {
 					entry.p = entry.p / norm;
 					if (entry.p > max) {
 						max = entry.p;
+						antName = entry.antName;
 					}
 				}
 			} else {
 				// Common.bangErrorPOS("!");
+			}
+			
+			if(!antName.equals("fake")) {
+				HashSet<String> corefs = chainMaps.get(antName);
+				corefs.add(group.anaphorName);
+				chainMaps.put(group.anaphorName, corefs);
 			}
 		}
 		System.out.println(System.currentTimeMillis() - t1);
