@@ -172,27 +172,7 @@ public class EMLearn {
 						entry.p_c = 1 / (Entry.p_fake_decay + seq);
 					}
 				}
-				sortEntries(rg);
-				for (int k = 0; k < rg.entries.size(); k++) {
-					Entry entry = rg.entries.get(k);
-					Mention ant = rg.entries.get(k).ant;
-					// add antecedents
-					Context context = Context.buildContext(ant, m, part, ants,
-							entry.seq);
-					entry.context = context;
-				}
-
-				// if(allP_C!=0) {
-				for (Entry entry : rg.entries) {
-					Context context = entry.context;
-					Double d = contextPrior.get(context.toString());
-					if (d == null) {
-						contextPrior.put(context.toString(), 1.0);
-					} else {
-						contextPrior.put(context.toString(),
-								1.0 + d.doubleValue());
-					}
-				}
+				
 				groups.add(rg);
 			}
 		}
@@ -343,65 +323,51 @@ public class EMLearn {
 		System.out.println("estep starts:");
 		long t1 = System.currentTimeMillis();
 		chainMaps.clear();
+		contextPrior.clear();
 		
-		for (ResolveGroup group : groups) {
-			double norm = 0;
+		for (ResolveGroup rg : groups) {
 			
-			for(int k=0;k<group.entries.size();k++) {
-				//TODO
-			}
-			
-//			ArrayList<Entry> goodEntries = new ArrayList<Entry>();
-//			ArrayList<Entry> fakeEntries = new ArrayList<Entry>();
-//			ArrayList<Entry> badEntries = new ArrayList<Entry>();
-//			for (int k = 0; k < group.entries.size(); k++) {
-//				Entry e = group.entries.get(k);
-//				
-//				if (e.head.contains(group.head) 
-////						|| m.head.contains(ant.head)
-////						|| (ant.ACESubtype.equals(m.ACESubtype)
-////								&& !ant.NE.equalsIgnoreCase("other") && m.NE.equalsIgnoreCase("other")
-////								)
-//						) {
-//					goodEntries.add(e);
-////				} else if(ant.ACESubtype.equals(m.ACESubtype) && !ant.NE.equalsIgnoreCase("other") && m.NE.equalsIgnoreCase("other")
-////						&& m.s.getSentenceIdx() - ant.s.getSentenceIdx()<=0) {
-////					neturalEntries.add(ant);
-//				} else {
-//					badEntries.add(e);
-//				}
-//			}
-//			ArrayList<Entry> allEntries = new ArrayList<Entry>();
-//			allEntries.addAll(goodEntries);
-//			allEntries.addAll(fakeEntries);
-//			allEntries.addAll(badEntries);
-//			allEntries.get(0).context.feaL = "0" + allEntries.get(0).context.feaL;
-//			for (int k = 1; k < allEntries.size(); k++) {
-//				allEntries.get(k).context.feaL = "1" + allEntries.get(k).context.feaL;
-//			}
-
-			
-			for (Entry entry : group.entries) {
-				
-				if(!chainMaps.containsKey(group.anaphorName) && !entry.isFake) {
+			for(Entry entry : rg.entries) {
+				if(!chainMaps.containsKey(rg.anaphorName) && !entry.isFake) {
 					HashSet<String> set = new HashSet<String>();
 					set.add(entry.antName);
 					chainMaps.put(entry.antName, set);
 				}
+			}
+			
+			sortEntries(rg);
+			for (int k = 0; k < rg.entries.size(); k++) {
+				Entry entry = rg.entries.get(k);
+				// add antecedents
+				entry.context = Context.buildContext(entry.ant, rg.m, rg.part, rg.ants,
+						entry.seq);
 				
+				Double d = contextPrior.get(entry.context.toString());
+				if (d == null) {
+					contextPrior.put(entry.context.toString(), 1.0);
+				} else {
+					contextPrior.put(entry.context.toString(),
+							1.0 + d.doubleValue());
+				}
+			}
+			
+			
+			double norm = 0;
+			
+			for (Entry entry : rg.entries) {
 				Context context = entry.context;
 
 				double p_number = numberP.getVal(entry.number.name(),
-						group.number.name());
+						rg.number.name());
 				double p_gender = genderP.getVal(entry.gender.name(),
-						group.gender.name());
+						rg.gender.name());
 				double p_animacy = animacyP.getVal(entry.animacy.name(),
-						group.animacy.name());
+						rg.animacy.name());
 				double p_grammatic = grammaticP.getVal(entry.gram.name(),
-						group.gram.name());
+						rg.gram.name());
 
-				double p_semetic = semanticP.getVal(entry.sem, group.sem);
-				double p_cilin = cilin.getVal(entry.cilin, group.cilin);
+				double p_semetic = semanticP.getVal(entry.sem, rg.sem);
+				double p_cilin = cilin.getVal(entry.cilin, rg.cilin);
 
 				double p_context = .5;
 				Double d = contextVals.get(context.toString());
@@ -434,7 +400,7 @@ public class EMLearn {
 			String antName = "";
 			
 			if (norm != 0) {
-				for (Entry entry : group.entries) {
+				for (Entry entry : rg.entries) {
 					entry.p = entry.p / norm;
 					if (entry.p > max) {
 						max = entry.p;
@@ -447,8 +413,8 @@ public class EMLearn {
 			
 			if(!antName.equals("fake")) {
 				HashSet<String> corefs = chainMaps.get(antName);
-				corefs.add(group.anaphorName);
-				chainMaps.put(group.anaphorName, corefs);
+				corefs.add(rg.anaphorName);
+				chainMaps.put(rg.anaphorName, corefs);
 			}
 		}
 		System.out.println(System.currentTimeMillis() - t1);
