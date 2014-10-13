@@ -187,6 +187,11 @@ public class EMLearn {
 			Entry entry = rg.entries.get(k);
 			Mention ant = rg.entries.get(k).ant;
 			
+			//TODO
+			if(!entry.isFake) {
+//				System.out.println(chainMaps.get(entry.antName).size());
+			}
+			
 			if (ant.head.contains(rg.m.head) 
 //					|| m.head.contains(ant.head)
 //					|| (ant.ACESubtype.equals(m.ACESubtype)
@@ -324,17 +329,14 @@ public class EMLearn {
 		long t1 = System.currentTimeMillis();
 		chainMaps.clear();
 		contextPrior.clear();
-		
 		for (ResolveGroup rg : groups) {
-			
 			for(Entry entry : rg.entries) {
-				if(!chainMaps.containsKey(rg.anaphorName) && !entry.isFake) {
+				if(!chainMaps.containsKey(entry.antName) && !entry.isFake) {
 					HashSet<String> set = new HashSet<String>();
 					set.add(entry.antName);
 					chainMaps.put(entry.antName, set);
 				}
 			}
-			
 			sortEntries(rg);
 			for (int k = 0; k < rg.entries.size(); k++) {
 				Entry entry = rg.entries.get(k);
@@ -350,10 +352,7 @@ public class EMLearn {
 							1.0 + d.doubleValue());
 				}
 			}
-			
-			
 			double norm = 0;
-			
 			for (Entry entry : rg.entries) {
 				Context context = entry.context;
 
@@ -411,10 +410,11 @@ public class EMLearn {
 				// Common.bangErrorPOS("!");
 			}
 			
-			if(!antName.equals("fake")) {
+			if(!antName.equals("fake") && !antName.isEmpty()) {
 				HashSet<String> corefs = chainMaps.get(antName);
 				corefs.add(rg.anaphorName);
 				chainMaps.put(rg.anaphorName, corefs);
+				chainMaps.put(antName, corefs);
 			}
 		}
 		System.out.println(System.currentTimeMillis() - t1);
