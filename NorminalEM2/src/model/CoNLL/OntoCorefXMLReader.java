@@ -15,7 +15,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import model.Entity;
-import model.Mention;
+import model.EntityMention;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -29,8 +29,8 @@ public class OntoCorefXMLReader extends DefaultHandler {
 	ArrayList<String> tags = new ArrayList<String>();
 	ArrayList<ArrayList<Entity>> chainses;
 	ArrayList<Entity> entities;
-	ArrayList<Mention> ems;
-	ArrayList<Mention> currentMentions;
+	ArrayList<EntityMention> ems;
+	ArrayList<EntityMention> currentMentions;
 	HashMap<String, Integer> entityMap = new HashMap<String, Integer>();
 	boolean includeNotAnaphor;
 	int partID = 0;
@@ -45,7 +45,7 @@ public class OntoCorefXMLReader extends DefaultHandler {
 		}
 		document.addZero = true;
 		this.chainses = chainses;
-		currentMentions = new ArrayList<Mention>();
+		currentMentions = new ArrayList<EntityMention>();
 		this.document = document;
 		this.includeNotAnaphor = includeNotAnaphor;
 	}
@@ -62,7 +62,7 @@ public class OntoCorefXMLReader extends DefaultHandler {
 		}
 		if (qName.equalsIgnoreCase("COREF")) {
 			if (atts.getValue("TYPE").equals("IDENT")) {
-				Mention em = new Mention();
+				EntityMention em = new EntityMention();
 				em.start = pos;
 				currentMentions.add(em);
 				String corefID = atts.getValue("ID") + "_" + Integer.toString(this.partID);
@@ -159,7 +159,7 @@ public class OntoCorefXMLReader extends DefaultHandler {
 							// singleton entity
 							entity.singleton = true;
 							entity.entityIdx = -20;
-							Mention mention = new Mention();
+							EntityMention mention = new EntityMention();
 							mention.notInChainZero = true;
 							mention.start = pos + notZero;
 							mention.end = -1;
@@ -237,7 +237,7 @@ public class OntoCorefXMLReader extends DefaultHandler {
 					}
 					Collections.sort(entity.mentions);
 
-					Mention m = this.getFirstNonZeroMention(entity);
+					EntityMention m = this.getFirstNonZeroMention(entity);
 
 					// add a pure zero pronoun chain
 					if (m == null) {
@@ -264,7 +264,7 @@ public class OntoCorefXMLReader extends DefaultHandler {
 							// pronouns
 							// check other mentions should be all zero pronouns
 							int nonZero = 0;
-							for (Mention temp : entity.mentions) {
+							for (EntityMention temp : entity.mentions) {
 								if (temp.end != -1) {
 									nonZero++;
 									if (nonZero == 2) {
@@ -283,7 +283,7 @@ public class OntoCorefXMLReader extends DefaultHandler {
 								}
 							}
 							boolean zero = false;
-							for(Mention m2 : entity.mentions) {
+							for(EntityMention m2 : entity.mentions) {
 								if(m2.end!=-1) {
 									newNPMentions++;
 								} else {
@@ -300,7 +300,7 @@ public class OntoCorefXMLReader extends DefaultHandler {
 							}
 						}
 					}
-					ArrayList<Mention> ems = entity.mentions;
+					ArrayList<EntityMention> ems = entity.mentions;
 					// emses.addAll(ems);
 					// System.out.println("=====================");
 					// for (Mention em : ems) {
@@ -355,7 +355,7 @@ public class OntoCorefXMLReader extends DefaultHandler {
 
 	private void combineEntity(Entity conllE, Entity zeroE, int part) {
 		int k = 0;
-		for (Mention m : zeroE.mentions) {
+		for (EntityMention m : zeroE.mentions) {
 			if (m.end == -1) {
 				conllE.addMention(m);
 			} else {
@@ -386,15 +386,15 @@ public class OntoCorefXMLReader extends DefaultHandler {
 
 	public static void printEntity(Entity e) {
 		StringBuilder sb = new StringBuilder();
-		for (Mention m : e.mentions) {
+		for (EntityMention m : e.mentions) {
 			sb.append(m.start).append(",").append(m.end).append(" ");
 		}
 		System.out.println(sb.toString().trim());
 	}
 
-	private Mention getFirstNonZeroMention(Entity e) {
-		Mention ret = null;
-		for (Mention m : e.mentions) {
+	private EntityMention getFirstNonZeroMention(Entity e) {
+		EntityMention ret = null;
+		for (EntityMention m : e.mentions) {
 			if (m.end != -1) {
 				ret = m;
 				break;
@@ -427,8 +427,8 @@ public class OntoCorefXMLReader extends DefaultHandler {
 		}
 	}
 
-	public static ArrayList<ArrayList<Mention>> getGoldZeroPronouns(CoNLLDocument document, boolean includeNotAnaphor) {
-		ArrayList<ArrayList<Mention>> goldZeroses = new ArrayList<ArrayList<Mention>>();
+	public static ArrayList<ArrayList<EntityMention>> getGoldZeroPronouns(CoNLLDocument document, boolean includeNotAnaphor) {
+		ArrayList<ArrayList<EntityMention>> goldZeroses = new ArrayList<ArrayList<EntityMention>>();
 		try {
 			String conllPath = document.getFilePath();
 			int a = conllPath.indexOf(anno);
@@ -444,10 +444,10 @@ public class OntoCorefXMLReader extends DefaultHandler {
 			sp.parse(new InputSource(inputStream), reader);
 
 			for (CoNLLPart part : document.getParts()) {
-				ArrayList<Mention> goldZeros = new ArrayList<Mention>();
+				ArrayList<EntityMention> goldZeros = new ArrayList<EntityMention>();
 				ArrayList<Entity> entities = part.getChains();
 				for (Entity entity : entities) {
-					for (Mention mention : entity.mentions) {
+					for (EntityMention mention : entity.mentions) {
 						if (mention.end == -1) {
 							goldZeros.add(mention);
 						}

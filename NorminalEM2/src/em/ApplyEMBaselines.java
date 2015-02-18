@@ -11,7 +11,7 @@ import java.util.HashSet;
 
 import model.Element;
 import model.Entity;
-import model.Mention;
+import model.EntityMention;
 import model.CoNLL.CoNLLDocument;
 import model.CoNLL.CoNLLPart;
 import model.CoNLL.CoNLLSentence;
@@ -104,7 +104,7 @@ public class ApplyEMBaselines {
 		ArrayList<String> files = Common.getLines("chinese_list_" + folder
 				+ "_" + dataset);
 
-		HashMap<String, ArrayList<Mention>> corefResults = new HashMap<String, ArrayList<Mention>>();
+		HashMap<String, ArrayList<EntityMention>> corefResults = new HashMap<String, ArrayList<EntityMention>>();
 
 		// ArrayList<HashSet<String>> goldAnaphorses = new
 		// ArrayList<HashSet<String>>();
@@ -134,15 +134,15 @@ public class ApplyEMBaselines {
 				HashMap<String, Integer> chainMap = EMUtil
 						.formChainMap(goldChains);
 
-				ArrayList<Mention> corefResult = new ArrayList<Mention>();
+				ArrayList<EntityMention> corefResult = new ArrayList<EntityMention>();
 				corefResults.put(part.getPartName(), corefResult);
 
-				ArrayList<Mention> goldBoundaryNPMentions = EMUtil
+				ArrayList<EntityMention> goldBoundaryNPMentions = EMUtil
 						.extractMention(part);
 				Collections.sort(goldBoundaryNPMentions);
 
-				ArrayList<Mention> candidates = new ArrayList<Mention>();
-				for (Mention m : goldBoundaryNPMentions) {
+				ArrayList<EntityMention> candidates = new ArrayList<EntityMention>();
+				for (EntityMention m : goldBoundaryNPMentions) {
 					if (m.start==m.end && part.getWord(m.end).posTag.equals("PN")) {
 						continue;
 					}
@@ -156,8 +156,8 @@ public class ApplyEMBaselines {
 //				 ArrayList<Mention> anaphors = getGoldAnaphorNouns(
 //				 goldPart.getChains(), goldPart);
 
-				ArrayList<Mention> anaphors = new ArrayList<Mention>();
-				for (Mention m : goldBoundaryNPMentions) {
+				ArrayList<EntityMention> anaphors = new ArrayList<EntityMention>();
+				for (EntityMention m : goldBoundaryNPMentions) {
 					if (m.start==m.end && part.getWord(m.end).posTag.equals("PN")) {
 						continue;
 					}
@@ -170,14 +170,14 @@ public class ApplyEMBaselines {
 
 				HashSet<String> goldPNs = EMUtil.getGoldPNs(goldPart);
 				HashSet<String> goldNEs = EMUtil.getGoldNEs(goldPart);
-				for (Mention m : anaphors) {
+				for (EntityMention m : anaphors) {
 					if (goldPNs.contains(m.toName())
 							|| goldNEs.contains(m.toName())
 							|| goldNEs.contains(m.end + "," + m.end)
 							|| m.antecedent == null) {
 						continue;
 					}
-					for(Mention i : m.innerMs) {
+					for(EntityMention i : m.innerMs) {
 						if (goldPNs.contains(i.toName())
 								|| goldNEs.contains(i.toName())
 								|| goldNEs.contains(i.end + "," + i.end)
@@ -208,20 +208,20 @@ public class ApplyEMBaselines {
 
 	private void findAntecedent(String file, CoNLLPart part,
 			HashMap<String, Integer> chainMap, 
-			ArrayList<Mention> anaphors, ArrayList<Mention> allCandidates) {
-		for (Mention anaphor : anaphors) {
+			ArrayList<EntityMention> anaphors, ArrayList<EntityMention> allCandidates) {
+		for (EntityMention anaphor : anaphors) {
 			anaphor.sentenceID = part.getWord(anaphor.start).sentence
 					.getSentenceIdx();
 			anaphor.s = part.getWord(anaphor.start).sentence;
 			anaphor.antecedent = null;
-			Mention antecedent = null;
+			EntityMention antecedent = null;
 			double maxP = -1;
 			Collections.sort(allCandidates);
 
-			ArrayList<Mention> cands = new ArrayList<Mention>();
+			ArrayList<EntityMention> cands = new ArrayList<EntityMention>();
 
 			for (int h = allCandidates.size() - 1; h >= 0; h--) {
-				Mention cand = allCandidates.get(h);
+				EntityMention cand = allCandidates.get(h);
 				cand.sentenceID = part.getWord(cand.start).sentence
 						.getSentenceIdx();
 				cand.s = part.getWord(cand.start).sentence;
@@ -233,7 +233,7 @@ public class ApplyEMBaselines {
 			}
 
 			for (int i = 0; i < cands.size(); i++) {
-				Mention cand = cands.get(i);
+				EntityMention cand = cands.get(i);
 
 				if (cand.end != anaphor.end 
 						&& cand.head.equals(anaphor.head)
@@ -374,7 +374,7 @@ public class ApplyEMBaselines {
 		}
 	}
 
-	protected void printResult(Mention zero, Mention systemAnte, CoNLLPart part) {
+	protected void printResult(EntityMention zero, EntityMention systemAnte, CoNLLPart part) {
 		StringBuilder sb = new StringBuilder();
 		CoNLLSentence s = part.getWord(zero.start).sentence;
 		CoNLLWord word = part.getWord(zero.start);
@@ -388,7 +388,7 @@ public class ApplyEMBaselines {
 		// System.out.println("========");
 	}
 
-	public void addEmptyCategoryNode(Mention zero) {
+	public void addEmptyCategoryNode(EntityMention zero) {
 		MyTreeNode V = zero.V;
 		MyTreeNode newNP = new MyTreeNode();
 		newNP.value = "NP";
@@ -410,32 +410,32 @@ public class ApplyEMBaselines {
 	static String anno = "annotations/";
 	static String suffix = ".coref";
 
-	private static ArrayList<Mention> getGoldMentions(
+	private static ArrayList<EntityMention> getGoldMentions(
 			ArrayList<Entity> entities, CoNLLPart goldPart) {
-		ArrayList<Mention> goldMentions = new ArrayList<Mention>();
+		ArrayList<EntityMention> goldMentions = new ArrayList<EntityMention>();
 		for (Entity e : entities) {
 			goldMentions.addAll(e.mentions);
 		}
-		for (Mention m : goldMentions) {
+		for (EntityMention m : goldMentions) {
 			EMUtil.setMentionAttri(m, goldPart);
 		}
 		return goldMentions;
 	}
 
-	private static ArrayList<Mention> getGoldAnaphorNouns(
+	private static ArrayList<EntityMention> getGoldAnaphorNouns(
 			ArrayList<Entity> entities, CoNLLPart goldPart) {
-		ArrayList<Mention> goldAnaphors = new ArrayList<Mention>();
+		ArrayList<EntityMention> goldAnaphors = new ArrayList<EntityMention>();
 		for (Entity e : entities) {
 			Collections.sort(e.mentions);
 			for (int i = 1; i < e.mentions.size(); i++) {
-				Mention m1 = e.mentions.get(i);
+				EntityMention m1 = e.mentions.get(i);
 				String pos1 = goldPart.getWord(m1.end).posTag;
 				if (pos1.equals("PN") || pos1.equals("NR") || pos1.equals("NT")) {
 					continue;
 				}
 				HashSet<String> ants = new HashSet<String>();
 				for (int j = i - 1; j >= 0; j--) {
-					Mention m2 = e.mentions.get(j);
+					EntityMention m2 = e.mentions.get(j);
 					String pos2 = goldPart.getWord(m2.end).posTag;
 					if (!pos2.equals("PN") && m1.end != m2.end) {
 						ants.add(m2.toName());
@@ -447,25 +447,25 @@ public class ApplyEMBaselines {
 			}
 		}
 		Collections.sort(goldAnaphors);
-		for (Mention m : goldAnaphors) {
+		for (EntityMention m : goldAnaphors) {
 			EMUtil.setMentionAttri(m, goldPart);
 		}
 		return goldAnaphors;
 	}
 
-	public static void evaluate(HashMap<String, ArrayList<Mention>> anaphorses,
+	public static void evaluate(HashMap<String, ArrayList<EntityMention>> anaphorses,
 			HashMap<String, HashMap<String, HashSet<String>>> goldKeyses) {
 		double gold = 0;
 		double system = 0;
 		double hit = 0;
 
 		for (String key : anaphorses.keySet()) {
-			ArrayList<Mention> anaphors = anaphorses.get(key);
+			ArrayList<EntityMention> anaphors = anaphorses.get(key);
 			HashMap<String, HashSet<String>> keys = goldKeyses.get(key);
 			gold += keys.size();
 			system += anaphors.size();
-			for (Mention anaphor : anaphors) {
-				Mention ant = anaphor.antecedent;
+			for (EntityMention anaphor : anaphors) {
+				EntityMention ant = anaphor.antecedent;
 				if (keys.containsKey(anaphor.toName())
 						&& keys.get(anaphor.toName()).contains(ant.toName())) {
 					hit++;

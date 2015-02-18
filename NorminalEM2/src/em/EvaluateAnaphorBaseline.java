@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import model.Entity;
-import model.Mention;
+import model.EntityMention;
 import model.CoNLL.CoNLLDocument;
 import model.CoNLL.CoNLLPart;
 import util.Common;
@@ -69,14 +69,14 @@ public class EvaluateAnaphorBaseline {
 			for(Entity e : chains) {
 				Collections.sort(e.mentions);
 				for(int i=0;i<e.mentions.size();i++) {
-					Mention m1 = e.mentions.get(i);
+					EntityMention m1 = e.mentions.get(i);
 					String pos = part.getWord(m1.end).posTag;
 					if(pos.equals("PN") || pos.equals("NR") || pos.equals("NT")) {
 						continue;
 					}
 					
 					for(int j=i-1;j>=0;j--) {
-						Mention m2 = e.mentions.get(j);
+						EntityMention m2 = e.mentions.get(j);
 						String pos2 = part.getWord(m2.end).posTag;
 						if(!pos2.equals("PN") && m2.end!=m1.end) {
 							String[] s = new String[2];

@@ -10,13 +10,16 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import model.Entity;
-import model.Mention;
+import model.EntityMention;
 import model.CoNLL.CoNLLDocument;
 import model.CoNLL.CoNLLPart;
 import model.CoNLL.CoNLLSentence;
 import model.CoNLL.CoNLLWord;
-import model.syntaxTree.MyTreeNode;
 import util.Common;
+import util.Util;
+import ace.ACECommon;
+import ace.PlainText;
+import ace.reader.ACEReader;
 import edu.stanford.nlp.classify.LinearClassifier;
 import em.ResolveGroup.Entry;
 
@@ -81,7 +84,7 @@ public class ApplyEM {
 
 			// modelInput2.close();
 			// loadGuessProb();
-			EMUtil.loadPredictNE(folder, "test");
+			// EMUtil.loadPredictNE(folder, "test");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -101,64 +104,68 @@ public class ApplyEM {
 
 	public void test() {
 		String dataset = "test";
-		ArrayList<String> files = Common.getLines("chinese_list_" + folder
-				+ "_" + dataset);
+		ArrayList<String> files = Common.getLines("ACE_Chinese_test"
+				+ Util.part);
 
-		HashMap<String, ArrayList<Mention>> corefResults = new HashMap<String, ArrayList<Mention>>();
-
+		// HashMap<String, ArrayList<EntityMention>> corefResults = new
+		// HashMap<String, ArrayList<EntityMention>>();
 		// ArrayList<HashSet<String>> goldAnaphorses = new
 		// ArrayList<HashSet<String>>();
-		HashMap<String, HashMap<String, String>> maps = EMUtil
-				.extractSysKeys("key.chinese.test.open.systemParse");
-		int all2 = 0;
-		for (String key : maps.keySet()) {
-			all2 += maps.get(key).size();
-		}
-		HashMap<String, HashMap<String, HashSet<String>>> goldKeyses = EMUtil
-				.extractGoldKeys();
+		// HashMap<String, HashMap<String, String>> maps = EMUtil
+		// .extractSysKeys("key.chinese.test.open.systemParse");
+		// int all2 = 0;
+		// for (String key : maps.keySet()) {
+		// all2 += maps.get(key).size();
+		// }
+		// HashMap<String, HashMap<String, HashSet<String>>> goldKeyses = EMUtil
+		// .extractGoldKeys();
 
-		for (String file : files) {
-			// System.out.println(file);
-			CoNLLDocument document = new CoNLLDocument(file
-			// .replace("auto_conll", "gold_conll")
-			);
+		ArrayList<String> fileNames = new ArrayList<String>();
+		ArrayList<Integer> lengths = new ArrayList<Integer>();
+		ArrayList<ArrayList<Entity>> answers = new ArrayList<ArrayList<Entity>>();
+		ArrayList<ArrayList<Entity>> goldKeys = new ArrayList<ArrayList<Entity>>();
+
+		ACEReader.nerElementses = null;
+		ACEReader.testFiles = null;
+		for (int g = 0; g < files.size(); g++) {
+			if (g % 5 != part) {
+				// continue;
+			}
+			String file = files.get(g);
+
+			CoNLLDocument document = ACEReader.read(file, false);
+			PlainText plainText = ACECommon.getPlainText(file + ".sgm");
+
+			fileNames.add(file.replace(
+					"/users/yzcchen/chen3/coling2012/LDC2006T06/data/Chinese/",
+					"/users/yzcchen/ACL12/data/ACE2005/Chinese/")
+					+ ".sgm");
+			lengths.add(plainText.content.length());
 
 			document.language = "chinese";
-			int a = file.indexOf("annotations");
-			a += "annotations/".length();
-			int b = file.lastIndexOf(".");
-			String docName = file.substring(a, b);
 
 			for (int k = 0; k < document.getParts().size(); k++) {
 				CoNLLPart part = document.getParts().get(k);
-				part.setNameEntities(EMUtil.predictNEs.get(part.getDocument()
-						.getDocumentID() + "_" + part.getPartID()));
 
-				CoNLLPart goldPart = EMUtil.getGoldPart(part, dataset);
+				CoNLLPart goldPart = part;
 				HashSet<String> goldPNs = EMUtil.getGoldPNs(goldPart);
-				HashSet<String> goldNEs = EMUtil.getGoldNEs(goldPart);
 
 				ArrayList<Entity> goldChains = goldPart.getChains();
 
 				HashMap<String, Integer> chainMap = EMUtil
 						.formChainMap(goldChains);
 
-				ArrayList<Mention> corefResult = new ArrayList<Mention>();
-				corefResults.put(part.getPartName(), corefResult);
+				ArrayList<EntityMention> goldBoundaryNPMentions = Util
+						.getSieveCorefMentions(part, files, g);
 
-				ArrayList<Mention> goldBoundaryNPMentions = EMUtil
-						.extractMention(part);
-
-				for (Mention m : goldBoundaryNPMentions) {
-					ArrayList<Mention> ms = new ArrayList<Mention>();
-					ms.add(m);
-					// EMUtil.alignMentions(m.s, ms, docName);
+				for (EntityMention m : goldBoundaryNPMentions) {
+					EMUtil.setMentionAttri(m, part);
 				}
 
 				Collections.sort(goldBoundaryNPMentions);
 
-				ArrayList<Mention> candidates = new ArrayList<Mention>();
-				for (Mention m : goldBoundaryNPMentions) {
+				ArrayList<EntityMention> candidates = new ArrayList<EntityMention>();
+				for (EntityMention m : goldBoundaryNPMentions) {
 					if (!goldPNs.contains(m.toName())) {
 						candidates.add(m);
 					}
@@ -169,8 +176,8 @@ public class ApplyEM {
 				HashMap<String, HashSet<String>> goldAnaNouns = EMUtil
 						.getGoldAnaphorKeys(goldChains, goldPart);
 
-				ArrayList<Mention> anaphors = new ArrayList<Mention>();
-				for (Mention m : goldBoundaryNPMentions) {
+				ArrayList<EntityMention> anaphors = new ArrayList<EntityMention>();
+				for (EntityMention m : goldBoundaryNPMentions) {
 					if (m.start == m.end
 							&& part.getWord(m.end).posTag.equals("PN")) {
 						continue;
@@ -179,52 +186,56 @@ public class ApplyEM {
 					if (goldPNs.contains(m.toName())) {
 						continue;
 					}
-					if (goldNEs.contains(m.toName())
-							|| goldNEs.contains(m.end + "," + m.end)) {
-						continue;
-					}
-
 					anaphors.add(m);
 				}
 
 				findAntecedent(file, part, chainMap, anaphors, candidates,
-						goldNEs, goldAnaNouns, goldKeyses);
+						goldAnaNouns);
 
-				for (Mention m : anaphors) {
-					if (goldPNs.contains(m.toName())
-							|| goldNEs.contains(m.toName())
-							|| goldNEs.contains(m.end + "," + m.end)
-							|| m.antecedent == null) {
-						continue;
-					}
-					for (Mention i : m.innerMs) {
-						if (goldPNs.contains(i.toName())
-								|| goldNEs.contains(i.toName())
-								|| goldNEs.contains(i.end + "," + i.end)) {
-							continue;
+				ArrayList<Entity> activeChains = new ArrayList<Entity>();
+				for (EntityMention m : anaphors) {
+					if (m.antecedent == null || m.antecedent.isFake) {
+						Entity entity = new Entity();
+						entity.addMention(m);
+						activeChains.add(entity);
+					} else {
+						out: for (Entity chain : activeChains) {
+							for (EntityMention ant : chain.mentions) {
+								if (m.antecedent == ant) {
+									chain.mentions.add(m);
+									break out;
+								}
+							}
 						}
-						i.antecedent = m.antecedent;
-						corefResult.add(i);
 					}
-					corefResult.add(m);
 				}
+				answers.add(activeChains);
+				goldKeys.add(part.getChains());
 			}
 		}
 		System.out.println("Good: " + good);
 		System.out.println("Bad: " + bad);
 		System.out.println("Precission: " + good / (good + bad) * 100);
-
-		evaluate(corefResults, goldKeyses);
-		int all = 0;
-		for (String key : maps.keySet()) {
-			all += maps.get(key).size();
+		try {
+			ToSemEval.outputSemFormatEntity(fileNames, lengths, "entity.sys."
+					+ Util.part, answers);
+			ToSemEval.outputSemFormatEntity(fileNames, lengths, "entity.gold."
+					+ Util.part, goldKeys);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		System.out.println(all + "@@@");
-		System.out.println(all2 + "@@@");
 
-		System.out.println(ApplyEM.allL);
-		System.out.println(zeroAnt + "/" + allAnt + ":" + zeroAnt / allAnt);
-		System.out.println("Bad_P_C:" + badP_C);
+		// evaluate(corefResults, goldKeyses);
+		// int all = 0;
+		// for (String key : maps.keySet()) {
+		// all += maps.get(key).size();
+		// }
+		// System.out.println(all + "@@@");
+		// System.out.println(all2 + "@@@");
+		//
+		// System.out.println(ApplyEM.allL);
+		// System.out.println(zeroAnt + "/" + allAnt + ":" + zeroAnt / allAnt);
+		// System.out.println("Bad_P_C:" + badP_C);
 	}
 
 	static double min_amongMax = 1;
@@ -239,23 +250,23 @@ public class ApplyEM {
 	static HashMap<String, HashSet<String>> chainMaps = new HashMap<String, HashSet<String>>();
 
 	private void findAntecedent(String file, CoNLLPart part,
-			HashMap<String, Integer> chainMap, ArrayList<Mention> anaphors,
-			ArrayList<Mention> allCandidates, HashSet<String> goldNEs,
-			HashMap<String, HashSet<String>> goldAnaNouns,
-			HashMap<String, HashMap<String, HashSet<String>>> goldKeys) {
-		for (Mention anaphor : anaphors) {
+			HashMap<String, Integer> chainMap,
+			ArrayList<EntityMention> anaphors,
+			ArrayList<EntityMention> allCandidates,
+			HashMap<String, HashSet<String>> goldAnaNouns) {
+		for (EntityMention anaphor : anaphors) {
 			anaphor.sentenceID = part.getWord(anaphor.start).sentence
 					.getSentenceIdx();
 			anaphor.s = part.getWord(anaphor.start).sentence;
 
-			Mention antecedent = null;
+			EntityMention antecedent = null;
 			double maxP = 0;
 			Collections.sort(allCandidates);
 
-			ArrayList<Mention> cands = new ArrayList<Mention>();
+			ArrayList<EntityMention> cands = new ArrayList<EntityMention>();
 
 			for (int h = allCandidates.size() - 1; h >= 0; h--) {
-				Mention cand = allCandidates.get(h);
+				EntityMention cand = allCandidates.get(h);
 				cand.sentenceID = part.getWord(cand.start).sentence
 						.getSentenceIdx();
 				cand.s = part.getWord(cand.start).sentence;
@@ -270,7 +281,7 @@ public class ApplyEM {
 					cands.add(cand);
 				}
 			}
-			Mention fake = new Mention();
+			EntityMention fake = new EntityMention();
 			fake.extent = "fakkkkke";
 			fake.head = "fakkkkke";
 			fake.isFake = true;
@@ -278,15 +289,15 @@ public class ApplyEM {
 
 			ResolveGroup rg = new ResolveGroup(anaphor, part, cands);
 			int seq = 0;
-			for (Mention cand : cands) {
+			for (EntityMention cand : cands) {
 				Entry entry = new Entry(cand, null, part);
 				rg.entries.add(entry);
 				entry.p_c = EMUtil.getP_C(cand, anaphor, part);
 				if (entry.p_c != 0) {
 					seq += 1;
 				}
-				
-				if(!chainMaps.containsKey(entry.antName) && !entry.isFake) {
+
+				if (!chainMaps.containsKey(entry.antName) && !entry.isFake) {
 					HashSet<String> set = new HashSet<String>();
 					set.add(entry.antName);
 					chainMaps.put(entry.antName, set);
@@ -300,36 +311,15 @@ public class ApplyEM {
 				}
 			}
 
-//			ArrayList<Entry> goodEntries = new ArrayList<Entry>();
-//			ArrayList<Entry> fakeEntries = new ArrayList<Entry>();
-//			ArrayList<Entry> badEntries = new ArrayList<Entry>();
-//			for (int i = 0; i < rg.entries.size(); i++) {
-//				Entry entry = rg.entries.get(i);
-//				if (entry.isFake) {
-//					fakeEntries.add(entry);
-//				} else if (entry.ant.head.contains(anaphor.head)) {
-//					goodEntries.add(entry);
-//				} else {
-//					badEntries.add(entry);
-//				}
-//			}
-//			ArrayList<Entry> allEntries = new ArrayList<Entry>();
-//			allEntries.addAll(goodEntries);
-//			allEntries.addAll(fakeEntries);
-//			allEntries.addAll(badEntries);
-//			for (int i = 0; i < allEntries.size(); i++) {
-//				allEntries.get(i).seq = i;
-//			}
-
 			EMLearn.sortEntries(rg, chainMaps);
-			
+
 			double probs[] = new double[cands.size()];
 
-			ArrayList<Mention> goldCorefs = new ArrayList<Mention>();
+			ArrayList<EntityMention> goldCorefs = new ArrayList<EntityMention>();
 
 			for (int i = 0; i < rg.entries.size(); i++) {
 				Entry entry = rg.entries.get(i);
-				Mention cand = cands.get(i);
+				EntityMention cand = cands.get(i);
 
 				boolean coref = chainMap.containsKey(anaphor.toName())
 						&& chainMap.containsKey(cand.toName())
@@ -340,10 +330,6 @@ public class ApplyEM {
 				Context.gM2 = chainMap.containsKey(anaphor.toName());
 				entry.context = Context.buildContext(cand, anaphor, part,
 						cands, entry.seq);
-				if (Context.doit) {
-					anaphor.antecedent = cand;
-					break;
-				}
 				cand.msg = Context.message;
 
 				allAnt++;
@@ -358,97 +344,43 @@ public class ApplyEM {
 				}
 			}
 
-			//TODO
+			// TODO
 			String antName = "";
-			if (anaphor.antecedent == null)
-				for (int i = 0; i < rg.entries.size(); i++) {
-					Entry entry = rg.entries.get(i);
-					Mention cand = entry.ant;
-					Context context = entry.context;
+			for (int i = 0; i < rg.entries.size(); i++) {
+				Entry entry = rg.entries.get(i);
+				EntityMention cand = entry.ant;
+				Context context = entry.context;
 
-					// if(entry.p_c!=0) {
-					// entry.p_c = 1.0/(seq+1);
-					// }
+				double p_sem = semanticP.getVal(entry.sem,
+						EMUtil.getSemantic(anaphor));
 
-					// calculate P(overt-pronoun|ant-context)
-					// if(entry.p_c!=0) {
-					// antecedent = cand;
-					// break;
-					// }
-					// if(entry.p_c==0 && coref &&
-					// !cand.head.equals(anaphor.head)) {
-					// System.out.println(coref);
-					// print(cand, anaphor, part, chainMap);
-					// }
-
-					double p_number = numberP.getVal(entry.number.name(),
-							EMUtil.getAntNumber(anaphor).name());
-					double p_animacy = animacyP.getVal(entry.animacy.name(),
-							EMUtil.getAntAnimacy(anaphor).name());
-					double p_gender = genderP.getVal(entry.gender.name(),
-							EMUtil.getAntGender(anaphor).name());
-					double p_sem = semanticP.getVal(entry.sem,
-							EMUtil.getSemantic(anaphor));
-
-					double p_cilin = cilinP.getVal(entry.cilin,
-							EMUtil.getModifiers(anaphor, part));
-
-					double p_gram = semanticP.getVal(entry.gram.name(),
-							anaphor.gram.name());
-
-					double p_context = 0.0000000000000000000000000000000000000000000001;
-					if (fracContextCount.containsKey(context.toString())) {
-						p_context = (1.0 * EMUtil.alpha + fracContextCount
-								.get(context.toString()))
-								/ (2.0 * EMUtil.alpha + contextPrior
-										.get(context.toString()));
-					} else {
-						p_context = 1.0 / 2;
-					}
-
-					double p2nd = p_context * entry.p_c;
-					p2nd *= 1
-					// p_number *
-					// p_gender *
-					// p_animacy *
-					* p_sem
-					// * p_cilin
-					// * p_gram
-					;
-					double p = p2nd;
-					probs[i] = p;
-					if (p > maxP && p != 0) {
-						antecedent = cand;
-						maxP = p;
-						antName = entry.antName;
-					}
+				double p_context = 0.0000000000000000000000000000000000000000000001;
+				if (fracContextCount.containsKey(context.toString())) {
+					p_context = (1.0 * EMUtil.alpha + fracContextCount
+							.get(context.toString()))
+							/ (2.0 * EMUtil.alpha + contextPrior.get(context
+									.toString()));
+				} else {
+					p_context = 1.0 / 2;
 				}
 
-//			if (antecedent != null && antecedent.isFake) {
-//				if (goldCorefs.size() != 0) {
-//					// anaphor.antecedent= goldCorefs.get(0);
-//					System.out.println("Anaphor: " + anaphor.extent + " "
-//							+ anaphor.ACEType + " # " + anaphor.ACESubtype
-//							+ " # " + chainMap.containsKey(anaphor.toName()));
-//					System.out.println("Selected: " + antecedent.extent + " "
-//							+ antecedent.ACEType + " # "
-//							+ antecedent.ACESubtype + " # "
-//							+ chainMap.containsKey(antecedent.toName()));
-//					System.out.println("True Ante: ");
-//					for (Mention m : goldCorefs) {
-//						System.out.println(m.extent + " " + m.ACEType + " # "
-//								+ m.ACESubtype);
-//					}
-//					System.out.println("---------------------------");
-//				}
-//			}
+				double p2nd = p_context * entry.p_c;
+				p2nd *= 1 * p_sem;
+				double p = p2nd;
+				probs[i] = p;
+				if (p > maxP && p != 0) {
+					antecedent = cand;
+					maxP = p;
+					antName = entry.antName;
+				}
+			}
 
 			if (antecedent != null && !antecedent.isFake
 					&& anaphor.antecedent == null) {
 				HashSet<String> corefs = chainMaps.get(antName);
 				corefs.add(rg.anaphorName);
 				chainMaps.put(rg.anaphorName, corefs);
-				
+
 				anaphor.antecedent = antecedent;
 
 				boolean coref = chainMap.containsKey(anaphor.toName())
@@ -458,17 +390,17 @@ public class ApplyEM {
 
 				if (!coref && goldCorefs.size() != 0) {
 					// anaphor.antecedent= goldCorefs.get(0);
-					System.out.println("Anaphor: " + anaphor.extent + " "
-							+ anaphor.ACEType + " # " + anaphor.ACESubtype
+					System.out.println("Anaphor: " + anaphor.head + " "
+							+ anaphor.semClass + " # " + anaphor.subType
 							+ " # " + chainMap.containsKey(anaphor.toName()));
-					System.out.println("Selected: " + antecedent.extent + " "
-							+ antecedent.ACEType + " # "
-							+ antecedent.ACESubtype + " # "
+					System.out.println("Selected: " + antecedent.head + " "
+							+ antecedent.semClass + " # "
+							+ antecedent.subType + " # "
 							+ chainMap.containsKey(antecedent.toName()));
 					System.out.println("True Ante: ");
-					for (Mention m : goldCorefs) {
-						System.out.println(m.extent + " " + m.ACEType + " # "
-								+ m.ACESubtype);
+					for (EntityMention m : goldCorefs) {
+						System.out.println(m.head + " " + m.semClass + " # "
+								+ m.subType);
 					}
 					System.out.println("---------------------------");
 					// print(antecedent, anaphor, part, chainMap);
@@ -476,12 +408,12 @@ public class ApplyEM {
 
 				if (!coref && goldCorefs.size() == 0) {
 					// anaphor.antecedent= null;
-					System.out.println("Anaphor: " + anaphor.extent + " "
-							+ anaphor.ACEType + " # " + anaphor.ACESubtype
+					System.out.println("Anaphor: " + anaphor.head + " "
+							+ anaphor.semClass + " # " + anaphor.subType
 							+ " # " + chainMap.containsKey(anaphor.toName()));
-					System.out.println("Selected: " + antecedent.extent + " "
-							+ antecedent.ACEType + " # "
-							+ antecedent.ACESubtype + " # "
+					System.out.println("Selected: " + antecedent.head + " "
+							+ antecedent.semClass + " # "
+							+ antecedent.subType + " # "
 							+ chainMap.containsKey(antecedent.toName()));
 					System.out.println("True Ante: EMPTY");
 					System.out.println("---------------------------");
@@ -492,7 +424,7 @@ public class ApplyEM {
 		}
 	}
 
-	public static void print(Mention antecedent, Mention anaphor,
+	public static void print(EntityMention antecedent, EntityMention anaphor,
 			CoNLLPart part, HashMap<String, Integer> chainMap) {
 		System.out.println(antecedent.extent + " # "
 				+ chainMap.containsKey(antecedent.toName()));
@@ -507,7 +439,8 @@ public class ApplyEM {
 
 	static int allL = 0;
 
-	protected void printResult(Mention zero, Mention systemAnte, CoNLLPart part) {
+	protected void printResult(EntityMention zero, EntityMention systemAnte,
+			CoNLLPart part) {
 		StringBuilder sb = new StringBuilder();
 		CoNLLSentence s = part.getWord(zero.start).sentence;
 		CoNLLWord word = part.getWord(zero.start);
@@ -593,19 +526,20 @@ public class ApplyEM {
 	// return goldAnaphors;
 	// }
 
-	public static void evaluate(HashMap<String, ArrayList<Mention>> anaphorses,
+	public static void evaluate(
+			HashMap<String, ArrayList<EntityMention>> anaphorses,
 			HashMap<String, HashMap<String, HashSet<String>>> goldKeyses) {
 		double gold = 0;
 		double system = 0;
 		double hit = 0;
 
 		for (String key : anaphorses.keySet()) {
-			ArrayList<Mention> anaphors = anaphorses.get(key);
+			ArrayList<EntityMention> anaphors = anaphorses.get(key);
 			HashMap<String, HashSet<String>> keys = goldKeyses.get(key);
 			gold += keys.size();
 			system += anaphors.size();
-			for (Mention anaphor : anaphors) {
-				Mention ant = anaphor.antecedent;
+			for (EntityMention anaphor : anaphors) {
+				EntityMention ant = anaphor.antecedent;
 				if (keys.containsKey(anaphor.toName())
 						&& keys.get(anaphor.toName()).contains(ant.toName())) {
 					hit++;
@@ -635,6 +569,7 @@ public class ApplyEM {
 			System.exit(1);
 		}
 		// EMUtil.loadAlign();
+		Util.part = args[0];
 		ArrayList<String> allMs = Common.getLines("allMs");
 		ArrayList<String> preds = Common
 				.getLines("/users/yzcchen/tool/svmlight/svm.anaphor.pred");
@@ -647,18 +582,26 @@ public class ApplyEM {
 			}
 		}
 		run(args[0]);
-		run("nw");
-		run("mz");
-		run("wb");
-		run("bn");
-		run("bc");
-		run("tc");
+		// run("nw");
+		// run("mz");
+		// run("wb");
+		// run("bn");
+		// run("bc");
+		// run("tc");
 	}
+
+	static int part;
 
 	public static void run(String folder) {
 		EMUtil.train = false;
 		ApplyEM test = new ApplyEM(folder);
+
+		// for(int i=0;i<5;i++) {
+		// part = i;
 		test.test();
+		// Common.pause("!!#");
+		// }
+
 		System.out.println("RUNN: " + folder);
 		Common.outputHashSet(Context.todo, "todo.word2vec");
 		if (Context.todo.size() != 0) {
@@ -669,7 +612,6 @@ public class ApplyEM {
 		// Common.outputLines(goodAnas, "goodAnaphors");
 
 		// Common.outputHashSet(EMUtil.semanticInstances, "semanticInstance");
-
-		Common.pause("!!#");
+		// Common.pause("!!#");
 	}
 }

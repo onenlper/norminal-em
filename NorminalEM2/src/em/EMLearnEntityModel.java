@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import model.Element;
-import model.Mention;
+import model.EntityMention;
 import model.CoNLL.CoNLLDocument;
 import model.CoNLL.CoNLLPart;
 import model.CoNLL.CoNLLSentence;
@@ -106,7 +106,7 @@ public class EMLearnEntityModel {
 
 			EMUtil.assignNE(s.mentions, part.getNameEntities());
 
-			for (Mention em : s.mentions) {
+			for (EntityMention em : s.mentions) {
 				em.animacy = EMUtil.getAntAnimacy(em);
 				em.gender = EMUtil.getAntGender(em);
 				em.number = EMUtil.getAntNumber(em);
@@ -114,11 +114,11 @@ public class EMLearnEntityModel {
 				origClusterMap.put(part.getPartName() + ":" + em.toName(), origClusterMap.size());
 			}
 
-			ArrayList<Mention> precedMs = new ArrayList<Mention>();
+			ArrayList<EntityMention> precedMs = new ArrayList<EntityMention>();
 
 			for (int j = maxDistance; j >= 1; j--) {
 				if (i - j >= 0) {
-					for (Mention m : part.getCoNLLSentences().get(i - j).mentions) {
+					for (EntityMention m : part.getCoNLLSentences().get(i - j).mentions) {
 						if (goldPNs.contains(m.toName())) {
 							continue;
 						}
@@ -128,7 +128,7 @@ public class EMLearnEntityModel {
 			}
 			Collections.sort(s.mentions);
 			for (int j = 0; j < s.mentions.size(); j++) {
-				Mention m = s.mentions.get(j);
+				EntityMention m = s.mentions.get(j);
 				if (goldPNs.contains(m.toName())
 						|| goldNEs.contains(m.toName())
 						) {
@@ -136,11 +136,11 @@ public class EMLearnEntityModel {
 				}
 				qid++;
 
-				ArrayList<Mention> ants = new ArrayList<Mention>();
+				ArrayList<EntityMention> ants = new ArrayList<EntityMention>();
 				ants.addAll(precedMs);
 
 				if (j > 0) {
-					for (Mention precedM : s.mentions.subList(0, j)) {
+					for (EntityMention precedM : s.mentions.subList(0, j)) {
 						if (goldPNs.contains(precedM.toName())
 								|| precedM.end == m.end) {
 							continue;
@@ -149,7 +149,7 @@ public class EMLearnEntityModel {
 					}
 				}
 
-				Mention fake = new Mention();
+				EntityMention fake = new EntityMention();
 				fake.isFake = true;
 				// ants.add(fake);
 
@@ -165,7 +165,7 @@ public class EMLearnEntityModel {
 
 				// TODO
 				for (int k = 0; k < ants.size(); k++) {
-					Mention ant = ants.get(k);
+					EntityMention ant = ants.get(k);
 					// add antecedents
 
 					rg.cands.add(ant);
@@ -291,24 +291,24 @@ public class EMLearnEntityModel {
 		long t1 = System.currentTimeMillis();
 		for (ResolveGroupEntityModel group : groups) {
 			double norm = 0;
-			Mention anaphor = group.anaphor;
+			EntityMention anaphor = group.anaphor;
 
 			group.entries.clear();
 
-			HashMap<Integer, ArrayList<Mention>> previousClusters = new HashMap<Integer, ArrayList<Mention>>();
+			HashMap<Integer, ArrayList<EntityMention>> previousClusters = new HashMap<Integer, ArrayList<EntityMention>>();
 			for(int k=0;k<group.cands.size();k++) {
-				Mention cand = group.cands.get(k);
+				EntityMention cand = group.cands.get(k);
 				Integer clusterID = activeClusterMap.get(group.part.getPartName() + ":" + cand.toName());
-				ArrayList<Mention> cluster = previousClusters.get(clusterID);
+				ArrayList<EntityMention> cluster = previousClusters.get(clusterID);
 				if(cluster==null) {
-					cluster = new ArrayList<Mention>();
+					cluster = new ArrayList<EntityMention>();
 					previousClusters.put(clusterID, cluster);
 				}
 				cluster.add(cand);
 			}
 //			System.out.println(group.cands.size() + "#" + previousClusters.size());
 			for(Integer key : previousClusters.keySet()) {
-				ArrayList<Mention> cluster = previousClusters.get(key);
+				ArrayList<EntityMention> cluster = previousClusters.get(key);
 				Collections.sort(cluster);
 				ContextEntityModel context = ContextEntityModel.buildContext(
 						cluster, anaphor, group.part, group.cands, 0);
@@ -327,7 +327,7 @@ public class EMLearnEntityModel {
 			Collections.reverse(group.entries);
 			
 			for (EntryEntityModel entry : group.entries) {
-				Mention ant = entry.cluster.get(entry.cluster.size()-1);
+				EntityMention ant = entry.cluster.get(entry.cluster.size()-1);
 				ContextEntityModel context = entry.context;
 
 				double p_number = numberP.getVal(ant.number.name(),
@@ -370,7 +370,7 @@ public class EMLearnEntityModel {
 			
 			// reorder activeClusterMap
 			if(maxIdx!=-1) {
-				Mention antecedent = group.entries.get(maxIdx).cluster.get(0);
+				EntityMention antecedent = group.entries.get(maxIdx).cluster.get(0);
 				int newClusterId = activeClusterMap.get(group.part.getPartName() + ":" + antecedent.toName());
 				activeClusterMap.put(group.part.getPartName() + ":" + anaphor.toName(), newClusterId);
 			}
@@ -390,10 +390,10 @@ public class EMLearnEntityModel {
 		fracContextCount.clear();
 		for (ResolveGroupEntityModel group : groups) {
 
-			Mention anaphor = group.anaphor;
+			EntityMention anaphor = group.anaphor;
 
 			for (EntryEntityModel entry : group.entries) {
-				Mention ant = entry.cluster.get(0);
+				EntityMention ant = entry.cluster.get(0);
 				double p = entry.p;
 				ContextEntityModel context = entry.context;
 

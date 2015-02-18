@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import model.Mention;
+import model.EntityMention;
 import model.CoNLL.CoNLLPart;
 import model.syntaxTree.MyTreeNode;
 import util.Common;
@@ -72,17 +72,17 @@ public class ContextEntityModel implements Serializable {
 
 	static short[] feas = new short[18];
 
-	public static ContextEntityModel buildContext(ArrayList<Mention> ants,
-			Mention anaphor, CoNLLPart part, ArrayList<Mention> allCands,
+	public static ContextEntityModel buildContext(ArrayList<EntityMention> ants,
+			EntityMention anaphor, CoNLLPart part, ArrayList<EntityMention> allCands,
 			int mentionDis) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(ants.size()).append(" ");
-		for (Mention ant : ants) {
+		for (EntityMention ant : ants) {
 			sb.append(ant.extent + ":" + ant.toName() + " ### ");
 		}
 		// System.out.println(sb.toString());
 
-		Mention ant = ants.get(ants.size() - 1);
+		EntityMention ant = ants.get(ants.size() - 1);
 		// exact match
 		int id = 0;
 		short[] feas = new short[10];
@@ -111,7 +111,7 @@ public class ContextEntityModel implements Serializable {
 		return getContext(feas);
 	}
 	
-	public static short sieve4Rule(Mention a, Mention m, CoNLLPart part) {
+	public static short sieve4Rule(EntityMention a, EntityMention m, CoNLLPart part) {
 		if(sameProperHeadLastWord(a, m, part)==1) {
 			if(chHaveDifferentLocation(a, m, part)==0 && numberInLaterMention(a, m, part)==0) {
 				return 1;
@@ -120,7 +120,7 @@ public class ContextEntityModel implements Serializable {
 		return 0;
 	}
 	
-	public static short sameProperHeadLastWord(Mention a, Mention m, CoNLLPart part) {
+	public static short sameProperHeadLastWord(EntityMention a, EntityMention m, CoNLLPart part) {
 		String ner1 = a.NE;
 		String ner2 = m.NE;
 		if (a.head.equalsIgnoreCase(m.head) && part.getWord(a.headID).posTag.equals("NR")
@@ -134,7 +134,7 @@ public class ContextEntityModel implements Serializable {
 		return 0;
 	}
 
-	public static short wordInclusion(ArrayList<Mention> ants, Mention anaphor,
+	public static short wordInclusion(ArrayList<EntityMention> ants, EntityMention anaphor,
 			CoNLLPart part) {
 		List<String> removeW = Arrays.asList(new String[] { "这个", "这", "那个",
 				"那", "自己", "的", "该", "公司", "这些", "那些", "'s" });
@@ -154,7 +154,7 @@ public class ContextEntityModel implements Serializable {
 
 		mentionClusterStrs.remove(anaphor.head.toLowerCase());
 		HashSet<String> candidateClusterStrs = new HashSet<String>();
-		for (Mention ant : ants) {
+		for (EntityMention ant : ants) {
 			for (int i = ant.start; i <= ant.end; i++) {
 				candidateClusterStrs.add(part.getWord(i).word.toLowerCase());
 			}
@@ -166,7 +166,7 @@ public class ContextEntityModel implements Serializable {
 			return 0;
 	}
 
-	private static short isSemanticSame(Mention ana, Mention anaphor,
+	private static short isSemanticSame(EntityMention ana, EntityMention anaphor,
 			CoNLLPart part) {
 		String s1 = EMUtil.getSemantic(ana);
 		String s2 = EMUtil.getSemantic(anaphor);
@@ -177,7 +177,7 @@ public class ContextEntityModel implements Serializable {
 		}
 	}
 
-	private static short modifierMatch(Mention ana, Mention anaphor,
+	private static short modifierMatch(EntityMention ana, EntityMention anaphor,
 			CoNLLPart part) {
 		HashSet<String> m1s = new HashSet<String>(ana.modifyList);
 		HashSet<String> m2s = new HashSet<String>(anaphor.modifyList);
@@ -197,9 +197,9 @@ public class ContextEntityModel implements Serializable {
 		return (short) (Math.log(diss) / Math.log(4));
 	}
 
-	private static short isSamePredicate(ArrayList<Mention> ants,
-			Mention anaphor, CoNLLPart part) {
-		for (Mention ant : ants) {
+	private static short isSamePredicate(ArrayList<EntityMention> ants,
+			EntityMention anaphor, CoNLLPart part) {
+		for (EntityMention ant : ants) {
 			if (ant.gram == anaphor.gram) {
 				if (ant.V != null && anaphor.V != null) {
 					String v1 = EMUtil.getPredicateNode(ant.V);
@@ -215,7 +215,7 @@ public class ContextEntityModel implements Serializable {
 		return 0;
 	}
 
-	private static short isSameGrammatic(Mention ant, Mention anaphor,
+	private static short isSameGrammatic(EntityMention ant, EntityMention anaphor,
 			CoNLLPart part) {
 		if (ant.gram == anaphor.gram) {
 			return 1;
@@ -224,8 +224,8 @@ public class ContextEntityModel implements Serializable {
 		}
 	}
 
-	private static short getHasSameHead(ArrayList<Mention> cands,
-			Mention anaphor, CoNLLPart part) {
+	private static short getHasSameHead(ArrayList<EntityMention> cands,
+			EntityMention anaphor, CoNLLPart part) {
 		// StringBuilder sb = new StringBuilder();
 		// sb.append(anaphor.extent).append(":");
 		// for(Mention c : cands) {
@@ -236,7 +236,7 @@ public class ContextEntityModel implements Serializable {
 		// System.out.println(part.getPartName());
 
 		boolean hasSameHead = false;
-		for (Mention m : cands) {
+		for (EntityMention m : cands) {
 			if (m.head.equals(anaphor.head)
 					&& m.extent.contains(anaphor.extent)) {
 				hasSameHead = true;
@@ -249,7 +249,7 @@ public class ContextEntityModel implements Serializable {
 		}
 	}
 
-	private static short getIsFake(Mention ant, Mention anaphor, CoNLLPart part) {
+	private static short getIsFake(EntityMention ant, EntityMention anaphor, CoNLLPart part) {
 		if (ant.isFake) {
 			return 0;
 		} else {
@@ -257,7 +257,7 @@ public class ContextEntityModel implements Serializable {
 		}
 	}
 
-	private static short getDistance(Mention ant, Mention anaphor,
+	private static short getDistance(EntityMention ant, EntityMention anaphor,
 			CoNLLPart part) {
 		short diss = 0;
 		if (ant.isFake) {
@@ -275,9 +275,9 @@ public class ContextEntityModel implements Serializable {
 		return (short) (Math.log(diss) / Math.log(2));
 	}
 
-	private static short isExactMatch(ArrayList<Mention> ants, Mention anaphor,
+	private static short isExactMatch(ArrayList<EntityMention> ants, EntityMention anaphor,
 			CoNLLPart part) {
-		for (Mention ant : ants) {
+		for (EntityMention ant : ants) {
 			if (ant.extent.equalsIgnoreCase(anaphor.extent)) {
 				boolean modifierCompatible = true;
 				ArrayList<String> curModifiers = anaphor.modifyList;
@@ -307,16 +307,16 @@ public class ContextEntityModel implements Serializable {
 		return 0;
 	}
 
-	public static short isAbb(Mention ant, Mention anaphor, CoNLLPart part) {
+	public static short isAbb(EntityMention ant, EntityMention anaphor, CoNLLPart part) {
 		if (Common.isAbbreviation(ant.extent, anaphor.extent)) {
 			return 1;
 		}
 		return 0;
 	}
 
-	public static short headMatch(ArrayList<Mention> ants, Mention anaphor,
+	public static short headMatch(ArrayList<EntityMention> ants, EntityMention anaphor,
 			CoNLLPart part) {
-		for (Mention ant : ants) {
+		for (EntityMention ant : ants) {
 			if (ant.head.equalsIgnoreCase(anaphor.head)) {
 				return 1;
 			}
@@ -324,15 +324,15 @@ public class ContextEntityModel implements Serializable {
 		return 0;
 	}
 
-	public static short isIWithI(Mention ant, Mention anaphor, CoNLLPart part) {
+	public static short isIWithI(EntityMention ant, EntityMention anaphor, CoNLLPart part) {
 		if (ant.end <= anaphor.start) {
 			return 0;
 		}
 		return 1;
 	}
 
-	public static short haveIncompatibleModify(ArrayList<Mention> ants,
-			Mention anaphor, CoNLLPart part) {
+	public static short haveIncompatibleModify(ArrayList<EntityMention> ants,
+			EntityMention anaphor, CoNLLPart part) {
 
 		boolean thisHasExtra = false;
 		Set<String> thisWordSet = new HashSet<String>();
@@ -348,7 +348,7 @@ public class ContextEntityModel implements Serializable {
 			}
 			thisWordSet.add(w1);
 		}
-		for (Mention ant : ants) {
+		for (EntityMention ant : ants) {
 			for (int j = ant.start; j <= ant.end; j++) {
 				String w2 = part.getWord(j).word.toLowerCase();
 				antWordSet.add(w2);
@@ -392,7 +392,7 @@ public class ContextEntityModel implements Serializable {
 	public static HashSet<String> ss = new HashSet<String>();
 	public static HashSet<String> vs = new HashSet<String>();
 
-	public static double calMI2(Mention ant, Mention pronoun) {
+	public static double calMI2(EntityMention ant, EntityMention pronoun) {
 		if (svoStat == null) {
 			svoStat = new SVOStat();
 			svoStat.loadMIInfo();
@@ -439,7 +439,7 @@ public class ContextEntityModel implements Serializable {
 		return MI;
 	}
 
-	public static double calMI(Mention ant, Mention pronoun) {
+	public static double calMI(EntityMention ant, EntityMention pronoun) {
 		if (true)
 			return 1;
 		if (svoStat == null) {
@@ -565,7 +565,7 @@ public class ContextEntityModel implements Serializable {
 		}
 	}
 	
-	public static short chHaveDifferentLocation(Mention antecedent, Mention mention, CoNLLPart part) {
+	public static short chHaveDifferentLocation(EntityMention antecedent, EntityMention mention, CoNLLPart part) {
 		// state and country cannot be coref
 		if ((ChDictionary.getInstance().statesAbbreviation.containsKey(antecedent.extent) || ChDictionary.getInstance().statesAbbreviation
 				.containsValue(mention.extent))
@@ -618,7 +618,7 @@ public class ContextEntityModel implements Serializable {
 		return 0;
 	}
 	
-	public static short numberInLaterMention(Mention ant, Mention mention, CoNLLPart part) {
+	public static short numberInLaterMention(EntityMention ant, EntityMention mention, CoNLLPart part) {
 		Set<String> antecedentWords = new HashSet<String>();
 		Set<String> numbers = new HashSet<String>();
 		numbers.addAll(ChDictionary.getInstance().singleWords);

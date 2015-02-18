@@ -5,18 +5,18 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import model.Mention;
+import model.EntityMention;
 import model.CoNLL.CoNLLDocument;
 import model.CoNLL.CoNLLPart;
 import util.Common;
 
 public class RuleAnaphorNounDetector {
 
-	public static boolean isAnahporic(Mention anaphor,
-			ArrayList<Mention> cands, CoNLLPart part) {
+	public static boolean isAnahporic(EntityMention anaphor,
+			ArrayList<EntityMention> cands, CoNLLPart part) {
 		boolean isAnaphor = false;
 
-		for (Mention cand : cands) {
+		for (EntityMention cand : cands) {
 			if (Context.sieve4Rule(cand, anaphor, part) == 1
 					|| Context.headSieve2(cand, anaphor, part) == 1
 //					|| Context.headSieve1(cand, anaphor, part) == 1
@@ -37,8 +37,8 @@ public class RuleAnaphorNounDetector {
 		return isAnaphor;
 	}
 
-	public static boolean isAnahporic2(Mention anaphor,
-			ArrayList<Mention> cands, CoNLLPart part) {
+	public static boolean isAnahporic2(EntityMention anaphor,
+			ArrayList<EntityMention> cands, CoNLLPart part) {
 		boolean isAnaphor = false;
 		// System.out.println(EMUtil.getSemantic(anaphor));
 		if (EMUtil.getSemantic(anaphor).startsWith("J")) {
@@ -55,7 +55,7 @@ public class RuleAnaphorNounDetector {
 			// return false;
 		}
 
-		for (Mention cand : cands) {
+		for (EntityMention cand : cands) {
 			if ((Context.sieve4Rule(cand, anaphor, part) == 1
 					|| Context.headSieve1(cand, anaphor, part) == 1
 					|| Context.headSieve2(cand, anaphor, part) == 1
@@ -101,24 +101,24 @@ public class RuleAnaphorNounDetector {
 						.getGoldAnaphorKeys(goldPart.getChains(), goldPart);
 				gold += goldAnaphors.size();
 
-				ArrayList<Mention> sysMentions = EMUtil.extractMention(part);
+				ArrayList<EntityMention> sysMentions = EMUtil.extractMention(part);
 
-				ArrayList<Mention> allCandidates = new ArrayList<Mention>();
-				for (Mention m : sysMentions) {
+				ArrayList<EntityMention> allCandidates = new ArrayList<EntityMention>();
+				for (EntityMention m : sysMentions) {
 					if (!part.getWord(m.end).posTag.equals("PN")) {
 						allCandidates.add(m);
 					}
 				}
 
-				ArrayList<Mention> anaphors = new ArrayList<Mention>();
-				for (Mention anaphor : sysMentions) {
+				ArrayList<EntityMention> anaphors = new ArrayList<EntityMention>();
+				for (EntityMention anaphor : sysMentions) {
 					String pos = part.getWord(anaphor.end).posTag;
 					if (pos.equals("PN") && anaphor.end == anaphor.start) {
 						continue;
 					}
-					ArrayList<Mention> cands = new ArrayList<Mention>();
+					ArrayList<EntityMention> cands = new ArrayList<EntityMention>();
 					for (int h = allCandidates.size() - 1; h >= 0; h--) {
-						Mention cand = allCandidates.get(h);
+						EntityMention cand = allCandidates.get(h);
 						cand.sentenceID = part.getWord(cand.start).sentence
 								.getSentenceIdx();
 						cand.s = part.getWord(cand.start).sentence;
@@ -134,7 +134,7 @@ public class RuleAnaphorNounDetector {
 							continue;
 						}
 						anaphors.add(anaphor);
-						for (Mention m : anaphor.innerMs) {
+						for (EntityMention m : anaphor.innerMs) {
 							if (goldNEs.contains(m.toName())
 									|| goldPNs.contains(m.toName())) {
 								continue;
@@ -153,7 +153,7 @@ public class RuleAnaphorNounDetector {
 				// }
 
 				sys += anaphors.size();
-				for (Mention ana : anaphors) {
+				for (EntityMention ana : anaphors) {
 					if (goldAnaphors.containsKey(ana.toName())) {
 						hit += 1;
 					} else {
