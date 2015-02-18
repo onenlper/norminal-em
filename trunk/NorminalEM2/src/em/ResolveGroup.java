@@ -3,7 +3,7 @@ package em;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import model.Mention;
+import model.EntityMention;
 import model.CoNLL.CoNLLPart;
 import em.EMUtil.Animacy;
 import em.EMUtil.Gender;
@@ -28,12 +28,12 @@ public class ResolveGroup implements Serializable {
 	Grammatic gram;
 	String sem = "unknown";
 	String cilin = "null";
-	ArrayList<Mention> ants;
+	ArrayList<EntityMention> ants;
 	String anaphorName;
 	CoNLLPart part;
-	Mention m;
+	EntityMention m;
 	
-	public ResolveGroup(Mention m, CoNLLPart part, ArrayList<Mention> ants) {
+	public ResolveGroup(EntityMention m, CoNLLPart part, ArrayList<EntityMention> ants) {
 		this.part = part;
 		this.ants = ants;
 		this.m = m;
@@ -73,11 +73,11 @@ public class ResolveGroup implements Serializable {
 		
 		boolean isFake = false;
 		double p;
-		Mention ant;
+		EntityMention ant;
 		double p_c;
 		int seq;
 		
-		public Entry(Mention ant, Context context, CoNLLPart part) {
+		public Entry(EntityMention ant, Context context, CoNLLPart part) {
 			this.ant = ant;
 			if(ant.isFake) {
 				this.antName = "fake";

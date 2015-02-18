@@ -7,9 +7,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import ace.model.EventMention;
+
 import model.Element;
 import model.Entity;
-import model.Mention;
+import model.EntityMention;
 import model.SemanticRole;
 import model.CoNLL.CoNLLDocument.DocType;
 import model.syntaxTree.MyTreeNode;
@@ -24,6 +26,8 @@ public class CoNLLPart {
 	private int partID;
 	
 	public String documentID;
+	
+	public HashMap<EntityMention, SemanticRole> semanticRoles;
 	
 	public String docName;
 
@@ -51,7 +55,7 @@ public class CoNLLPart {
 
 	private String partName;
 
-	private ArrayList<Mention> mentions;
+	private ArrayList<EntityMention> mentions;
 
 	public String folder;
 	
@@ -63,7 +67,7 @@ public class CoNLLPart {
 		this.sentences = new ArrayList<CoNLLSentence>();
 		this.nameEntities = new ArrayList<Element>();
 		this.chains = new ArrayList<Entity>();
-		this.mentions = new ArrayList<Mention>();
+		this.mentions = new ArrayList<EntityMention>();
 	}
 	
 	public CoNLLPart(CoNLLDocument doc) {
@@ -74,7 +78,7 @@ public class CoNLLPart {
 		this.sentences = new ArrayList<CoNLLSentence>();
 		this.nameEntities = new ArrayList<Element>();
 		this.chains = new ArrayList<Entity>();
-		this.mentions = new ArrayList<Mention>();
+		this.mentions = new ArrayList<EntityMention>();
 		
 //		if (mapCache.containsKey(docName + this.lang) && !MTDoc) {
 //			documentMap = mapCache.get(docName + this.lang);
@@ -98,7 +102,7 @@ public class CoNLLPart {
 //		}
 	}
 	
-	public ArrayList<Mention> getMentions() {
+	public ArrayList<EntityMention> getMentions() {
 		return mentions;
 	}
 	
@@ -114,7 +118,7 @@ public class CoNLLPart {
 		this.partName = partName;
 	}
 
-	public void setMentions(ArrayList<Mention> mentions) {
+	public void setMentions(ArrayList<EntityMention> mentions) {
 		this.mentions = mentions;
 	}
 	
@@ -186,7 +190,7 @@ public class CoNLLPart {
 		int start = 0;
 		int end = 0;
 		String neType = "";
-		ArrayList<Mention> curMentions = new ArrayList<Mention>();
+		ArrayList<EntityMention> curMentions = new ArrayList<EntityMention>();
 		for (int p = 0; p < this.sentences.size(); p++) {
 			CoNLLSentence sentence = this.sentences.get(p);
 			sentence.setSentenceIdx(p);
@@ -232,7 +236,7 @@ public class CoNLLPart {
 						if (rightBracket != -1) {
 							rightEnd = rightBracket;
 						}
-						Mention em = new Mention();
+						EntityMention em = new EntityMention();
 						em.setStart(word.index);
 						int clusterID = Integer.valueOf(token.substring(
 								leftBracket + 1, rightEnd));
@@ -247,7 +251,7 @@ public class CoNLLPart {
 						int clusterID = Integer.valueOf(token.substring(
 								leftStart, rightBracket));
 						for (int k = curMentions.size() - 1; k >= 0; k--) {
-							Mention em = curMentions.get(k);
+							EntityMention em = curMentions.get(k);
 							if (em.entityIndex == clusterID) {
 								StringBuilder content = new StringBuilder();
 								StringBuilder orginal = new StringBuilder();
@@ -272,7 +276,7 @@ public class CoNLLPart {
 		// form entities
 		HashMap<Integer, Entity> clusters = new HashMap<Integer, Entity>();
 //		System.out.println(this.mentions.size() + "###");
-		for (Mention em : this.mentions) {
+		for (EntityMention em : this.mentions) {
 			int clusterID = em.entityIndex;
 			if (clusters.containsKey(clusterID)) {
 				clusters.get(clusterID).addMention(em);
@@ -437,7 +441,7 @@ public class CoNLLPart {
 									forwardTrace++;
 								}
 							}
-							Mention subject = null;
+							EntityMention subject = null;
 							if (VP != null) {
 								MyTreeNode NP = null;
 								for (int m = VP.childIndex - 1; m >= 0; m--) {
@@ -511,19 +515,19 @@ public class CoNLLPart {
 					CoNLLWord word = s.words.get(k);
 					String label = word.getPredicateArgument().split("\\s+")[i];
 					if(label.startsWith("(V*")) {
-						Mention m = new Mention();
+						EntityMention m = new EntityMention();
 						m.start = word.getIndex();
 						m.end = word.getIndex();
 						m.extent = this.getWord(m.start).word;
 						role.predicate = m;
 					} else if(label.startsWith("(ARG")) {
-						Mention m = new Mention();
+						EntityMention m = new EntityMention();
 						m.start = word.getIndex();
 						
 						String roleName = label.substring(1, label.lastIndexOf("*"));
-						ArrayList<Mention> mentions = role.args.get(roleName);
+						ArrayList<EntityMention> mentions = role.args.get(roleName);
 						if(mentions==null) {
-							mentions = new ArrayList<Mention>();
+							mentions = new ArrayList<EntityMention>();
 							role.args.put(roleName, mentions);
 						}
 						mentions.add(m);

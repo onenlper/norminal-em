@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import model.Element;
-import model.Mention;
+import model.EntityMention;
 import model.SemanticRole;
 import model.syntaxTree.MyTree;
 import model.syntaxTree.MyTreeNode;
@@ -25,7 +25,7 @@ public class CoNLLSentence implements Serializable{
 	
 	public ArrayList<Element> namedEntities = new ArrayList<Element>();
 	
-	public ArrayList<Mention> mentions;
+	public ArrayList<EntityMention> mentions;
 	
 	public String getText() {
 		StringBuilder sb = new StringBuilder();
@@ -161,12 +161,12 @@ public class CoNLLSentence implements Serializable{
 		this.syntaxTree = Common.constructTree(syntaxStr);
 	}
 
-	public Mention getSpan(int start, int end) {
+	public EntityMention getSpan(int start, int end) {
 		int startInS = Math.min(start, end);
 		int endInS = Math.max(start, end);
 		
 		
-		Mention m = new Mention();
+		EntityMention m = new EntityMention();
 		m.startInS = startInS;
 		m.endInS = endInS;
 		

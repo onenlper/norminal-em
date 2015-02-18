@@ -2,12 +2,12 @@ package model.CoNLL;
 
 import java.util.HashSet;
 
-import model.Mention;
+import model.EntityMention;
 
 
 public class CoNLLWord {
 
-	public Mention speakerM;
+	public EntityMention speakerM;
 	
 	public boolean isZeroWord = false;
 	
@@ -23,7 +23,7 @@ public class CoNLLWord {
 	
 	public String nextSpeaker;
 	
-	public Mention getSpeakerM() {
+	public EntityMention getSpeakerM() {
 		return speakerM;
 	}
 	
@@ -65,7 +65,7 @@ public class CoNLLWord {
 		this.toSpeaker = toSpeaker;
 	}
 
-	public void setSpeakerM(Mention speakerM) {
+	public void setSpeakerM(EntityMention speakerM) {
 		this.speakerM = speakerM;
 	}
 

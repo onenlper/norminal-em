@@ -13,7 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import model.Mention;
+import model.EntityMention;
 import model.CoNLL.CoNLLPart;
 import model.syntaxTree.MyTreeNode;
 import util.Common;
@@ -195,8 +195,8 @@ public class Context implements Serializable {
 		}
 	}
 	
-	public static Context buildContext(Mention ant, Mention anaphor,
-			CoNLLPart part, ArrayList<Mention> allCands, int mentionDis) {
+	public static Context buildContext(EntityMention ant, EntityMention anaphor,
+			CoNLLPart part, ArrayList<EntityMention> allCands, int mentionDis) {
 		doit = false;
 		if(!ant.isFake) {
 			ant.s = part.getWord(ant.end).sentence;
@@ -205,7 +205,7 @@ public class Context implements Serializable {
 		
 		int id = 0;
 		int[] feas = new int[10];
-		feas[id++] = getMentionDiss(mentionDis);
+//		feas[id++] = getMentionDiss(mentionDis);
 		if(ant.isFake) {
 //			feas[id++] = -anaphor.head.hashCode();
 //			return getContext(feas);
@@ -215,10 +215,26 @@ public class Context implements Serializable {
 		// feas[id++] = getIsFake(ant, anaphor, part);
 		// feas[id++] = getHasSameHead(allCands, anaphor, part);
 
-		feas[id++] = getDistance(ant, anaphor, part); //
-		feas[id++] = isExactMatch(ant, anaphor, part); // 2
+//		feas[id++] = getDistance(ant, anaphor, part); //
+//		feas[id++] = isExactMatch(ant, anaphor, part); // 2
 		feas[id++] = headMatch(ant, anaphor, part); // 2
-		feas[id++] = isSamePredicate(ant, anaphor, part);
+//		feas[id++] = isSamePredicate(ant, anaphor, part);
+		
+		
+		if(EMUtil.isCopular(ant, anaphor, part)) {
+			feas[id++] = 1;
+		} else {
+			feas[id++] = 0;
+		}
+		
+		if(EMUtil.isRoleAppositive(ant, anaphor)) {
+//			System.out.println(ant.head);
+//			System.out.println(anaphor.head);
+//			Common.pause("");
+			feas[id++] = 1;
+		} else {
+			feas[id++] = 0;
+		}
 		
 //		if(subtype1!=null && subtype2!=null && subtype1.equals(subtype2)) {
 ////			System.out.println(subtype1 + " # " + subtype2);
@@ -343,7 +359,7 @@ public class Context implements Serializable {
 		return getContext(feas);
 	}
 	
-	public static short nested(Mention ant, Mention anaphor, CoNLLPart part) {
+	public static short nested(EntityMention ant, EntityMention anaphor, CoNLLPart part) {
 		if(ant.nested) {
 			if(anaphor.nested) {
 				return 0;
@@ -359,14 +375,14 @@ public class Context implements Serializable {
 		}
 	}
 	
-	public static short head6(Mention ant, Mention anaphor, CoNLLPart part) {
+	public static short head6(EntityMention ant, EntityMention anaphor, CoNLLPart part) {
 		if(ant.head.equals(anaphor.head) && !anaphor.extent.equals(ant.extent) && anaphor.extent.contains(ant.extent)) {
 			return 1;
 		}
 		return 0;
 	}
 	
-	public static boolean ccCompatible(Mention ant, Mention anaphor, CoNLLPart part) {
+	public static boolean ccCompatible(EntityMention ant, EntityMention anaphor, CoNLLPart part) {
 		if(ant.extent.equals(anaphor.extent)) {
 			return true;
 		}
@@ -377,7 +393,7 @@ public class Context implements Serializable {
 		}
 	}
 	
-	public static short head5(Mention ant, Mention anaphor, CoNLLPart part) {
+	public static short head5(EntityMention ant, EntityMention anaphor, CoNLLPart part) {
 		if(ant.head.contains(anaphor.head) || anaphor.head.contains(ant.head)) {
 			boolean overlap = false;
 			for(String modifier : ant.modifyList) {
@@ -394,7 +410,7 @@ public class Context implements Serializable {
 		return 0;
 	}
 	
-	public static short exactMatchSieve1(Mention ant, Mention anaphor, CoNLLPart part) {
+	public static short exactMatchSieve1(EntityMention ant, EntityMention anaphor, CoNLLPart part) {
 		if(ant.extent.equals(anaphor.extent)) {
 			boolean modiferCompatible = true;
 			ArrayList<String> curModifiers = anaphor.modifyList;
@@ -422,7 +438,7 @@ public class Context implements Serializable {
 		return 0;
 	}
 	
-	public static short headSieve1(Mention ant, Mention anaphor, CoNLLPart part) {
+	public static short headSieve1(EntityMention ant, EntityMention anaphor, CoNLLPart part) {
 		if(ant.head.equals(anaphor.head)) {
 			if(wordInclusion(ant, anaphor, part)==1 && haveIncompatibleModify(ant, anaphor, part)!=1) {
 				return 1;
@@ -431,7 +447,7 @@ public class Context implements Serializable {
 		return 0;
 	}
 	
-	public static short headSieve2(Mention ant, Mention anaphor, CoNLLPart part) {
+	public static short headSieve2(EntityMention ant, EntityMention anaphor, CoNLLPart part) {
 		if(ant.head.contains(anaphor.head)) {
 			if(wordInclusion(ant, anaphor, part)==1) {
 				return 1;
@@ -440,7 +456,7 @@ public class Context implements Serializable {
 		return 0;
 	}
 	
-	public static short headSieve3(Mention ant, Mention anaphor, CoNLLPart part) {
+	public static short headSieve3(EntityMention ant, EntityMention anaphor, CoNLLPart part) {
 		if(ant.head.equals(anaphor.head)) {
 			if(haveIncompatibleModify(ant, anaphor, part)!=1) {
 				return 1;
@@ -449,7 +465,7 @@ public class Context implements Serializable {
 		return 0;
 	}
 	
-	public static boolean wordInclusion2(Mention ant, Mention anaphor,
+	public static boolean wordInclusion2(EntityMention ant, EntityMention anaphor,
 			CoNLLPart part) {
 		List<String> removeW = Arrays.asList(new String[] { "这个", "这", "那个", "全", "此", "本",
 				"那", "自己", "的", "该", "公司", "这些", "那些", "'s" });
@@ -504,7 +520,7 @@ public class Context implements Serializable {
 //			return 0;
 	}
 
-	public static short wordInclusion(Mention ant, Mention anaphor,
+	public static short wordInclusion(EntityMention ant, EntityMention anaphor,
 			CoNLLPart part) {
 		List<String> removeW = Arrays.asList(new String[] { "这个", "这", "那个", "全", "此", "本",
 				"那", "自己", "的", "该", "公司", "这些", "那些", "'s" });
@@ -562,7 +578,7 @@ public class Context implements Serializable {
 //			return 0;
 	}
 
-	private static short isSemanticSame(Mention ana, Mention anaphor,
+	private static short isSemanticSame(EntityMention ana, EntityMention anaphor,
 			CoNLLPart part) {
 		String s1 = EMUtil.getSemantic(ana);
 		String s2 = EMUtil.getSemantic(anaphor);
@@ -573,7 +589,7 @@ public class Context implements Serializable {
 		}
 	}
 
-	private static short modifierMatch(Mention ana, Mention anaphor,
+	private static short modifierMatch(EntityMention ana, EntityMention anaphor,
 			CoNLLPart part) {
 		HashSet<String> m1s = new HashSet<String>(ana.modifyList);
 		HashSet<String> m2s = new HashSet<String>(anaphor.modifyList);
@@ -604,7 +620,7 @@ public class Context implements Serializable {
 //		return (short) diss;
 	}
 
-	private static short isSamePredicate(Mention ant, Mention anaphor,
+	private static short isSamePredicate(EntityMention ant, EntityMention anaphor,
 			CoNLLPart part) {
 		boolean sameV = false;
 		if (ant.V != null && anaphor.V != null) {
@@ -629,7 +645,7 @@ public class Context implements Serializable {
 		}
 	}
 
-	private static short isSameGrammatic(Mention ant, Mention anaphor,
+	private static short isSameGrammatic(EntityMention ant, EntityMention anaphor,
 			CoNLLPart part) {
 		if (ant.gram == anaphor.gram) {
 			return 1;
@@ -638,8 +654,8 @@ public class Context implements Serializable {
 		}
 	}
 
-	private static short getHasSameHead(ArrayList<Mention> cands,
-			Mention anaphor, CoNLLPart part) {
+	private static short getHasSameHead(ArrayList<EntityMention> cands,
+			EntityMention anaphor, CoNLLPart part) {
 		// StringBuilder sb = new StringBuilder();
 		// sb.append(anaphor.extent).append(":");
 		// for(Mention c : cands) {
@@ -650,7 +666,7 @@ public class Context implements Serializable {
 		// System.out.println(part.getPartName());
 
 		boolean hasSameHead = false;
-		for (Mention m : cands) {
+		for (EntityMention m : cands) {
 			if (m.head.equals(anaphor.head)
 					&& m.extent.contains(anaphor.extent)) {
 				hasSameHead = true;
@@ -663,7 +679,7 @@ public class Context implements Serializable {
 		}
 	}
 
-	private static short getIsFake(Mention ant, Mention anaphor, CoNLLPart part) {
+	private static short getIsFake(EntityMention ant, EntityMention anaphor, CoNLLPart part) {
 		if (ant.isFake) {
 			return 0;
 		} else {
@@ -671,7 +687,7 @@ public class Context implements Serializable {
 		}
 	}
 
-	private static short getDistance(Mention ant, Mention anaphor,
+	private static short getDistance(EntityMention ant, EntityMention anaphor,
 			CoNLLPart part) {
 		short diss = 0;
 		if (ant.isFake) {
@@ -689,29 +705,56 @@ public class Context implements Serializable {
 		return (short) (Math.log(diss) / Math.log(2));
 	}
 
-	private static short isExactMatch(Mention ant, Mention anaphor,
+	public static boolean sameModifier(EntityMention ant, EntityMention anaphor) {
+		boolean modiferCompatible = true;
+		ArrayList<String> curModifiers = anaphor.modifyList;
+		ArrayList<String> canModifiers = ant.modifyList;
+		HashSet<String> curModifiersHash = new HashSet<String>();
+		curModifiersHash.addAll(curModifiers);
+		HashSet<String> canModifiersHash = new HashSet<String>();
+		canModifiersHash.addAll(canModifiers);
+		for (String canModifier : canModifiers) {
+			if (!curModifiersHash.contains(canModifier)) {
+				modiferCompatible = false;
+				break;
+			}
+		}
+		for (String curModifier : curModifiers) {
+			if (!canModifiersHash.contains(curModifier)) {
+				modiferCompatible = false;
+				break;
+			}
+		}
+		return modiferCompatible;
+	}
+	
+	private static short isExactMatch(EntityMention ant, EntityMention anaphor,
 			CoNLLPart part) {
-		if (ant.extent.equalsIgnoreCase(anaphor.extent)) {
-			return 1;
+		if (ant.head.equalsIgnoreCase(anaphor.head)) {
+			if(sameModifier(ant, anaphor)) {
+				return 1;
+			} else {
+				return 0;
+			}
 		} else {
 			return 0;
 		}
 	}
 
-	public static short isAbb(Mention ant, Mention anaphor, CoNLLPart part) {
+	public static short isAbb(EntityMention ant, EntityMention anaphor, CoNLLPart part) {
 		if (Common.isAbbreviation(ant.extent, anaphor.extent)) {
 			return 1;
 		}
 		return 0;
 	}
 
-	public static short headMatch(Mention ant, Mention anaphor, CoNLLPart part) {
+	public static short headMatch(EntityMention ant, EntityMention anaphor, CoNLLPart part) {
 		if(ant.head.equals(anaphor.head)) {
 			return 1;
-		} else if (ant.head.startsWith(anaphor.head)) {
-			return 2;
-		} else if(ant.head.endsWith(anaphor.head)) {
-			return 3;
+//		} else if (ant.head.startsWith(anaphor.head)) {
+//			return 2;
+//		} else if(ant.head.endsWith(anaphor.head)) {
+//			return 3;
 //		} else if (ant.head.contains(anaphor.head)){
 //			return 4;
 		} else {
@@ -730,7 +773,7 @@ public class Context implements Serializable {
 //		}
 	}
 	
-	public static short headMatch2(Mention ant, Mention anaphor, CoNLLPart part) {
+	public static short headMatch2(EntityMention ant, EntityMention anaphor, CoNLLPart part) {
 		if (ant.head.contains(anaphor.head)) {
 			return 1;
 		} else {
@@ -738,14 +781,14 @@ public class Context implements Serializable {
 		}
 	}
 
-	public static short isIWithI(Mention ant, Mention anaphor, CoNLLPart part) {
+	public static short isIWithI(EntityMention ant, EntityMention anaphor, CoNLLPart part) {
 		if (ant.end <= anaphor.start) {
 			return 0;
 		}
 		return 1;
 	}
 
-	public static short haveIncompatibleModify(Mention ant, Mention anaphor,
+	public static short haveIncompatibleModify(EntityMention ant, EntityMention anaphor,
 			CoNLLPart part) {
 		// if (anaphor.isFake || !ant.head.equalsIgnoreCase(anaphor.head)) {
 		// return 0;
@@ -814,7 +857,7 @@ public class Context implements Serializable {
 	public static HashSet<String> ss = new HashSet<String>();
 	public static HashSet<String> vs = new HashSet<String>();
 
-	public static double calMI2(Mention ant, Mention pronoun) {
+	public static double calMI2(EntityMention ant, EntityMention pronoun) {
 		if (svoStat == null) {
 			svoStat = new SVOStat();
 			svoStat.loadMIInfo();
@@ -861,7 +904,7 @@ public class Context implements Serializable {
 		return MI;
 	}
 
-	public static double calMI(Mention ant, Mention pronoun) {
+	public static double calMI(EntityMention ant, EntityMention pronoun) {
 		if (true)
 			return 1;
 		if (svoStat == null) {
@@ -987,7 +1030,7 @@ public class Context implements Serializable {
 		}
 	}
 	
-	public static short sieve4Rule(Mention a, Mention m, CoNLLPart part) {
+	public static short sieve4Rule(EntityMention a, EntityMention m, CoNLLPart part) {
 		if(sameProperHeadLastWord(a, m, part)==1) {
 //			if(chHaveDifferentLocation(a, m, part)==0)
 //					&& numberInLaterMention(a, m, part)==0)
@@ -996,7 +1039,7 @@ public class Context implements Serializable {
 		return 0;
 	}
 	
-	public static short sameProperHeadLastWord(Mention a, Mention m, CoNLLPart part) {
+	public static short sameProperHeadLastWord(EntityMention a, EntityMention m, CoNLLPart part) {
 		String ner1 = a.NE;
 		String ner2 = m.NE;
 		if (a.head.equalsIgnoreCase(m.head) && part.getWord(a.headID).posTag.equals("NR")
@@ -1010,7 +1053,7 @@ public class Context implements Serializable {
 		return 0;
 	}
 	
-	public static short chHaveDifferentLocation(Mention antecedent, Mention mention, CoNLLPart part) {
+	public static short chHaveDifferentLocation(EntityMention antecedent, EntityMention mention, CoNLLPart part) {
 		// state and country cannot be coref
 		if ((ChDictionary.getInstance().statesAbbreviation.containsKey(antecedent.extent) || ChDictionary.getInstance().statesAbbreviation
 				.containsValue(mention.extent))
@@ -1063,7 +1106,7 @@ public class Context implements Serializable {
 		return 0;
 	}
 	
-	public static short numberInLaterMention(Mention ant, Mention mention, CoNLLPart part) {
+	public static short numberInLaterMention(EntityMention ant, EntityMention mention, CoNLLPart part) {
 		Set<String> antecedentWords = new HashSet<String>();
 		Set<String> numbers = new HashSet<String>();
 		numbers.addAll(ChDictionary.getInstance().singleWords);

@@ -5,21 +5,21 @@ import java.util.HashMap;
 
 public class SemanticRole implements Comparable<SemanticRole>{
 	
-	public ArrayList<Mention> arg0;
+	public ArrayList<EntityMention> arg0;
 
-	public ArrayList<Mention> arg1;
+	public ArrayList<EntityMention> arg1;
 	
-	public ArrayList<Mention> tmp;
+	public ArrayList<EntityMention> tmp;
 	
-	public HashMap<String, ArrayList<Mention>> args = new HashMap<String, ArrayList<Mention>>();
+	public HashMap<String, ArrayList<EntityMention>> args = new HashMap<String, ArrayList<EntityMention>>();
 	
-	public Mention predicate;
+	public EntityMention predicate;
 	
 	public SemanticRole() {
-		this.arg0 = new ArrayList<Mention>();
-		this.arg1 = new ArrayList<Mention>();
-		this.tmp = new ArrayList<Mention>();
-		this.predicate = new Mention();
+		this.arg0 = new ArrayList<EntityMention>();
+		this.arg1 = new ArrayList<EntityMention>();
+		this.tmp = new ArrayList<EntityMention>();
+		this.predicate = new EntityMention();
 	}
 
 	@Override

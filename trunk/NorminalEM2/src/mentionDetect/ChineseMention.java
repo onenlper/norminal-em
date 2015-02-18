@@ -5,11 +5,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import model.Element;
-import model.Mention;
+import model.EntityMention;
 import model.CoNLL.CoNLLDocument;
 import model.CoNLL.CoNLLPart;
 import model.CoNLL.CoNLLSentence;
-import align.DocumentMap.Unit;
+//import align.DocumentMap.Unit;
 import em.EMUtil;
 
 public class ChineseMention {
@@ -19,8 +19,8 @@ public class ChineseMention {
 
 	public static boolean goldNE = false;
 
-	public ArrayList<Mention> getChineseMention(CoNLLSentence s) {
-		ArrayList<Mention> mentions = new ArrayList<Mention>();
+	public ArrayList<EntityMention> getChineseMention(CoNLLSentence s) {
+		ArrayList<EntityMention> mentions = new ArrayList<EntityMention>();
 		CoNLLPart part = s.part;
 		part.setNameEntities(getChNE(part));
 		// part.setNameEntities(this.getChGoldNE(part));
@@ -34,8 +34,8 @@ public class ChineseMention {
 		return mentions;
 	}
 	
-	public ArrayList<Mention> getChineseMention(CoNLLPart part) {
-		ArrayList<Mention> mentions = new ArrayList<Mention>();
+	public ArrayList<EntityMention> getChineseMention(CoNLLPart part) {
+		ArrayList<EntityMention> mentions = new ArrayList<EntityMention>();
 
 		part.setNameEntities(getChNE(part));
 		// part.setNameEntities(this.getChGoldNE(part));
@@ -115,8 +115,8 @@ public class ChineseMention {
 		}
 	}
 	
-	private ArrayList<Mention> getChNPMention(CoNLLSentence s) {
-		ArrayList<Mention> npMentions = EMUtil.extractMention(s);
+	private ArrayList<EntityMention> getChNPMention(CoNLLSentence s) {
+		ArrayList<EntityMention> npMentions = EMUtil.extractMention(s);
 
 		// MentionDetect md = new GoldBoundaryMentionTest();
 		// npMentions = md.getMentions(part);
@@ -126,7 +126,7 @@ public class ChineseMention {
 		// npMentions = md.getMentions(part);
 		CoNLLPart part = s.part;
 		for (int g = 0; g < npMentions.size(); g++) {
-			Mention npMention = npMentions.get(g);
+			EntityMention npMention = npMentions.get(g);
 			int end = npMention.end;
 			int start = npMention.start;
 			StringBuilder sb = new StringBuilder();
@@ -138,8 +138,8 @@ public class ChineseMention {
 		return npMentions;
 	}
 
-	private ArrayList<Mention> getChNPMention(CoNLLPart part) {
-		ArrayList<Mention> npMentions = EMUtil.extractMention(part);
+	private ArrayList<EntityMention> getChNPMention(CoNLLPart part) {
+		ArrayList<EntityMention> npMentions = EMUtil.extractMention(part);
 
 		// MentionDetect md = new GoldBoundaryMentionTest();
 		// npMentions = md.getMentions(part);
@@ -149,7 +149,7 @@ public class ChineseMention {
 		// npMentions = md.getMentions(part);
 
 		for (int g = 0; g < npMentions.size(); g++) {
-			Mention npMention = npMentions.get(g);
+			EntityMention npMention = npMentions.get(g);
 			int end = npMention.end;
 			int start = npMention.start;
 			StringBuilder sb = new StringBuilder();
@@ -163,8 +163,8 @@ public class ChineseMention {
 		return npMentions;
 	}
 
-	private void removeDuplicateMentions(ArrayList<Mention> mentions) {
-		HashSet<Mention> mentionsHash = new HashSet<Mention>();
+	private void removeDuplicateMentions(ArrayList<EntityMention> mentions) {
+		HashSet<EntityMention> mentionsHash = new HashSet<EntityMention>();
 		mentionsHash.addAll(mentions);
 		mentions.clear();
 		mentions.addAll(mentionsHash);

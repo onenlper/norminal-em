@@ -10,11 +10,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import model.Element;
-import model.Mention;
+import model.Entity;
+import model.EntityMention;
 import model.CoNLL.CoNLLDocument;
 import model.CoNLL.CoNLLPart;
 import model.CoNLL.CoNLLSentence;
 import util.Common;
+import util.Util;
+import ace.reader.ACEReader;
 import em.ResolveGroup.Entry;
 
 public class EMLearn {
@@ -93,6 +96,20 @@ public class EMLearn {
 		return goldPart.getNameEntities();
 	}
 
+	
+	public static ArrayList<EntityMention> extractMention(CoNLLPart part, CoNLLSentence s) {
+		ArrayList<EntityMention> ems = new ArrayList<EntityMention>();
+		for(Entity e : part.getChains()) {
+			for(EntityMention m : e.mentions) {
+				if(s.getStartWordIdx()<=m.headStart && s.getEndWordIdx()>=m.headStart) {
+					ems.add(m);
+				}
+			}
+		}
+		return ems;
+	}
+	
+	
 	@SuppressWarnings("unused")
 	public static ArrayList<ResolveGroup> extractGroups(CoNLLPart part, String docName) {
 
@@ -101,20 +118,26 @@ public class EMLearn {
 		HashSet<String> goldNEs = EMUtil.getGoldNEs(goldPart);
 		HashSet<String> goldPNs = EMUtil.getGoldPNs(goldPart);
 
+		for(Entity e : part.getChains()) {
+			for(EntityMention m : e.mentions) {
+				EMUtil.setMentionAttri(m, part);
+			}
+		}
+		
 		ArrayList<ResolveGroup> groups = new ArrayList<ResolveGroup>();
 		for (int i = 0; i < part.getCoNLLSentences().size(); i++) {
 			CoNLLSentence s = part.getCoNLLSentences().get(i);
-			s.mentions = EMUtil.extractMention(s);
 			
+			s.mentions = extractMention(part, s);
 //			EMUtil.alignMentions(s, s.mentions, docName);
 			
 			EMUtil.assignNE(s.mentions, part.getNameEntities());
 
-			ArrayList<Mention> precedMs = new ArrayList<Mention>();
+			ArrayList<EntityMention> precedMs = new ArrayList<EntityMention>();
 
 			for (int j = maxDistance; j >= 1; j--) {
 				if (i - j >= 0) {
-					for (Mention m : part.getCoNLLSentences().get(i - j).mentions) {
+					for (EntityMention m : part.getCoNLLSentences().get(i - j).mentions) {
 						if (goldPNs.contains(m.toName())) {
 							continue;
 						}
@@ -124,7 +147,7 @@ public class EMLearn {
 			}
 			Collections.sort(s.mentions);
 			for (int j = 0; j < s.mentions.size(); j++) {
-				Mention m = s.mentions.get(j);
+				EntityMention m = s.mentions.get(j);
 				if (goldPNs.contains(m.toName())) {
 					continue;
 				}
@@ -136,11 +159,11 @@ public class EMLearn {
 				
 				qid++;
 
-				ArrayList<Mention> ants = new ArrayList<Mention>();
+				ArrayList<EntityMention> ants = new ArrayList<EntityMention>();
 				ants.addAll(precedMs);
 
 				if (j > 0) {
-					for (Mention precedM : s.mentions.subList(0, j)) {
+					for (EntityMention precedM : s.mentions.subList(0, j)) {
 						if (goldPNs.contains(precedM.toName())
 								|| precedM.end == m.end) {
 							continue;
@@ -149,7 +172,7 @@ public class EMLearn {
 					}
 				}
 
-				Mention fake = new Mention();
+				EntityMention fake = new EntityMention();
 				fake.extent = "fakkkkke";
 				fake.head = "fakkkkke";
 				fake.isFake = true;
@@ -161,7 +184,7 @@ public class EMLearn {
 				
 				int seq = 0;
 				
-				for(Mention ant : ants) {
+				for(EntityMention ant : ants) {
 					Entry entry = new Entry(ant, null, part);
 					rg.entries.add(entry);
 					entry.p_c = EMUtil.getP_C(ant, m, part);
@@ -190,37 +213,17 @@ public class EMLearn {
 		ArrayList<Entry> badEntries = new ArrayList<Entry>();
 		for (int k = 0; k < rg.entries.size(); k++) {
 			Entry entry = rg.entries.get(k);
-			Mention ant = rg.entries.get(k).ant;
+			EntityMention ant = rg.entries.get(k).ant;
 			
 			//TODO
-			if(!entry.isFake) {
-//				System.out.println(chainMaps.get(entry.antName).size());
-			}
 			if(entry.isFake) {
 				fakeEntries.add(entry);
-			} else if (ant.head.contains(rg.m.head) 
-//					|| m.head.contains(ant.head)
-//					|| (ant.ACESubtype.equals(m.ACESubtype)
-//							&& !ant.NE.equalsIgnoreCase("other") && m.NE.equalsIgnoreCase("other")
-//							)
-//					 && entry.p_c!=0
+			} else if ((ant.head.equals(rg.m.head)) 
+					|| EMUtil.isCopular(ant, rg.m, rg.part)
+					|| EMUtil.isRoleAppositive(ant, rg.m)
 					) {
-				
-//				HashSet<String> corefs = chainMaps.get(entry.antName);
-//				if(goodEntries.size()!=0) {
-//					HashSet<String> corefs0 = chainMaps.get(goodEntries.get(0).antName);
-//					if(corefs.size()>corefs0.size()) {
-//						goodEntries.add(0, entry);
-//					} else {
-//						goodEntries.add(entry);		
-//					}
-//				} else
 					goodEntries.add(entry);
-			} 
-//			} else if(ant.ACESubtype.equals(m.ACESubtype) && !ant.NE.equalsIgnoreCase("other") && m.NE.equalsIgnoreCase("other")
-//					&& m.s.getSentenceIdx() - ant.s.getSentenceIdx()<=0) {
-//				neturalEntries.add(ant);
-			else {
+			} else {
 				badEntries.add(entry);
 			}
 		}
@@ -237,15 +240,24 @@ public class EMLearn {
 
 	private static void extractCoNLL(ArrayList<ResolveGroup> groups) {
 		// CoNLLDocument d = new CoNLLDocument("train_auto_conll");
-		ArrayList<String> lines = Common.getLines("chinese_list_all_train");
-		lines.addAll(Common.getLines("chinese_list_all_development"));
+//		ArrayList<String> lines = Common.getLines("chinese_list_all_train");
+//		lines.addAll(Common.getLines("chinese_list_all_development"));
 
+		ArrayList<String> lines = Common.getLines("ACE_Chinese_train" + Util.part);
+		
 		int docNo = 0;
 		for (String line : lines) {
+			if(docNo%50==0) {
+				System.out.println(docNo + "/" + lines.size());
+			}
 			if (docNo % 10 < percent) {
-				CoNLLDocument d = new CoNLLDocument(line
-				// .replace("gold_conll", "auto_conll")
-						.replace("auto_conll", "gold_conll"));
+				
+				CoNLLDocument d = ACEReader.read(line, true);
+				
+//				CoNLLDocument d = new CoNLLDocument(line
+//				 .replace("gold_conll", "auto_conll")
+////						.replace("auto_conll", "gold_conll")
+//				 );
 
 				d.language = "chinese";
 				int a = line.indexOf("annotations");
@@ -490,6 +502,7 @@ public class EMLearn {
 
 	public static void main(String args[]) throws Exception {
 //		EMUtil.loadAlign();
+		Util.part = args[0];
 		run();
 		// System.out.println(match/XallX);
 		// Common.outputLines(svmRanks, "svmRank.train");
@@ -552,14 +565,13 @@ public class EMLearn {
 		// System.out.println(EMUtil.missed);
 		System.out.println(EMUtil.missed.size());
 
-		ApplyEM.run("all");
-
-		ApplyEM.run("nw");
-		ApplyEM.run("mz");
-		ApplyEM.run("wb");
-		ApplyEM.run("bn");
-		ApplyEM.run("bc");
-		ApplyEM.run("tc");
+		ApplyEM.run(Util.part);
+//		ApplyEM.run("nw");
+//		ApplyEM.run("mz");
+//		ApplyEM.run("wb");
+//		ApplyEM.run("bn");
+//		ApplyEM.run("bc");
+//		ApplyEM.run("tc");
 	}
 
 }

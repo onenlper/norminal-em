@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.HashSet;
 
 import model.Element;
-import model.Mention;
+import model.EntityMention;
 import model.CoNLL.CoNLLPart;
 import model.CoNLL.CoNLLSentence;
 import model.CoNLL.CoNLLWord;
@@ -22,7 +22,7 @@ import em.EMUtil.PersonEng;
 public class ParseTreeMention extends MentionDetect {
 
         @Override
-        public ArrayList<Mention> getMentions(CoNLLPart part) {
+        public ArrayList<EntityMention> getMentions(CoNLLPart part) {
                 if (part.getDocument().getLanguage().equalsIgnoreCase("chinese")) {
                         ChineseMention ch = new ChineseMention();
                         return ch.getChineseMention(part);
@@ -32,7 +32,7 @@ public class ParseTreeMention extends MentionDetect {
                 return null;
         }
 
-        public ArrayList<Mention> getMentions(CoNLLSentence s) {
+        public ArrayList<EntityMention> getMentions(CoNLLSentence s) {
                 CoNLLPart part = s.part;
                 if (part.getDocument().getLanguage().equalsIgnoreCase("chinese")) {
                         ChineseMention ch = new ChineseMention();
@@ -43,8 +43,8 @@ public class ParseTreeMention extends MentionDetect {
                 return null;
         }
 
-        private ArrayList<Mention> getEnglishMention(CoNLLSentence s) {
-                ArrayList<Mention> mentions = new ArrayList<Mention>();
+        private ArrayList<EntityMention> getEnglishMention(CoNLLSentence s) {
+                ArrayList<EntityMention> mentions = new ArrayList<EntityMention>();
                 mentions.addAll(this.getNamedMention(s));
                 mentions.addAll(this.getNPorPRPMention(s));
                 removeDuplicateMentions(mentions);
@@ -53,8 +53,8 @@ public class ParseTreeMention extends MentionDetect {
                 return mentions;
         }
 
-        private ArrayList<Mention> getEnglishMention(CoNLLPart part) {
-                ArrayList<Mention> mentions = new ArrayList<Mention>();
+        private ArrayList<EntityMention> getEnglishMention(CoNLLPart part) {
+                ArrayList<EntityMention> mentions = new ArrayList<EntityMention>();
                 mentions.addAll(this.getNamedMention(part));
                 mentions.addAll(this.getNPorPRPMention(part));
                 removeDuplicateMentions(mentions);
@@ -62,8 +62,8 @@ public class ParseTreeMention extends MentionDetect {
                 return mentions;
         }
        
-        private ArrayList<Mention> getNamedMention(CoNLLSentence s) {
-                ArrayList<Mention> mentions = new ArrayList<Mention>();
+        private ArrayList<EntityMention> getNamedMention(CoNLLSentence s) {
+                ArrayList<EntityMention> mentions = new ArrayList<EntityMention>();
                 ArrayList<Element> namedEntities = s.namedEntities;
                 CoNLLPart part = s.part;
                 for (Element element : namedEntities) {
@@ -86,7 +86,7 @@ public class ParseTreeMention extends MentionDetect {
                                         end++;
                                 }
                         }
-                        Mention mention = new Mention(start, end);
+                        EntityMention mention = new EntityMention(start, end);
 
                         StringBuilder sb = new StringBuilder();
                         for (int i = start; i <= end; i++) {
@@ -118,8 +118,8 @@ public class ParseTreeMention extends MentionDetect {
                 return mentions;
         }
 
-        private ArrayList<Mention> getNamedMention(CoNLLPart part) {
-                ArrayList<Mention> mentions = new ArrayList<Mention>();
+        private ArrayList<EntityMention> getNamedMention(CoNLLPart part) {
+                ArrayList<EntityMention> mentions = new ArrayList<EntityMention>();
                 ArrayList<Element> namedEntities = part.getNameEntities();
                 System.out.println(namedEntities.size());
                 for (Element element : namedEntities) {
@@ -142,7 +142,7 @@ public class ParseTreeMention extends MentionDetect {
                                         end++;
                                 }
                         }
-                        Mention mention = new Mention(start, end);
+                        EntityMention mention = new EntityMention(start, end);
 
                         StringBuilder sb = new StringBuilder();
                         StringBuilder sb2 = new StringBuilder();
@@ -176,7 +176,7 @@ public class ParseTreeMention extends MentionDetect {
                 return mentions;
         }
 
-        public Mention formPhrase(MyTreeNode treeNode, CoNLLSentence sentence) {
+        public EntityMention formPhrase(MyTreeNode treeNode, CoNLLSentence sentence) {
                 ArrayList<MyTreeNode> leaves = treeNode.getLeaves();
                 int startIdx = leaves.get(0).leafIdx;
                 int endIdx = leaves.get(leaves.size() - 1).leafIdx;
@@ -186,7 +186,7 @@ public class ParseTreeMention extends MentionDetect {
                 for (int i = startIdx; i <= endIdx; i++) {
                         sb.append(sentence.getWord(i).word).append(" ");
                 }
-                Mention em = new Mention();
+                EntityMention em = new EntityMention();
                 em.start = start;
                 em.end = end;
                 em.extent = sb.toString().trim();
@@ -195,8 +195,8 @@ public class ParseTreeMention extends MentionDetect {
                 return em;
         }
 
-        public ArrayList<Mention> getAllNounPhrase(CoNLLSentence sentence) {
-                ArrayList<Mention> nounPhrases = new ArrayList<Mention>();
+        public ArrayList<EntityMention> getAllNounPhrase(CoNLLSentence sentence) {
+                ArrayList<EntityMention> nounPhrases = new ArrayList<EntityMention>();
                 MyTree tree = sentence.getSyntaxTree();
                 MyTreeNode root = tree.root;
                 ArrayList<MyTreeNode> frontie = new ArrayList<MyTreeNode>();
@@ -215,7 +215,7 @@ public class ParseTreeMention extends MentionDetect {
                                 // && !value.equalsIgnoreCase("PRP$")) {
                                 // System.out.println(value);
                                 // }
-                                Mention element = formPhrase(tn, sentence);
+                                EntityMention element = formPhrase(tn, sentence);
                                 if (element != null) {
                                         if (element.start == -1) {
                                                 // System.out.println();
@@ -229,8 +229,8 @@ public class ParseTreeMention extends MentionDetect {
                 return nounPhrases;
         }
 
-        public ArrayList<Mention> getAllNounPhrase(CoNLLPart part) {
-                ArrayList<Mention> nounPhrases = new ArrayList<Mention>();
+        public ArrayList<EntityMention> getAllNounPhrase(CoNLLPart part) {
+                ArrayList<EntityMention> nounPhrases = new ArrayList<EntityMention>();
                 for (CoNLLSentence sentence : part.getCoNLLSentences()) {
                         MyTree tree = sentence.getSyntaxTree();
                         MyTreeNode root = tree.root;
@@ -249,7 +249,7 @@ public class ParseTreeMention extends MentionDetect {
                                         // && !value.equalsIgnoreCase("PRP$")) {
                                         // System.out.println(value);
                                         // }
-                                        Mention element = formPhrase(tn, sentence);
+                                        EntityMention element = formPhrase(tn, sentence);
                                         if (element != null) {
                                                 if (element.start == -1) {
                                                         // System.out.println();
@@ -265,15 +265,15 @@ public class ParseTreeMention extends MentionDetect {
                 return nounPhrases;
         }
 
-        private ArrayList<Mention> getNPorPRPMention(CoNLLSentence s) {
-                ArrayList<Mention> npMentions = new ArrayList<Mention>();
+        private ArrayList<EntityMention> getNPorPRPMention(CoNLLSentence s) {
+                ArrayList<EntityMention> npMentions = new ArrayList<EntityMention>();
                 npMentions = getAllNounPhrase(s);
 
                 // MentionDetect md = new GoldBoundaryMentionTest();
                 // npMentions = md.getMentions(part);
                 CoNLLPart part = s.part;
                 for (int g = 0; g < npMentions.size(); g++) {
-                        Mention npMention = npMentions.get(g);
+                        EntityMention npMention = npMentions.get(g);
                         int end = npMention.end;
                         int start = npMention.start;
                         StringBuilder sb2 = new StringBuilder();
@@ -300,15 +300,15 @@ public class ParseTreeMention extends MentionDetect {
                 return npMentions;
         }
 
-        private ArrayList<Mention> getNPorPRPMention(CoNLLPart part) {
-                ArrayList<Mention> npMentions = new ArrayList<Mention>();
+        private ArrayList<EntityMention> getNPorPRPMention(CoNLLPart part) {
+                ArrayList<EntityMention> npMentions = new ArrayList<EntityMention>();
                 npMentions = getAllNounPhrase(part);
 
                 // MentionDetect md = new GoldBoundaryMentionTest();
                 // npMentions = md.getMentions(part);
                 System.out.println(npMentions.size());
                 for (int g = 0; g < npMentions.size(); g++) {
-                        Mention npMention = npMentions.get(g);
+                        EntityMention npMention = npMentions.get(g);
                         int end = npMention.end;
                         int start = npMention.start;
                         StringBuilder sb2 = new StringBuilder();
@@ -335,8 +335,8 @@ public class ParseTreeMention extends MentionDetect {
                 return npMentions;
         }
 
-        private void assignNE(ArrayList<Mention> mentions) {
-                for (Mention mention : mentions) {
+        private void assignNE(ArrayList<EntityMention> mentions) {
+                for (EntityMention mention : mentions) {
                         int headStart = mention.headID;
                         for (Element element : mention.s.namedEntities) {
                                 if (element.start <= headStart && headStart <= element.end) {
@@ -413,18 +413,18 @@ public class ParseTreeMention extends MentionDetect {
         // return false;
         // }
 
-        private void pruneMentions(ArrayList<Mention> mentions, CoNLLPart part) {
-                ArrayList<Mention> removes = new ArrayList<Mention>();
+        private void pruneMentions(ArrayList<EntityMention> mentions, CoNLLPart part) {
+                ArrayList<EntityMention> removes = new ArrayList<EntityMention>();
 
                 Collections.sort(mentions);
 
-                ArrayList<Mention> copyMentions = new ArrayList<Mention>(
+                ArrayList<EntityMention> copyMentions = new ArrayList<EntityMention>(
                                 mentions.size());
                 copyMentions.addAll(mentions);
                 for (int i = 0; i < mentions.size(); i++) {
-                        Mention em = mentions.get(i);
+                        EntityMention em = mentions.get(i);
                         for (int j = i+1; j < copyMentions.size(); j++) {
-                                Mention em2 = copyMentions.get(j);
+                                EntityMention em2 = copyMentions.get(j);
                                 if (em.headID == em2.headID
                                                 && (em.end - em.start < em2.end - em2.start)) {
                                         if (em.end + 1 < part.getWordCount()
@@ -455,7 +455,7 @@ public class ParseTreeMention extends MentionDetect {
                 removes.clear();
                
                 assignNE(mentions);
-                for (Mention mention : mentions) {
+                for (EntityMention mention : mentions) {
                         calEnAttribute(mention, part);
                 }
                
@@ -526,14 +526,14 @@ public class ParseTreeMention extends MentionDetect {
 //              mentions.addAll(mentionsHash);
         }
 
-        private void removeDuplicateMentions(ArrayList<Mention> mentions) {
-                HashSet<Mention> mentionsHash = new HashSet<Mention>();
+        private void removeDuplicateMentions(ArrayList<EntityMention> mentions) {
+                HashSet<EntityMention> mentionsHash = new HashSet<EntityMention>();
                 mentionsHash.addAll(mentions);
                 mentions.clear();
                 mentions.addAll(mentionsHash);
         }
 
-        private static boolean inStopList(Mention m) {
+        private static boolean inStopList(EntityMention m) {
                 String mentionSpan = m.extent.toLowerCase();
                 if (mentionSpan.equals("u.s.") || mentionSpan.equals("u.k.")
                                 || mentionSpan.equals("u.s.s.r"))
@@ -548,7 +548,7 @@ public class ParseTreeMention extends MentionDetect {
                 return false;
         }
 
-        public static void assignHeadExtent(Mention em, CoNLLPart part) {
+        public static void assignHeadExtent(EntityMention em, CoNLLPart part) {
                 if (part.lang.equalsIgnoreCase("chi")) {
                         em.headID = em.end;
                         em.head = part.getWord(em.headID).orig;
@@ -567,22 +567,22 @@ public class ParseTreeMention extends MentionDetect {
                 }
         }
 
-        public static void setMentionType(Mention mention, CoNLLPart part) {
+        public static void setMentionType(EntityMention mention, CoNLLPart part) {
                 if (part.getWord(mention.headID).posTag.startsWith("PRP")
                                 || (mention.start == mention.end
                                                 && mention.NE.equalsIgnoreCase("OTHER") && (EnDictionary
                                                 .getInstance().allPronouns.contains(mention.head) || EnDictionary
                                                 .getInstance().relativePronouns.contains(mention.head)))) {
-                        mention.mentionType = MentionType.pronoun;
+                        mention.mType = MentionType.pronoun;
                 } else if (!mention.NE.equalsIgnoreCase("OTHER")
                                 || part.getWord(mention.headID).posTag.startsWith("NNP")) {
-                        mention.mentionType = MentionType.proper;
+                        mention.mType = MentionType.proper;
                 } else {
-                        mention.mentionType = MentionType.common;
+                        mention.mType = MentionType.common;
                 }
         }
 
-        public static void calEnAttribute(Mention em, CoNLLPart part) {
+        public static void calEnAttribute(EntityMention em, CoNLLPart part) {
                 assignHeadExtent(em, part);
                 setMentionType(em, part);
 
@@ -634,7 +634,7 @@ public class ParseTreeMention extends MentionDetect {
                 setPerson(em, part);
         }
 
-        private static void setAnimacy(Mention mention, CoNLLPart part) {
+        private static void setAnimacy(EntityMention mention, CoNLLPart part) {
                 String headString = mention.head.toLowerCase();
                 String nerString = mention.NE;
                 if (mention.isPronoun) {
@@ -698,7 +698,7 @@ public class ParseTreeMention extends MentionDetect {
                 }
         }
 
-        private static void setPerson(Mention mention, CoNLLPart part) {
+        private static void setPerson(EntityMention mention, CoNLLPart part) {
                 // only do for pronoun
                 if (!mention.isPronoun) {
                         mention.personEng = PersonEng.UNKNOWN;
@@ -737,7 +737,7 @@ public class ParseTreeMention extends MentionDetect {
                 }
         }
 
-        private static void setGender(Mention mention, CoNLLPart part) {
+        private static void setGender(EntityMention mention, CoNLLPart part) {
                 String headString = mention.head.toLowerCase();
                 mention.gender = Gender.unknown;
                 if (mention.isPronoun) {
@@ -777,7 +777,7 @@ public class ParseTreeMention extends MentionDetect {
                 }
         }
 
-        private static int[] getNumberCount(Mention mention, CoNLLPart part) {
+        private static int[] getNumberCount(EntityMention mention, CoNLLPart part) {
                 int headIndex = mention.headID;
                 if (part.getWord(headIndex).rawNamedEntity.startsWith("PER")) {
                         ArrayList<String> words = new ArrayList<String>();
@@ -796,7 +796,7 @@ public class ParseTreeMention extends MentionDetect {
                 return null;
         }
 
-        public static void setNumber(Mention mention, CoNLLPart part) {
+        public static void setNumber(EntityMention mention, CoNLLPart part) {
                 String headString = part.getWord(mention.headID).orig.toLowerCase();
                 if (mention.isPronoun) {
                         if (EnDictionary.getInstance().pluralPronouns.contains(headString)) {

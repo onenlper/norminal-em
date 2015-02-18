@@ -10,25 +10,25 @@ public class Entity implements Comparable<Entity>{
 	 */
 	public boolean singleton = false;
 
-	public ArrayList<Mention> mentions;
+	public ArrayList<EntityMention> mentions;
 	public String type;
 	public String subType;
 	public int entityIdx;
 
-	public ArrayList<Mention> getMentions() {
+	public ArrayList<EntityMention> getMentions() {
 		return mentions;
 	}
 
-	public void addMention(Mention em) {
+	public void addMention(EntityMention em) {
 //		em.entity = this;
 		this.mentions.add(em);
 	}
 
-	public void setMentions(ArrayList<Mention> mentions) {
+	public void setMentions(ArrayList<EntityMention> mentions) {
 		this.mentions = mentions;
 	}
 
-	public Mention getFirstMention() {
+	public EntityMention getFirstMention() {
 		Collections.sort(mentions);
 		return mentions.get(0);
 	}
@@ -50,10 +50,10 @@ public class Entity implements Comparable<Entity>{
 	}
 
 	public Entity() {
-		mentions = new ArrayList<Mention>();
+		mentions = new ArrayList<EntityMention>();
 	}
 
-	Mention mostReppresent;
+	EntityMention mostReppresent;
 
 //	public EntityMention getMostRepresent() {
 //		Collections.sort(this.mentions);
@@ -79,7 +79,7 @@ public class Entity implements Comparable<Entity>{
 
 	public String print() {
 		StringBuilder sb = new StringBuilder();
-		for (Mention m : this.mentions) {
+		for (EntityMention m : this.mentions) {
 			sb.append(m.extent).append(" ");
 		}
 		sb.append(this.mentions.get(0).start).append(":");
@@ -90,7 +90,7 @@ public class Entity implements Comparable<Entity>{
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Type: ").append(type).append(" SubType: ").append(subType).append("\n");
-		for (Mention em : mentions) {
+		for (EntityMention em : mentions) {
 			sb.append(em.toString()).append("\n");
 		}
 		return sb.toString();
